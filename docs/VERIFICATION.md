@@ -1,4 +1,15 @@
-# Verification record — 0.1.0 alpha
+# Verification record
+
+## 0.1.1 — System Data Clean and turnkey installation
+
+- 75 tests pass; coverage 80.87%, with Ruff, mypy and architecture/safety gates passing.
+- New tests demonstrate automatic cold-checkpoint provisioning, cached no-network preparation, checksum tamper rejection, failed-download/inference readiness failure, exact newly installed executable verification, update readiness checks, and System Data visibility across Clean selection and its investigation toggle.
+- A real **isolated installation with empty HF_HOME** succeeded: app/runtime install, pinned model download, file checksums, actual inference, then a real-inference Clean demo with the new System Data context. No separate model-setup command was run. Global tool installation was not replaced.
+- The normal CLI no longer exposes `model setup`; advanced direct installs prepare missing weights automatically. `doctor --verify-model` is an installer readiness primitive, not a manual setup prerequisite.
+- Refreshed public demo/assets show the actual Clean System Data panel, model decisions and the in-mode investigation view using synthetic data. OCR verified those labels; no private machine data was published.
+- Existing deletion/privilege boundaries remain unchanged. No real user cleanup was performed.
+
+## 0.1.0 — Initial alpha baseline
 
 ## Local target
 

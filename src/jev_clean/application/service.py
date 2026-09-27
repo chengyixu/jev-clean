@@ -10,7 +10,15 @@ from pathlib import Path
 from typing import Callable
 
 from jev_clean.application.exploration import explore
-from jev_clean.domain.models import AuditReport, Candidate, DiskNode, Fingerprint, Measurement, ScanReport
+from jev_clean.domain.models import (
+    AuditReport,
+    Candidate,
+    CategoryReport,
+    DiskNode,
+    Fingerprint,
+    Measurement,
+    ScanReport,
+)
 from jev_clean.domain.policy import apply_policy
 from jev_clean.infrastructure import native
 from jev_clean.infrastructure.model import LayaAdvisor
@@ -69,6 +77,14 @@ def demo_report(home: Path, mode: str, advisor: LayaAdvisor, progress: Callable[
         mode,
         ScanReport(candidates, files_seen=len(specs)),
         [Measurement("Synthetic cache inventory", 1_212_000_000, True, "Fixture; not your disk")],
+        categories=CategoryReport(
+            "2026-01-01 00:00:00.000 (DEMO)",
+            500 * 10**9,
+            20 * 10**9,
+            {"com.apple.STMExtension.Documents": 200 * 10**9},
+            280 * 10**9,
+            source="Synthetic category arithmetic; not your Mac",
+        ),
         diagnostics={
             "disk_total": 10**12,
             "disk_free": 190 * 10**9,
@@ -95,7 +111,12 @@ def audit(
 ) -> AuditReport:
     if mode not in ("clean", "status"):
         raise ValueError("Unknown mode: choose clean or status")
-    progress("Loading required local Laya model. No fallback without inference.")
+    progress("Preparing required local model automatically; no model-free fallback.")
+    progress(
+        "Clean mysterious macOS System Data: account → investigate → model decisions → review."
+        if mode == "clean"
+        else "Investigate macOS System Data: native accounting and model-directed breakdown."
+    )
     advisor = LayaAdvisor()
     advisor.load()  # Must succeed before native scans or synthetic demonstration.
     if demo:

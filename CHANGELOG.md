@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1 — 2026-09-27
+
+- Make **Clean mysterious macOS System Data** the primary Clean workflow and product headline, not a Status-only feature.
+- Persistent System Data context in Clean, in-mode investigation/review toggle (`B`), and shared `system_data` JSON evidence for agents.
+- Turnkey installer provisions the app, pinned model, checksum validation and real inference before reporting ready; no separate setup command.
+- Advanced direct installs automatically provision a missing checkpoint on first operation. Confirmed updates verify the new installation's model.
+- Remove the obsolete manual `model setup` command. Integrity/network/inference errors stop readiness without fallback.
+- Add installation cold-cache/failure, checksum and Clean-context tests; refresh real-inference TUI demo assets.
+
 ## 0.1.0 — 2026-09-27
 
 Initial alpha release, Nexora family.

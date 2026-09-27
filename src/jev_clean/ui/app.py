@@ -21,7 +21,8 @@ from jev_clean.ui.screens import ConfirmScreen, DepthScreen, InfoScreen
 
 HELP = """jev-clean · Nexora — model-driven Clean and Status
 
-1 Clean     2 Status (model-directed disk breakdown)
+1 Clean mysterious System Data     2 Status (disk breakdown)
+B           In Clean: switch file review / System Data investigation
 ↑/↓ or j/k  Navigate evidence / decisions
 Space       Toggle a model-approved, safety-checked file
 A / N       Select all visible approved / select none
@@ -41,14 +42,15 @@ Trash staging is reversible; it does NOT free space. No root cleanup.
 
 class JevCleanApp(App):
     TITLE = "jev-clean"
-    SUB_TITLE = "NEXORA / MODEL-DRIVEN SYSTEM DATA INVESTIGATION"
+    SUB_TITLE = "NEXORA / CLEAN MYSTERIOUS MACOS SYSTEM DATA"
     CSS = """
     Screen { background: #101820; color: #e1e9ec; }
     Header { background: #172832; color: #6ce5ca; }
     #brand { height: 3; padding: 1 2 0 2; color: #6ce5ca; text-style: bold; }
     #nav { height: 3; margin: 0 2; }
     #nav Button { width: 1fr; min-width: 12; border: none; margin-right: 1; background: #223640; }
-    #summary { height: 4; padding: 1 2; background: #172832; margin: 1 2 0 2; }
+    #system-data { height: 4; padding: 0 2; margin: 1 2 0 2; color: #6ce5ca; background: #172832; }
+    #summary { height: 3; padding: 1 2; background: #172832; margin: 1 2 0 2; }
     #progress { margin: 0 2; height: 1; }
     #search { margin: 0 2; height: 3; }
     #candidates { height: 1fr; min-height: 5; margin: 0 2; background: #101820; }
@@ -64,6 +66,7 @@ class JevCleanApp(App):
     BINDINGS = [
         Binding("1", "clean", "Clean"),
         Binding("2", "status", "Status"),
+        Binding("b", "breakdown", "Investigation"),
         Binding("space", "toggle_item", "Select"),
         Binding("a", "all", "All approved"),
         Binding("n", "none", "None"),
@@ -86,6 +89,7 @@ class JevCleanApp(App):
         self.demo = demo
         self.initial = initial
         self.mode = "welcome"
+        self.clean_breakdown = False
         self.report: AuditReport | None = None
         self.selected: set[str] = set()
         self.candidate_by_id: dict[str, Candidate] = {}
@@ -95,12 +99,19 @@ class JevCleanApp(App):
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        yield Label("jev-clean  /  The model investigates. You keep control.", id="brand")
+        yield Label(
+            "Clean mysterious macOS System Data. The model investigates; you keep control.", id="brand"
+        )
         with Horizontal(id="nav"):
             yield Button("1  Clean", id="nav-clean")
             yield Button("2  Status", id="nav-status")
         yield Static(
-            "Choose Clean or Status. A working local model is required.\n"
+            "Clean mysterious System Data\nAccounting → model-led investigation → review → cleanup. No model-free fallback.",
+            id="system-data",
+            markup=False,
+        )
+        yield Static(
+            "Choose Clean or Status. The required local model is prepared automatically.\n"
             + (
                 "DEMO: synthetic file metadata, real inference, no removal"
                 if self.demo
@@ -113,7 +124,7 @@ class JevCleanApp(App):
         yield Input(placeholder="Filter paths · / focus · Escape return", id="search")
         yield DataTable(id="candidates", cursor_type="row", zebra_stripes=True)
         yield Static(
-            "Clean: model finds potential trash. Status: model chooses the deeper disk breakdown.",
+            "Clean includes System Data accounting, model investigation and file review. B switches investigation/review.",
             id="details",
             markup=False,
         )
@@ -135,6 +146,10 @@ class JevCleanApp(App):
             self.notify("Investigation in progress; Escape cancels first")
             return
         self.mode = mode
+        self.clean_breakdown = False
+        self.query_one("#system-data", Static).update(
+            "System Data: awaiting this investigation. Native totals will appear here; unavailable never means zero."
+        )
         self.report = None
         self.candidate_by_id.clear()
         self.nodes.clear()
@@ -197,7 +212,7 @@ class JevCleanApp(App):
         self.query_one("#candidates", DataTable).clear(columns=True)
         self.query_one("#progress", ProgressBar).update(total=100, progress=0)
         self.query_one("#summary", Static).update(
-            f"Operation stopped: {message}\nModel setup: jev-clean model setup. R to retry."
+            f"Operation stopped: {message}\nAutomatic model preparation did not succeed. Check connection and press R to retry."
         )
         self.trace(message)
 
@@ -221,7 +236,23 @@ class JevCleanApp(App):
         table.clear(columns=True)
         query = self.query_one("#search", Input).value.casefold()
         prefix = "DEMO DATA / REAL INFERENCE | " if self.demo else ""
-        if self.mode == "clean":
+        context = report.system_data
+        native_total = (
+            f"{human_bytes(context['native_other_bytes'])} reported @ {context['timestamp']}"
+            if context["native_other_bytes"] is not None
+            else "native total unavailable — not zero"
+        )
+        self.query_one("#system-data", Static).update(
+            f"{prefix}System Data · {native_total}\n"
+            f"{context['approved_candidate_count']} model-approved potential cleanup files / {human_bytes(context['approved_candidate_bytes'])}. "
+            "Category membership not proven; Trash staging frees no space.\n"
+            + (
+                "CLEAN: B switches investigation ↔ file review. Select then confirm."
+                if self.mode == "clean"
+                else "STATUS: model-directed breakdown; nested directory sizes overlap."
+            )
+        )
+        if self.mode == "clean" and not self.clean_breakdown:
             table.add_columns("Pick", "Allocated", "Location", "Laya", "Safety veto")
             for c in report.scan.candidates:
                 if query not in c.path.casefold():
@@ -261,7 +292,7 @@ class JevCleanApp(App):
                 if category
                 else "Native category totals unavailable. Filesystem rows are not proven System Data membership."
             )
-            summary = f"{prefix}STATUS · model-selected depth · nested sizes overlap; never sum\n{detail}"
+            summary = f"{self.mode.upper()} · System Data investigation · model-selected depth; do not sum nested rows\n{detail}"
         self.query_one("#summary", Static).update(summary)
 
     @on(DataTable.RowSelected, "#candidates")
@@ -271,7 +302,7 @@ class JevCleanApp(App):
     @on(DataTable.RowHighlighted, "#candidates")
     def highlight(self, event: DataTable.RowHighlighted) -> None:
         key = str(event.row_key.value)
-        if self.mode == "clean" and key in self.candidate_by_id:
+        if self.mode == "clean" and not self.clean_breakdown and key in self.candidate_by_id:
             item = self.candidate_by_id[key]
             dist = (
                 " · ".join(f"{k} {v:.1%}" for k, v in item.decision.probabilities.items())
@@ -282,7 +313,7 @@ class JevCleanApp(App):
             self.query_one("#details", Static).update(
                 f"{item.path}\nMODEL: {dist} · {latency}\nGUARD: {item.reason}"
             )
-        elif self.mode == "status" and key in self.nodes:
+        elif (self.mode == "status" or self.clean_breakdown) and key in self.nodes:
             node = self.nodes[key]
             decision = node.get("decision")
             self.query_one("#details", Static).update(
@@ -294,7 +325,7 @@ class JevCleanApp(App):
         self.render_report()
 
     def action_toggle_item(self) -> None:
-        if self.mode != "clean" or self.busy:
+        if self.mode != "clean" or self.clean_breakdown or self.busy:
             return
         table = self.query_one("#candidates", DataTable)
         if table.row_count:
@@ -307,11 +338,17 @@ class JevCleanApp(App):
                 table.move_cursor(row=row)
 
     def action_all(self) -> None:
-        if self.mode == "clean" and not self.busy:
+        if self.mode == "clean" and not self.clean_breakdown and not self.busy:
             query = self.query_one("#search", Input).value.casefold()
             self.selected.update(
                 c.id for c in self.candidate_by_id.values() if c.selectable and query in c.path.casefold()
             )
+            self.render_report()
+
+    def action_breakdown(self) -> None:
+        if self.mode == "clean" and self.report and not self.busy:
+            self.clean_breakdown = not self.clean_breakdown
+            self.query_one("#search", Input).value = ""
             self.render_report()
 
     def action_none(self) -> None:
@@ -319,7 +356,7 @@ class JevCleanApp(App):
         self.render_report()
 
     def action_review(self) -> None:
-        if self.mode == "clean" and not self.busy and self.selected:
+        if self.mode == "clean" and not self.clean_breakdown and not self.busy and self.selected:
             items = [self.candidate_by_id[i] for i in self.selected]
             self.push_screen(
                 ConfirmScreen(items), lambda accepted: self.move_selected(items) if accepted else None
@@ -354,6 +391,9 @@ class JevCleanApp(App):
         self.report = None
         self.candidate_by_id.clear()
         self.query_one("#candidates", DataTable).clear(columns=True)
+        self.query_one("#system-data", Static).update(
+            "System Data cleanup review finished. Files staged in Trash do not free space.\nRe-run Clean after any manual Trash emptying to get a new native reading; no reduction is assumed."
+        )
         self.query_one("#summary", Static).update(
             "Review finished. History has receipts. R to investigate again; Trash staging does not free space."
         )

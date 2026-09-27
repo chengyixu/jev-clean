@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "jev-clean"
-version = "0.1.0"
-description = "Nexora's evidence-first macOS System Data inspector and local-AI cleanup reviewer"
+version = "0.1.1"
+description = "Clean mysterious macOS System Data with model-led investigation and human-controlled cleanup"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "Apache-2.0"

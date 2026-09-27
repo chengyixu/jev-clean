@@ -20,8 +20,8 @@ jobs:
         with:
           version: '0.9.27'
       - run: uv sync --frozen --extra dev --python 3.12
-      - run: uv run ruff check src tests scripts
-      - run: uv run ruff format --check src tests scripts
+      - run: uv run ruff check src tests scripts install.py
+      - run: uv run ruff format --check src tests scripts install.py
       - run: uv run mypy src
       - run: uv run pytest --cov=jev_clean --cov-report=term-missing --cov-fail-under=75
       - run: uv run bash scripts/repo-guards.sh

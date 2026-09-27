@@ -11,14 +11,13 @@ The model drives discovery, not just labels. Use the installed CLI; it is the sa
 
 ```bash
 jev-clean doctor
-jev-clean model setup
 jev-clean status --json
 jev-clean clean --json --output "$HOME/.local/state/jev-clean/review.json"
 ```
 
-`model setup` explicitly downloads the pinned weights; run only when model setup is authorized. Once cached, inference is local. Missing/error model stops Clean and Status. There is no `--model off`, rules-only mode, Analyze or Optimize command.
+The normal installer provisions and verifies the model automatically. No separate setup command. Direct-package installs also provision missing weights on first operation (about 0.85 GB); downloading or inference failure stops the operation. Once cached, inference is local. There is no `--model off`, rules-only mode, Analyze or Optimize command.
 
-Status: model chooses deeper disk-usage breakdown and classifies observed storage. Clean: model chooses where to look and assesses discovered files. `--root "$HOME/Library/Caches"` narrows either investigation's read scope when a broad exploration exhausts its budget. It does not authorize deletion. Investigations are bounded and incomplete coverage is explicit; do not call unvisited data empty.
+Clean is the flagship **mysterious macOS System Data cleanup** flow: native accounting → model-directed contributor investigation → model file decisions → user review → cleanup receipt. Its `system_data` context is not exclusive to Status. Status provides the read-only deeper breakdown. In the TUI, B inside Clean switches investigation/file review while the System Data panel stays visible. `--root "$HOME/Library/Caches"` narrows either investigation's read scope when a broad exploration exhausts its budget. It does not authorize deletion. Investigations are bounded and incomplete coverage is explicit; do not call unvisited data empty.
 
 For deep native diagnostics, the human runs `sudo -v` in their terminal first, then `jev-clean status --deep --json`. Never collect or pipe a password, run the whole app as root, or send credentials to a model. Sudo does not grant Full Disk Access/TCC.
 

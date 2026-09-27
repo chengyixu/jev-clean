@@ -24,6 +24,11 @@ async def capture():
                 await pilot.press("a")
             await pilot.pause(0.3)
             app.save_screenshot(name + ".svg", str(assets))
+            if name == "clean":
+                await pilot.press("b")
+                await pilot.pause(0.3)
+                app.save_screenshot("clean-breakdown.svg", str(assets))
+                await pilot.press("b")
         await pilot.press("?")
         await pilot.pause(0.3)
         app.save_screenshot("keys.svg", str(assets))
@@ -35,7 +40,7 @@ async def capture():
         from PIL import Image
 
         frames = []
-        for name in ["welcome", "clean", "status", "keys"]:
+        for name in ["welcome", "clean", "clean-breakdown", "status", "keys"]:
             cairosvg.svg2png(url=str(assets / (name + ".svg")), write_to=str(assets / (name + ".png")))
             frame = Image.open(assets / (name + ".png")).convert("RGB")
             frame.thumbnail((1188, 792))
@@ -44,7 +49,7 @@ async def capture():
             assets / "walkthrough.gif",
             save_all=True,
             append_images=frames[1:],
-            duration=[1800, 4500, 4500, 3000],
+            duration=[1800, 4500, 4000, 4500, 3000],
             loop=0,
         )
         print("Created walkthrough.gif (screen sequence, not real-time playback).")

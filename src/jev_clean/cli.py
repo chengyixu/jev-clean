@@ -14,7 +14,7 @@ from pathlib import Path
 
 from jev_clean.application.service import audit, load_plan, reassess_selection, save_plan
 from jev_clean.infrastructure import native
-from jev_clean.infrastructure.model import MODEL_ID, MODEL_REVISION, local_snapshot
+from jev_clean.infrastructure.model import verify_model_ready
 from jev_clean.infrastructure.trash import TrashStore
 from jev_clean.infrastructure.update import check_update, installed_version
 
@@ -53,13 +53,16 @@ def parser() -> argparse.ArgumentParser:
     cmd = sub.add_parser("restore", help="Restore a batch without overwriting source files")
     cmd.add_argument("batch")
     cmd.add_argument("--confirm", help="For agents after explicit human authorization: literal RESTORE")
-    cmd = sub.add_parser("model", help="Explicit model setup/status")
-    cmd.add_argument("action", choices=["setup", "status"])
     cmd = sub.add_parser("update", help="Check public GitHub releases; explicit confirmation to install")
     cmd.add_argument("--apply", action="store_true")
     cmd = sub.add_parser("completion", help="Print completion script; does not edit shell config")
     cmd.add_argument("shell", choices=["bash", "zsh", "fish"])
-    sub.add_parser("doctor", help="Read-only compatibility and permission diagnostics")
+    doctor = sub.add_parser("doctor", help="Compatibility and permission diagnostics")
+    doctor.add_argument(
+        "--verify-model",
+        action="store_true",
+        help="Automatically provision pinned weights if missing, verify checksums and run real inference",
+    )
     return p
 
 
@@ -143,20 +146,26 @@ def main(argv: list[str] | None = None) -> int:
             emit(asdict(result))
             return 1 if result.failed else 0
         elif args.command == "doctor":
+            model_proof = (
+                verify_model_ready()
+                if args.verify_model
+                else {
+                    "ready": None,
+                    "note": "Model is verified during installation and automatically prepared on first operation.",
+                }
+            )
             emit(
                 {
                     "version": installed_version(),
+                    "model": model_proof,
                     "platform": platform.system(),
                     "arch": platform.machine(),
                     "root": False,
                     "sudo_cached": native.run(["/usr/bin/sudo", "-n", "-v"], 3)[0] == 0,
                     "lsof_available": native.open_files() is not None,
-                    "note": "sudo does not bypass Full Disk Access/TCC. No file changes performed.",
+                    "note": "sudo does not bypass Full Disk Access/TCC. No user cleanup performed; model verification may populate its local cache.",
                 }
             )
-        elif args.command == "model":
-            path = local_snapshot(download=args.action == "setup")
-            emit({"model": MODEL_ID, "revision": MODEL_REVISION, "snapshot": str(path), "inference": "local"})
         elif args.command == "update":
             info = check_update()
             emit(info)
@@ -171,9 +180,23 @@ def main(argv: list[str] | None = None) -> int:
                 if not uv:
                     raise ValueError("uv is required; install uv separately from its official distribution")
                 spec = info["install_spec"]
-                return subprocess.run([uv, "tool", "install", "--force", spec], check=False).returncode
+                subprocess.run([uv, "tool", "install", "--force", spec], check=True)
+                tool_dir = subprocess.run(
+                    [uv, "tool", "dir"], check=True, capture_output=True, text=True
+                ).stdout.strip()
+                verified = subprocess.run(
+                    [str(Path(tool_dir) / "jev-clean/bin/jev-clean"), "doctor", "--verify-model"],
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    text=True,
+                )
+                proof = json.loads(verified.stdout)
+                if proof.get("version") != info["latest"] or proof.get("model", {}).get("ready") is not True:
+                    raise RuntimeError("Update installed but model verification failed; not ready")
+                emit({"updated": True, "ready": True, "version": info["latest"]})
+                return 0
         elif args.command == "completion":
-            words = "clean status tui apply restore history model update doctor completion"
+            words = "clean status tui apply restore history update doctor completion"
             if args.shell == "bash":
                 print(f"complete -W '{words}' jev-clean")
             elif args.shell == "zsh":

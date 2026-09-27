@@ -1,8 +1,8 @@
-<p align="center"><img src="docs/assets/hero.svg" alt="jev-clean · Nexora — Let the model investigate. Keep the decision yours." width="960"></p>
+<p align="center"><img src="docs/assets/hero.svg" alt="jev-clean · Nexora — Clean mysterious macOS System Data." width="960"></p>
 
 # jev-clean · Nexora
 
-**A local model that investigates your Mac’s storage—not another list of folders to delete.**
+**Clean the mysterious “System Data” on your Mac—with a local model doing the investigation.**
 
 [![CI](https://github.com/chengyixu/jev-clean/actions/workflows/ci.yml/badge.svg)](https://github.com/chengyixu/jev-clean/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-6ce5ca)](LICENSE)
@@ -11,7 +11,9 @@
 
 macOS calls hundreds of gigabytes **System Data**. That label doesn't tell you what the data is, why it exists, or whether you can remove it.
 
-**jev-clean puts a local Laya model in the investigation loop.** It chooses which locations need deeper inspection, classifies the evidence, and proposes what to keep or remove. You see the choices and scores as they happen. You approve the files. Hard safety protections can veto a model proposal, never replace the model.
+**Clean is the flagship System Data workflow—not merely a report in Status.** It starts with System Data accounting, sends the model to investigate potential contributors, brings its removal proposals into the same review screen, and lets you choose what goes. Press `B` inside Clean to switch between the model's investigation and the file review; the System Data panel stays visible throughout. Status provides a read-only deeper breakdown.
+
+Laya chooses which locations need inspection, classifies the evidence, and proposes what to keep or remove. You see the actual choices and scores as they happen. You approve the files. Hard safety protections can veto a model proposal, never replace the model.
 
 > **Alpha software.** No model = no Clean or Status operation. There is no rules-only fallback. Model scores are **not deletion-safety guarantees**. Begin with the real-inference demo and review [SECURITY.md](SECURITY.md). The project name does not imply affiliation with TypeSafe AI; the shipped engine is Laya-MLX.
 
@@ -23,11 +25,11 @@ macOS calls hundreds of gigabytes **System Data**. That label doesn't tell you w
 
 | | **Clean** | **Status** |
 |---|---|---|
-| Question | “What can I safely consider removing?” | “Where is the space actually going?” |
+| Question | “What can I remove to tackle mysterious System Data?” | “Where is the space actually going?” |
 | Model’s job | Choose directories to inspect → find potential trash → propose remove / review / keep | Choose deeper disk breakdown → classify storage → expose unresolved areas |
 | Tools’ job | Return bounded filesystem evidence, not recommendations | Measure chosen locations; collect native/APFS evidence |
 | Your control | Select all approved items or some; review and confirm | Read-only investigation; narrow the next scope |
-| Result | Journaled user-Trash staging + undo | Private JSON report and model decision trace |
+| Result | System Data context + model findings + selected cleanup + receipt/undo | Private JSON report and model decision trace |
 
 **The loop:** model chooses → tools inspect → model assesses new evidence → repeat within the visible budget → you review. Filesystem checks can veto symlinks, active files, databases and unsafe paths. They cannot mark something as trash without a model decision.
 
@@ -43,15 +45,16 @@ It keeps that accounting separate from filesystem allocation. Nested directories
 
 ## Install
 
-Requires **Apple Silicon macOS**, Python **3.12+**, and [uv](https://docs.astral.sh/uv/). The underlying MLX runtime declares macOS 14+ support; live inference was tested here on macOS 27.0. Intel Macs and Linux cannot run the application model.
+Requires **Apple Silicon macOS** and `python3` to run the installer. It provisions uv if needed, an isolated Python 3.12 app environment, and the required model automatically. The underlying MLX runtime declares macOS 14+ support; live inference is tested here on macOS 27.0. Intel Macs and Linux cannot run the application model.
 
 ```bash
-uv tool install --python 3.12 'jev-clean @ git+https://github.com/chengyixu/jev-clean.git@v0.1.0'
-jev-clean model setup    # explicit one-time pinned model download (~0.85 GB)
-jev-clean               # keyboard-first TUI
+d="$(mktemp -d)" && curl -fL https://github.com/chengyixu/jev-clean/releases/download/v0.1.1/install.py -o "$d/install.py" && python3 "$d/install.py"
+jev-clean
 ```
 
-No API key, cloud inference, account, daemon, sudoers change or shell installer. Dependencies install with the app; model setup downloads the pinned checkpoint. After setup, inference is local. Run the application **without sudo**.
+**One install flow: app → pinned model (~0.85 GB) → checksum verification → real inference test → Ready.** No separate model-setup command. The installer exits with failure if the model cannot be provisioned or run; it never calls an app-only installation complete. Review the [installer source](install.py) and release checksums if desired. It prints the exact launch path if your uv executable directory is not on PATH.
+
+No API key, cloud inference, account, daemon, password capture or sudoers change. Run the installer and app **without sudo**. After installation, inference is local. Advanced direct-package installs also automatically provision missing weights on the first Clean/Status operation; network/download failure stops the operation, never produces a fallback.
 
 ### Try the model without touching your files
 
@@ -60,7 +63,7 @@ jev-clean clean --demo
 jev-clean status --demo
 ```
 
-The demo feeds synthetic disk metadata through **real mandatory Laya inference**. It cannot move real files. Missing model? It stops and tells you to run setup.
+The demo feeds synthetic disk metadata through **real mandatory Laya inference**. It cannot move real files. An incomplete model cache is provisioned automatically; failed provisioning stops the operation.
 
 ### Permission flow
 
@@ -85,13 +88,14 @@ jev-clean apply "$HOME/.local/state/jev-clean/review.json" \
   --ids ID1,ID2 --confirm TRASH
 ```
 
-`--root` narrows the model's investigation, not its deletion permissions. Plans expire in one hour. Every chosen file needs a `remove` decision and a guard pass; applying a plan re-runs model assessment and identity/open-file checks. Invalid or missing model output stops the operation. Reports contain private paths: **do not upload them**.
+`--root` narrows the model's investigation, not its deletion permissions. The JSON `system_data` section carries native total/residual, candidate bytes and attribution limits for **both** modes. Plans expire in one hour. Every chosen file needs a `remove` decision and a guard pass; applying a plan re-runs model assessment and identity/open-file checks. Invalid or missing model output stops the operation. Reports contain private paths: **do not upload them**.
 
 ## Controls and utilities
 
 | Key | Action |
 |---|---|
-| `1` / `2` | Clean / Status |
+| `1` / `2` | Clean System Data / Status |
+| `B` | In Clean, switch System Data investigation / file review |
 | `↑ ↓` or `j k` | Navigate |
 | `Space` | Toggle a model-approved, safety-checked file |
 | `A` / `N` | Select all visible approved / select none |
@@ -108,7 +112,7 @@ jev-clean doctor
 jev-clean history
 jev-clean restore BATCH_ID --confirm RESTORE
 jev-clean update           # check only
-jev-clean update --apply   # separate interactive UPDATE confirmation; pinned release tag
+jev-clean update --apply   # confirm update; model provision + inference verified before ready
 jev-clean completion zsh   # also bash and fish; prints, doesn't modify shell config
 ```
 
@@ -143,11 +147,11 @@ git clone https://github.com/chengyixu/jev-clean.git
 cd jev-clean
 uv sync --frozen --extra dev --python 3.12
 uv run bash scripts/verify.sh
-uv run python scripts/evaluate_model.py --output docs/model-evaluation.json
+uv run python scripts/evaluate_model.py --output docs/model-evaluation.json  # cold cache provisions automatically
 uv run python scripts/capture_demo.py
 ```
 
-Hermetic tests use temporary directories and an explicit neural-adapter test double; the application has no fake-model switch. Real-inference evaluation and media capture require the downloaded checkpoint. On macOS, PNG/GIF rendering needs Cairo discoverable (e.g. `DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib"`). The SVG screenshots do not require Cairo.
+Hermetic tests use temporary directories and an explicit neural-adapter test double; the application has no fake-model switch. Real-inference evaluation and media capture automatically provision a missing checkpoint, just like the app. On macOS, PNG/GIF rendering needs Cairo discoverable (e.g. `DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib"`). The SVG screenshots do not require Cairo.
 
 ## License and credits
 
