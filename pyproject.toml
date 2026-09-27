@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jev-clean"
+version = "0.1.0"
+description = "Nexora's evidence-first macOS System Data inspector and local-AI cleanup reviewer"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+authors = [{name = "Nexora"}]
+keywords = ["macos", "system-data", "tui", "laya", "mlx", "cleanup"]
+dependencies = ["textual>=1.0,<2", "psutil>=6,<8", "packaging>=24,<27", "laya-mlx==0.2.0; sys_platform == 'darwin' and platform_machine == 'arm64'"]
+classifiers = ["Development Status :: 3 - Alpha", "Environment :: Console", "Operating System :: MacOS", "Programming Language :: Python :: 3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9", "pytest-asyncio>=0.25,<1", "pytest-cov>=6,<7", "ruff>=0.12,<1", "mypy>=1.15,<2", "types-psutil>=6", "pillow>=11,<13", "cairosvg>=2.7,<3"]
+
+[project.scripts]
+jev-clean = "jev_clean.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/chengyixu/jev-clean"
+Issues = "https://github.com/chengyixu/jev-clean/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jev_clean"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.coverage.run]
+source = ["jev_clean"]

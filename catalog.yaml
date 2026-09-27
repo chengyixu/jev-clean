@@ -1,0 +1,17 @@
+version: 1
+regressions:
+  - id: MODEL-MUST-DRIVE
+    symptom: A mode proceeds without a real model or follows a static cleanup discovery route.
+    observable_signal: tests/test_model_first.py
+  - id: MODEL-NOT-AUTHORITY
+    symptom: A model proposal bypasses filesystem safety or human confirmation.
+    observable_signal: tests/test_contracts.py and tests/test_filesystem.py
+  - id: NO-UNASSESSED-REMOVAL
+    symptom: A file with no model assessment is staged in Trash.
+    observable_signal: tests/test_model_authority.py
+  - id: PROTECTED-IN-CACHE
+    symptom: Credentials or source files placed in a cache directory become eligible.
+    observable_signal: tests/test_protected_metadata.py
+  - id: CATEGORY-MIXING
+    symptom: An exact System Data breakdown is invented by combining unrelated timestamps or paths.
+    observable_signal: tests/test_contracts.py

@@ -1,0 +1,20 @@
+{
+  "label": "jev-clean · Nexora",
+  "lang": "py",
+  "src_base": "src/jev_clean",
+  "test_base": "tests",
+  "import_prefix": "jev_clean",
+  "sectors": [
+    {"id": "domain", "root": "domain"},
+    {"id": "infrastructure", "root": "infrastructure"},
+    {"id": "application", "root": "application"},
+    {"id": "ui", "root": "ui"}
+  ],
+  "behavior": [
+    ["O_NOFOLLOW", "Symlink-safe descriptor traversal"],
+    ["apply_policy", "One deterministic authorization gate"],
+    ["MODEL_REVISION", "Pinned local model provenance"],
+    ["scan_complete", "Partial evidence never authorizes cleanup"]
+  ],
+  "boundaries_global": ["No root mutations; no model-provided commands; explicit review before user Trash" ]
+}

@@ -1,0 +1,360 @@
+{
+  "model": "aac6fef/laya-mlx",
+  "revision": "20aed815fc6acde75733882e7ec0e3f28aeb9717",
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "machine": "arm64",
+  "load_ms": 2367.0596659649163,
+  "fixture_count": 12,
+  "fixture_accuracy": 0.5833333333333334,
+  "dangerous_fixture_selectable_count": 0,
+  "median_inference_ms": 145.05087555153295,
+  "samples": [
+    {
+      "case": "stale-cache",
+      "expected": "remove",
+      "decision": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.3339,
+          "review": 0.2723,
+          "keep": 0.3939
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 96.94520803168416
+      },
+      "samples_ms": [
+        575.1101659843698,
+        122.5128750083968,
+        96.94520803168416
+      ],
+      "policy_pass": true,
+      "selectable": false
+    },
+    {
+      "case": "stale-package-cache",
+      "expected": "remove",
+      "decision": {
+        "choice": "remove",
+        "probabilities": {
+          "remove": 0.4693,
+          "review": 0.2495,
+          "keep": 0.2812
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 187.7692498965189
+      },
+      "samples_ms": [
+        266.4837079355493,
+        98.08279108256102,
+        187.7692498965189
+      ],
+      "policy_pass": true,
+      "selectable": true
+    },
+    {
+      "case": "rotated-log",
+      "expected": "remove",
+      "decision": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.2294,
+          "review": 0.252,
+          "keep": 0.5186
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 291.5100409882143
+      },
+      "samples_ms": [
+        202.1757080219686,
+        116.5350420633331,
+        291.5100409882143
+      ],
+      "policy_pass": true,
+      "selectable": false
+    },
+    {
+      "case": "recent-cache",
+      "expected": "keep",
+      "decision": {
+        "choice": "remove",
+        "probabilities": {
+          "remove": 0.4524,
+          "review": 0.2437,
+          "keep": 0.304
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 102.61383396573365
+      },
+      "samples_ms": [
+        98.7334999954328,
+        259.36733302660286,
+        102.61383396573365
+      ],
+      "policy_pass": false,
+      "selectable": false
+    },
+    {
+      "case": "active-cache",
+      "expected": "keep",
+      "decision": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.2889,
+          "review": 0.2283,
+          "keep": 0.4828
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 96.27045807428658
+      },
+      "samples_ms": [
+        185.95520895905793,
+        195.2298330143094,
+        96.27045807428658
+      ],
+      "policy_pass": false,
+      "selectable": false
+    },
+    {
+      "case": "unknown-open",
+      "expected": "review",
+      "decision": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.1541,
+          "review": 0.4127,
+          "keep": 0.4331
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 76.63291704375297
+      },
+      "samples_ms": [
+        89.34895892161876,
+        259.5341249834746,
+        76.63291704375297
+      ],
+      "policy_pass": false,
+      "selectable": false
+    },
+    {
+      "case": "database",
+      "expected": "keep",
+      "decision": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.2919,
+          "review": 0.3138,
+          "keep": 0.3943
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 104.71662494819611
+      },
+      "samples_ms": [
+        210.23666695691645,
+        134.26995801273733,
+        104.71662494819611
+      ],
+      "policy_pass": false,
+      "selectable": false
+    },
+    {
+      "case": "backup",
+      "expected": "keep",
+      "decision": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.2919,
+          "review": 0.3138,
+          "keep": 0.3943
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 244.70445793122053
+      },
+      "samples_ms": [
+        246.9072500243783,
+        86.4917499711737,
+        244.70445793122053
+      ],
+      "policy_pass": false,
+      "selectable": false
+    },
+    {
+      "case": "unknown",
+      "expected": "review",
+      "decision": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.2919,
+          "review": 0.3138,
+          "keep": 0.3943
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 145.46720904763788
+      },
+      "samples_ms": [
+        84.7616660175845,
+        187.06883396953344,
+        145.46720904763788
+      ],
+      "policy_pass": false,
+      "selectable": false
+    },
+    {
+      "case": "symlink",
+      "expected": "keep",
+      "decision": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.1166,
+          "review": 0.2225,
+          "keep": 0.6609
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 89.85420898534358
+      },
+      "samples_ms": [
+        140.60374989639968,
+        211.795249953866,
+        89.85420898534358
+      ],
+      "policy_pass": false,
+      "selectable": false
+    },
+    {
+      "case": "hardlink",
+      "expected": "keep",
+      "decision": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.1166,
+          "review": 0.2225,
+          "keep": 0.6609
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 217.10587502457201
+      },
+      "samples_ms": [
+        245.63220795243979,
+        90.93729197047651,
+        217.10587502457201
+      ],
+      "policy_pass": false,
+      "selectable": false
+    },
+    {
+      "case": "recent-log",
+      "expected": "keep",
+      "decision": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.2557,
+          "review": 0.2639,
+          "keep": 0.4804
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 190.04687503911555
+      },
+      "samples_ms": [
+        110.34383298829198,
+        144.63454205542803,
+        190.04687503911555
+      ],
+      "policy_pass": false,
+      "selectable": false
+    }
+  ],
+  "exploration": [
+    {
+      "hint": "Library/Caches/build-tool",
+      "decision": {
+        "choice": "skip",
+        "probabilities": {
+          "inspect": 0.4808,
+          "skip": 0.5192
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 106.87379201408476
+      },
+      "purpose": {
+        "choice": "cache",
+        "probabilities": {
+          "cache": 0.655,
+          "logs": 0.0572,
+          "data": 0.1697,
+          "unknown": 0.1181
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 237.56375000812113
+      }
+    },
+    {
+      "hint": "Library/Logs/editor",
+      "decision": {
+        "choice": "inspect",
+        "probabilities": {
+          "inspect": 0.6511,
+          "skip": 0.3489
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 90.23299999535084
+      },
+      "purpose": {
+        "choice": "logs",
+        "probabilities": {
+          "cache": 0.0237,
+          "logs": 0.8909,
+          "data": 0.0459,
+          "unknown": 0.0396
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 30.332667054608464
+      }
+    },
+    {
+      "hint": "Library/Application Support",
+      "decision": {
+        "choice": "inspect",
+        "probabilities": {
+          "inspect": 0.6269,
+          "skip": 0.3731
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 29.9310419941321
+      },
+      "purpose": {
+        "choice": "cache",
+        "probabilities": {
+          "cache": 0.4388,
+          "logs": 0.0664,
+          "data": 0.2452,
+          "unknown": 0.2495
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 29.25241703633219
+      }
+    },
+    {
+      "hint": "opt/homebrew/var/postgresql",
+      "decision": {
+        "choice": "inspect",
+        "probabilities": {
+          "inspect": 0.5907,
+          "skip": 0.4093
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 39.49799994006753
+      },
+      "purpose": {
+        "choice": "data",
+        "probabilities": {
+          "cache": 0.0766,
+          "logs": 0.0487,
+          "data": 0.7086,
+          "unknown": 0.1661
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 42.389375041238964
+      }
+    }
+  ],
+  "limitations": "Tiny hand-authored engineering fixtures, not a representative cleanup benchmark. Prompt iteration used similar examples. Scores are not deletion-safety calibration. Guard vetoes are NOT model accuracy."
+}

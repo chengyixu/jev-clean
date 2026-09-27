@@ -1,0 +1,12 @@
+jev-clean
+Copyright 2026 Nexora contributors.
+
+Independent project in the Nexora family. Not affiliated with TypeSafe AI, Apple, Convai Innovations or Mole.
+The product name does not imply that TypeSafe Jev weights or a hosted TypeSafe service are bundled.
+
+Mandatory local inference uses laya-mlx (Apache-2.0), an independent MLX port by mizorewww,
+and aac6fef/laya-mlx model weights derived from Convai Innovations Laya (Apache-2.0).
+Weights are not distributed in this repository. See model setup and docs/RESEARCH.md for pinned provenance.
+
+Mole's documented interface was researched as a comparison; no Mole source code or assets were copied.
+Other dependencies retain their respective licenses.
