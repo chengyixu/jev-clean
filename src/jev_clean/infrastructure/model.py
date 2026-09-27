@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import platform
+import sys
 import threading
 import time
 from pathlib import Path
@@ -15,6 +17,21 @@ from jev_clean.domain.models import Candidate, Decision, DiskNode
 MODEL_ID = "aac6fef/laya-mlx"
 MODEL_REVISION = "20aed815fc6acde75733882e7ec0e3f28aeb9717"
 MODEL_FILES = ["*.json", "*.safetensors", "encoder/*.json", "tokenizer/*.json", "LICENSE", "NOTICE"]
+MANIFEST_SHA256 = "d8e254b51322fc0462a3cb384bde4d1b449baec9a716cbbc0d0aa99c0cb216b6"
+REQUIRED_CHECKPOINT_FILES = (
+    "encoder/config.json",
+    "mlx_config.json",
+    "model.safetensors",
+    "rl_agent_config.json",
+    "tokenizer/tokenizer.json",
+    "tokenizer/tokenizer_config.json",
+)
+
+
+class CheckpointMissing(RuntimeError):
+    """A cold installation needs automatic provisioning, not a model-free fallback."""
+
+
 QUESTIONS: dict[str, Any] = {
     "disposition": {
         "type": "choice",
@@ -84,6 +101,7 @@ def local_snapshot(download: bool = False) -> Path:
         raise RuntimeError("jev-clean requires Apple Silicon macOS for local Laya-MLX inference")
     try:
         from huggingface_hub import snapshot_download
+        from huggingface_hub.errors import LocalEntryNotFoundError
     except ImportError as error:
         raise RuntimeError("Model runtime required. Reinstall jev-clean with its dependencies.") from error
     try:
@@ -92,10 +110,67 @@ def local_snapshot(download: bool = False) -> Path:
                 MODEL_ID, revision=MODEL_REVISION, allow_patterns=MODEL_FILES, local_files_only=not download
             )
         )
-    except Exception as error:
+    except LocalEntryNotFoundError as error:
+        if not download:
+            raise CheckpointMissing("Pinned model not cached") from error
         raise RuntimeError(
-            "Pinned model unavailable. Run: jev-clean model setup. No model-free fallback."
+            "Automatic model download failed. Retry the installer or operation when connected."
         ) from error
+    except Exception as error:
+        raise RuntimeError("Model provisioning failed; no fallback. Retry when connected.") from error
+
+
+def verify_checkpoint(path: Path) -> None:
+    manifest_data = (path / "manifest.json").read_bytes()
+    if hashlib.sha256(manifest_data).hexdigest() != MANIFEST_SHA256:
+        raise ValueError("Pinned model manifest checksum mismatch; refusing to load")
+    files = json.loads(manifest_data)["files"]
+    for name in REQUIRED_CHECKPOINT_FILES:
+        expected = files[name]
+        file = path / name
+        if file.stat().st_size != expected["bytes"]:
+            raise ValueError(f"Checkpoint size mismatch: {name}")
+        digest = hashlib.sha256()
+        with file.open("rb") as source:
+            for chunk in iter(lambda: source.read(4 * 1024 * 1024), b""):
+                digest.update(chunk)
+        if digest.hexdigest() != expected["sha256"]:
+            raise ValueError(f"Checkpoint checksum mismatch: {name}")
+
+
+def prepare_checkpoint() -> Path:
+    try:
+        path = local_snapshot(False)
+        # An incomplete interrupted snapshot can exist before all files were cached.
+        if not all((path / name).is_file() for name in (*REQUIRED_CHECKPOINT_FILES, "manifest.json")):
+            raise CheckpointMissing("Incomplete model cache")
+    except CheckpointMissing:
+        print(
+            "Provisioning required local model (~0.85 GB). Installation/first launch is not ready until verified.",
+            file=sys.stderr,
+        )
+        path = local_snapshot(True)
+    verify_checkpoint(path)
+    return path
+
+
+def verify_model_ready() -> dict[str, Any]:
+    advisor = LayaAdvisor()
+    advisor.load()
+    smoke = advisor.decide(
+        "This is an installation readiness test. No files are inspected or removed.",
+        "readiness",
+        "Choose the described activity.",
+        {"verification": "Testing model inference during installation.", "cleanup": "Removing user files."},
+    )
+    return {
+        "ready": True,
+        "model": MODEL_ID,
+        "revision": MODEL_REVISION,
+        "weights_verified": True,
+        "load_ms": advisor.load_ms,
+        "smoke_inference_ms": smoke.elapsed_ms,
+    }
 
 
 class LayaAdvisor:
@@ -115,7 +190,7 @@ class LayaAdvisor:
                     import laya_mlx
                 except ImportError as error:
                     raise RuntimeError("Mandatory laya-mlx runtime missing; reinstall jev-clean") from error
-                type(self)._shared = laya_mlx.load(str(local_snapshot(False)))
+                type(self)._shared = laya_mlx.load(str(prepare_checkpoint()))
         self.load_ms = (time.perf_counter() - started) * 1000
 
     def decide(self, state: str, key: str, instructions: str, criteria: dict[str, str]) -> Decision:
@@ -137,7 +212,7 @@ class LayaAdvisor:
         parts = Path(node.path).parts
         label = "/".join(parts[-3:])[:180]
         goal = (
-            "find potential disposable storage for owner review"
+            "clean mysterious macOS System Data by investigating potential disposable caches, logs and support data for owner review"
             if mode == "clean"
             else "understand where disk space is used"
         )

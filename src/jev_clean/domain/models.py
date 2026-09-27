@@ -105,8 +105,28 @@ class AuditReport:
     demo: bool = False
     exploration: dict[str, Any] = field(default_factory=dict)
 
+    @property
+    def system_data(self) -> dict[str, Any]:
+        category = self.categories
+        approved = [c for c in self.scan.candidates if c.selectable]
+        return {
+            "state": ("reconciled" if category.discrepancy_bytes == 0 else "mismatch")
+            if category
+            else "unavailable",
+            "timestamp": category.timestamp if category else None,
+            "native_other_bytes": category.other_bytes if category else None,
+            "residual_bytes": category.residual_bytes if category else None,
+            "discrepancy_bytes": category.discrepancy_bytes if category else None,
+            "approved_candidate_bytes": sum(c.allocated_bytes for c in approved),
+            "approved_candidate_count": len(approved),
+            "category_membership": "unattributed",
+            "space_freed_by_staging": 0,
+            "evidence": "Potential contributing files are not proven members of Apple System Data. Trash staging does not free space.",
+        }
+
     def to_dict(self) -> dict[str, Any]:
         value = asdict(self)
+        value["system_data"] = self.system_data
         value["scan"]["candidates"] = [
             {**asdict(c), "selectable": c.selectable} for c in self.scan.candidates
         ]

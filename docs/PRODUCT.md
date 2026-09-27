@@ -2,12 +2,20 @@
 
 Current owner scope (2026-09-27) supersedes the initial four-mode/optional-model sketch.
 
+## Flagship: clean mysterious macOS System Data
+
+Clean includes native System Data accounting, model-selected contributor investigation, cleanup proposals, user review and receipts in one workflow. It is not a generic cleaner with System Data confined to Status. The `system_data` JSON context and persistent TUI panel expose the native total (or unavailable), candidate size and attribution limits in both modes. `B` in Clean switches investigation/file review without leaving the mode. Moving to Trash does not reduce disk usage; no reduction of Apple's gray bar is assumed.
+
+## Installation is complete only when the model runs
+
+The official installer installs app/runtime, downloads missing pinned weights, checks SHA256 integrity, and runs real inference before Ready. There is no second model setup command. Direct-package installs automatically provision a cold cache on first operation. Download, hash or inference failures stop the flow rather than claiming partial readiness. Confirmed updates verify the installed model too.
+
 ## Two modes, one mandatory model
 
 1. **Clean**: load local Laya → ask for terminal sudo diagnostics → gather initial filesystem observations → model chooses directories to inspect → bounded tools return metadata → model classifies storage and proposes remove/review/keep → safety veto → user selects all or some approved candidates → final confirmation → model re-assesses selection → identity/open-file recheck → user Trash + receipt/undo.
 2. **Status**: load local Laya → terminal sudo diagnostics → native category/APFS grounding → model chooses deeper directory breakdown → tools measure those locations → model labels the storage → show evidence, explicit coverage gaps and native System Data reconciliation. No mutation.
 
-No Analyze/Optimize modes. No `--model off`, rules-only fallback or canned neural scores. The model chooses discovery and recommends cleanup, not just post-processes a deterministic scan. Missing weights, failed load/inference or invalid predictions stop the operation. Pure administrative commands (`help`, `version`, `model setup`, `update`, `history`, `restore`) do not invent model outputs; restore is recovery, not a new deletion decision.
+No Analyze/Optimize modes. No `--model off`, rules-only fallback or canned neural scores. The model chooses discovery and recommends cleanup, not just post-processes a deterministic scan. Missing weights, failed load/inference or invalid predictions stop the operation. Pure administrative commands (`help`, `version`, `doctor`, `update`, `history`, `restore`) do not invent model outputs; restore is recovery, not a new deletion decision.
 
 ## Boundaries
 

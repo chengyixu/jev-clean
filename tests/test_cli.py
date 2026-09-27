@@ -28,13 +28,13 @@ def test_cli_demo_uses_neural_boundary_and_labels_metadata(neural_boundary, caps
 
 
 def test_cli_no_model_off_or_removed_modes():
-    for args in [("clean", "--model", "off"), ("analyze",), ("optimize",)]:
+    for args in [("clean", "--model", "off"), ("analyze",), ("optimize",), ("model", "setup")]:
         assert cli(*args).returncode != 0
 
 
 def test_cli_help_and_completion():
     assert cli("--help").returncode == 0
-    assert cli("--version").stdout.strip() == "0.1.0"
+    assert cli("--version").stdout.strip() == "0.1.1"
     for shell in ["bash", "zsh", "fish"]:
         result = cli("completion", shell)
         assert result.returncode == 0 and "jev-clean" in result.stdout

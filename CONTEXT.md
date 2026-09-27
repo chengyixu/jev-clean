@@ -1,6 +1,6 @@
 # Project context
 
-jev-clean is a standalone Nexora-family macOS tool. Python 3.12+, Textual 1.x; mandatory Laya-MLX 0.2.0 on Apple Silicon macOS 14+. Only Clean and Status are main workflows, both model-driven. Pure/adapter-boundary tests run cross-platform; the application and real-inference demo require Apple Silicon macOS. No backend service, account, or API key is required. Network only for explicit model download, installation and release checks.
+jev-clean is a standalone Nexora-family macOS tool. Python 3.12+, Textual 1.x; mandatory Laya-MLX 0.2.0 on Apple Silicon macOS 14+. Only Clean and Status are main workflows, both model-driven. Pure/adapter-boundary tests run cross-platform; the application and real-inference demo require Apple Silicon macOS. No backend service, account, or API key is required. Installation includes automatic pinned-model provisioning and real-inference verification. A cold/incomplete cache also provisions automatically on first operation. No manual model setup is required. Network is used only for these provisioning/install paths and release checks.
 
 Local runtime data: `~/.local/state/jev-clean/` (private JSON plans/journals), `~/.Trash/jev-clean-<batch>/` (staged files), Hugging Face cache (pinned model weights). These are not project artifacts. `.private/` is ignored for local evidence. Never publish an actual machine audit.
 
