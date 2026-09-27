@@ -177,8 +177,11 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 confirm("UPDATE", None)
                 uv = shutil.which("uv")
+                bootstrap_uv = home / ".local/share/jev-clean/installer/bin/uv"
+                if not uv and bootstrap_uv.is_file() and os.access(bootstrap_uv, os.X_OK):
+                    uv = str(bootstrap_uv)
                 if not uv:
-                    raise ValueError("uv is required; install uv separately from its official distribution")
+                    raise ValueError("Installer runtime missing; rerun the official jev-clean installer")
                 spec = info["install_spec"]
                 subprocess.run([uv, "tool", "install", "--force", spec], check=True)
                 tool_dir = subprocess.run(
