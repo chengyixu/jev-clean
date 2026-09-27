@@ -38,16 +38,10 @@ async def test_clean_shows_system_data_before_and_through_selection(tmp_path, ne
         await pilot.press("1")
         await pilot.pause(0.5)
         assert app.mode == "clean"
-        panel = app.query_one("#system-data", Static)
-        assert "System Data" in str(panel.render())
+        summary = app.query_one("#summary", Static)
+        assert "System Data" in str(summary.render())
         await pilot.press("a")
-        assert app.selected
-        assert "System Data" in str(panel.render())
-        assert "not" in str(panel.render()).lower()  # no implied per-file category proof
-        selected = set(app.selected)
-        await pilot.press("b")
-        assert app.clean_breakdown and app.mode == "clean"
-        await pilot.press("a", "enter")
-        assert app.selected == selected and app.screen.id != "confirm-cleanup"
-        await pilot.press("b")
-        assert not app.clean_breakdown and app.selected == selected
+        assert app.selected and "System Data" in str(summary.render())
+        assert app.report.system_data["category_membership"] == "unattributed"
+        # The accounting survives the minimal UI; the old dashboard does not.
+        assert not list(app.query("#system-data, #brand, #details"))

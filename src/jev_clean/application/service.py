@@ -111,12 +111,8 @@ def audit(
 ) -> AuditReport:
     if mode not in ("clean", "status"):
         raise ValueError("Unknown mode: choose clean or status")
-    progress("Preparing required local model automatically; no model-free fallback.")
-    progress(
-        "Clean mysterious macOS System Data: account → investigate → model decisions → review."
-        if mode == "clean"
-        else "Investigate macOS System Data: native accounting and model-directed breakdown."
-    )
+    progress("Loading model…")
+    progress("Inspecting System Data…" if mode == "clean" else "Reading disk usage…")
     advisor = LayaAdvisor()
     advisor.load()  # Must succeed before native scans or synthetic demonstration.
     if demo:
