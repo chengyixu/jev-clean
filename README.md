@@ -11,7 +11,18 @@
 
 macOS calls hundreds of gigabytes **System Data**. That label doesn't tell you what the data is, why it exists, or whether you can remove it.
 
-**Clean is the flagship System Data workflow—not merely a report in Status.** It starts with System Data accounting, sends the model to investigate potential contributors, brings its removal proposals into the same review screen, and lets you choose what goes. Press `B` inside Clean to switch between the model's investigation and the file review; the System Data panel stays visible throughout. Status provides a read-only deeper breakdown.
+**Clean is the flagship System Data workflow.** The terminal stays simple:
+
+```text
+1. Clean
+2. Status
+```
+
+**Clean:** sudo or not → agent logs → select files → delete or cancel.
+
+**Status:** agent logs → locations with usage bars and percentages.
+
+No dashboard, banners, permanent captions or competing panels. The accounting and full model evidence remain in the shared engine and JSON report, not plastered over the screen.
 
 Laya chooses which locations need inspection, classifies the evidence, and proposes what to keep or remove. You see the actual choices and scores as they happen. You approve the files. Hard safety protections can veto a model proposal, never replace the model.
 
@@ -48,7 +59,7 @@ It keeps that accounting separate from filesystem allocation. Nested directories
 Requires **Apple Silicon macOS** and `python3` to run the installer. It provisions uv if needed, an isolated Python 3.12 app environment, and the required model automatically. The underlying MLX runtime declares macOS 14+ support; live inference is tested here on macOS 27.0. Intel Macs and Linux cannot run the application model.
 
 ```bash
-d="$(mktemp -d)" && curl -fL https://github.com/chengyixu/jev-clean/releases/download/v0.1.1/install.py -o "$d/install.py" && python3 "$d/install.py"
+d="$(mktemp -d)" && curl -fL https://github.com/chengyixu/jev-clean/releases/download/v0.1.2/install.py -o "$d/install.py" && python3 "$d/install.py"
 jev-clean
 ```
 
@@ -67,7 +78,7 @@ The demo feeds synthetic disk metadata through **real mandatory Laya inference**
 
 ### Permission flow
 
-After selecting Clean or Status, choose native sudo diagnostics or explicitly request unprivileged inspection. For sudo, Textual hands control back to the terminal for `sudo -v`. Passwords never enter Python, the agent or the model. Cancelled/failed authentication starts no investigation. Sudo broadens read-only native evidence—not deletion power—and does not bypass SIP, TCC or Full Disk Access.
+Clean asks **“Use sudo?”** with Yes/No; No is the default. Yes returns to the real terminal for `sudo -v`. Passwords never enter Python, the agent or the model. Cancelling starts no scan. Status goes straight to read-only agent logs and results. Sudo broadens read-only evidence—not deletion power—and does not bypass SIP, TCC or Full Disk Access.
 
 ## Agent skill and JSON CLI
 
@@ -95,17 +106,18 @@ jev-clean apply "$HOME/.local/state/jev-clean/review.json" \
 | Key | Action |
 |---|---|
 | `1` / `2` | Clean System Data / Status |
-| `B` | In Clean, switch System Data investigation / file review |
 | `↑ ↓` or `j k` | Navigate |
 | `Space` | Toggle a model-approved, safety-checked file |
 | `A` / `N` | Select all visible approved / select none |
 | `/` | Filter paths |
-| `Enter` | Final review; type `TRASH` to confirm |
+| `Enter` | Clean: confirm selected files with Yes/No; Status: open a directory |
 | `R` | New model investigation |
 | `E` | Export private report |
 | `H` | History and undo instructions |
 | `U` | Check release updates |
-| `?` / `Esc` / `Q` | Help / cancel / quit |
+| `?` / `Esc` / `Q` | Help / back or cancel / quit |
+
+Status percentages are shares of **fully measured, non-overlapping rows at the current level**—not percentages of Apple's System Data category. Unknown or partial measurements show `?`, not a fake percentage. Enter opens an already measured child breakdown or asks the model to investigate that directory. Details and utility shortcuts are available on demand, not in a permanent footer.
 
 ```bash
 jev-clean doctor
@@ -115,6 +127,8 @@ jev-clean update           # check only
 jev-clean update --apply   # confirm update; model provision + inference verified before ready
 jev-clean completion zsh   # also bash and fish; prints, doesn't modify shell config
 ```
+
+The deletion question defaults to **No**. Only an explicit Yes proceeds with the selected paths and the existing model/safety rechecks.
 
 **Trash is not free space.** Staging is reversible; it does not immediately reclaim bytes. jev-clean never automatically empties Trash. Restore refuses to overwrite an existing file.
 

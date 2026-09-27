@@ -1,5 +1,15 @@
 # Verification record
 
+## 0.1.2 — Minimal terminal
+
+- 87 tests pass; coverage 80.43%; lint/type/safety gates pass. A real 80x24 PTY run verified startup → Status with actual model inference and percentage rows → clean quit.
+
+- Sequential TUI verified at 80x24 and 60x20: two-choice home, Clean sudo Yes/No, logs-only running stage, approved file selection, default-No delete confirmation, cancellation/error handling, Status usage bars and drill-down.
+- No persistent Header/Footer/ProgressBar or dashboard panels. Literal `[x]` checkbox rendering and long-path percentage visibility have regression tests.
+- Percentage tests establish 50/30/20 shares for disjoint fixtures without adding children twice; incomplete/unknown rows get no invented percentage.
+- Public screenshots/GIF recaptured from the real app with real model inference on synthetic disk metadata. OCR confirms the plain menu, flowing logs, selected file, Yes/No question and percentage rows.
+- Mandatory model, file safety, Trash/undo, automatic installation and private JSON evidence remain unchanged. No real user cleanup performed.
+
 ## 0.1.1 — System Data Clean and turnkey installation
 
 - 75 tests pass; coverage 80.87%, with Ruff, mypy and architecture/safety gates passing.

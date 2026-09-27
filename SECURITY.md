@@ -4,7 +4,7 @@ This is an **alpha cleanup reviewer**, not a guarantee that deletion is harmless
 
 ## Permission boundary
 
-The entire app refuses root. The TUI offers sudo diagnostics on each of Clean and Status. Authentication is `/usr/bin/sudo -v` attached to the real terminal, with no password captured. Elevated subprocesses are fixed native read-only commands. Canceling or failing authentication does not start the operation. The user can explicitly choose unprivileged inspection; the mandatory model still runs and coverage gaps remain visible. Sudo does not bypass SIP, TCC or Full Disk Access. No system helper/daemon is installed and no sudoers/PAM configuration is modified.
+The entire app refuses root. Clean asks a short Yes/No sudo question; Status starts read-only without a permission dialog. Advanced `--deep --json` diagnostics remain available in the CLI. Authentication is `/usr/bin/sudo -v` attached to the real terminal, with no password captured. Elevated subprocesses are fixed native read-only commands. Canceling or failing authentication does not start the operation. The user can explicitly choose unprivileged inspection; the mandatory model still runs and coverage gaps remain visible. Sudo does not bypass SIP, TCC or Full Disk Access. No system helper/daemon is installed and no sudoers/PAM configuration is modified.
 
 ## Deletion boundary
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2 — 2026-09-28
+
+- Replace the dashboard with a plain two-choice terminal menu.
+- Clean: sudo Yes/No → agent logs → file selection → deletion Yes/No. Both questions default to No; existing model/identity/Trash safeguards remain.
+- Status: agent logs → locations with usage bars and percentages. Percentages use complete measured rows at one level, never nested parent/child sums; unknowns remain `?`.
+- Remove permanent banners, captions, footer, progress panels, debug tables and B toggle. Details/utilities stay on demand.
+- Fix literal checkbox rendering and keep percentage columns visible at small terminal widths.
+- Refresh actual real-model TUI demo assets. Automatic model-ready installation remains included.
+
 ## 0.1.1 — 2026-09-27
 
 - Make **Clean mysterious macOS System Data** the primary Clean workflow and product headline, not a Status-only feature.

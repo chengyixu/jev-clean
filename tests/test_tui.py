@@ -11,7 +11,7 @@ async def test_two_modes_selection_help_review_cancel_and_resize(tmp_path, neura
         await pilot.press("1")
         await pilot.pause(0.5)
         assert app.mode == "clean"
-        table = app.query_one("#candidates", DataTable)
+        table = app.query_one("#results", DataTable)
         assert table.row_count > 0
         await pilot.press("a")
         assert app.selected
@@ -47,7 +47,7 @@ async def test_model_failure_displays_error_no_selectable_rows(tmp_path, monkeyp
         await pilot.press("1")
         await pilot.pause(0.4)
         assert not app.busy and app.report is None
-        assert app.query_one("#candidates", DataTable).row_count == 0
+        assert app.query_one("#results", DataTable).row_count == 0
         await pilot.press("a", "enter")
         assert not app.selected and app.screen.id != "confirm-cleanup"
         assert "Mandatory model missing" in str(app.query_one("#summary", Static).render())
