@@ -9,8 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
-from jev_clean.application.cleanup import investigate_cleanup
-from jev_clean.application.exploration import explore
+from jev_clean.application.whole_disk import investigate_disk
 from jev_clean.domain.models import (
     AuditReport,
     Candidate,
@@ -127,12 +126,10 @@ def audit(
         return demo_report(home, mode, advisor, progress)
     report = AuditReport(1, datetime.now(timezone.utc).isoformat(), str(home), mode, ScanReport())
     home = Path(os.path.abspath(home))
-    scope = roots or [home, Path("/Library"), Path("/private/var"), Path("/opt/homebrew/var")]
-    allowed = [home, Path("/Library"), Path("/private/var"), Path("/opt/homebrew")]
-    for root in scope:
-        if not root.is_absolute() or ".." in root.parts or not any(root.is_relative_to(a) for a in allowed):
-            raise ValueError("Read scope must stay in HOME, /Library, /private/var or /opt/homebrew")
-    handles = (native.open_files(deep=True) if deep else native.open_files()) if mode == "clean" else None
+    for root in roots or []:
+        if not root.is_absolute() or ".." in root.parts:
+            raise ValueError("Explicit read scope must be an absolute filesystem path")
+    handles = native.open_files(deep=True) if deep else native.open_files()
     report.diagnostics = native.status_snapshot(home)
     report.diagnostics["coverage"] = (
         "deep native diagnostics requested" if deep else "unprivileged; permission gaps reported"
@@ -153,13 +150,20 @@ def audit(
                 report.diagnostics["category_probe"] = {k: v for k, v in evidence.items() if k != "stdout"}
             else:
                 report.diagnostics[name] = evidence
-    initial = [DiskNode(str(root), None, True, 0) for root in scope if root.is_dir()]
-    if mode == "clean":
-        result = investigate_cleanup(
-            home, advisor, roots=roots, open_paths=handles, progress=progress, cancelled=cancelled
-        )
-    else:
-        result = explore(initial, advisor, mode, home=home, deep=deep, progress=progress, cancelled=cancelled)
+    result = investigate_disk(
+        home,
+        advisor,
+        mode,
+        roots=roots,
+        deep=deep,
+        open_paths=handles,
+        progress=progress,
+        cancelled=cancelled,
+    )
+    report.created_at = datetime.now(
+        timezone.utc
+    ).isoformat()  # review expiry starts after a potentially long scan
+    report.coverage = result.stats.get("coverage", {})
     report.exploration = {
         "nodes": [asdict(n) for n in result.nodes],
         "steps": [asdict(s) for s in result.steps],
@@ -177,7 +181,11 @@ def audit(
     report.scan = ScanReport(
         result.candidates, True, result.warnings, result.stats.get("observed_files", len(result.candidates))
     )
-    report.model_status = f"Mandatory local Laya-MLX · {len(result.steps)} exploration decisions · {len(result.candidates)} file decisions · load {advisor.load_ms:.0f} ms"
+    report.model_status = (
+        f"Mandatory local Laya-MLX · {result.stats.get('model_assessed_files', 0):,} files assessed · "
+        f"{result.stats.get('fresh_model_inferences', 0):,} fresh / {result.stats.get('reused_model_decisions', 0):,} exact-input reused · "
+        f"{result.stats.get('directory_model_decisions', 0):,} directory classifications"
+    )
     if mode == "clean" and handles is None:
         report.scan.warnings.append("Open-file status unavailable: all removal candidates vetoed")
     if cancelled():

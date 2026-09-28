@@ -23,6 +23,7 @@ class Decision:
     probabilities: dict[str, float]
     backend: str
     elapsed_ms: float
+    reused: bool = False
 
 
 @dataclass(frozen=True)
@@ -41,6 +42,7 @@ class Candidate:
     reason: str = "Not evaluated"
     decision: Decision | None = None
     recommended: bool = False
+    context_hint: str = ""
 
     @property
     def selectable(self) -> bool:
@@ -104,6 +106,7 @@ class AuditReport:
     model_status: str = "model required; not yet assessed"
     demo: bool = False
     exploration: dict[str, Any] = field(default_factory=dict)
+    coverage: dict[str, Any] = field(default_factory=dict)
 
     @property
     def system_data(self) -> dict[str, Any]:

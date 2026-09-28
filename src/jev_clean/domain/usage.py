@@ -13,7 +13,9 @@ class UsageRow:
     is_dir: bool
 
 
-def usage_rows(nodes: list[dict], parent: str | None = None) -> list[UsageRow]:
+def usage_rows(
+    nodes: list[dict], parent: str | None = None, *, observed_basis: bool = False
+) -> list[UsageRow]:
     unique = {str(PurePath(n["path"])): n for n in nodes}
     paths = {p for p in unique if parent is None or (p != parent and PurePath(p).is_relative_to(parent))}
     # Incomplete ancestors must not hide completed native child measurements.
@@ -33,7 +35,7 @@ def usage_rows(nodes: list[dict], parent: str | None = None) -> list[UsageRow]:
 
     def known(p: str) -> bool:
         return (
-            unique[p].get("complete", False)
+            (observed_basis or unique[p].get("complete", False))
             and isinstance(unique[p].get("allocated_bytes"), int)
             and unique[p]["allocated_bytes"] >= 0
         )

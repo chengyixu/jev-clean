@@ -36,7 +36,7 @@ def test_output_callback_failure_reaps_owned_reader_process():
 
 
 def test_default_clean_budget_does_not_stop_at_first160_files(tmp_path):
-    from jev_clean.application.cleanup import investigate_cleanup
+    from jev_clean.application.whole_disk import investigate_disk
 
     root = tmp_path / "Library/Caches/app"
     root.mkdir(parents=True)
@@ -45,6 +45,8 @@ def test_default_clean_budget_does_not_stop_at_first160_files(tmp_path):
         file = root / str(i)
         file.write_bytes(b"x" * 1024)
         os.utime(file, (old, old))
-    result = investigate_cleanup(tmp_path, ChoosingModel(), open_paths=set(), roots=[root])
+    result = investigate_disk(
+        tmp_path, ChoosingModel(), "clean", open_paths=set(), roots=[root], state_dir=tmp_path / "state"
+    )
     assert result.stats["model_assessed"] == 170
     assert len(result.candidates) == 170

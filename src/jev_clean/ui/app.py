@@ -96,7 +96,7 @@ class JevCleanApp(App):
         yield Static("jev-clean", id="title", markup=False)
         yield OptionList("1. Clean", "2. Status", id="menu")
         yield Static("", id="summary", markup=False)
-        yield RichLog(id="trace", markup=False, wrap=True, auto_scroll=True)
+        yield RichLog(id="trace", markup=False, wrap=True, auto_scroll=True, max_lines=500)
         yield Input(placeholder="Filter", id="search")
         yield DataTable(id="results", show_header=False, cursor_type="row")
         yield Static("↑↓ Enter · q quit", id="hint", markup=False)
@@ -262,16 +262,29 @@ class JevCleanApp(App):
                 recorded = report.categories.timestamp.split(" ")[1].split(".")[0]
                 label = "demo" if report.demo else "macOS log " + recorded
                 summary += f" | System Data {human_bytes(report.categories.other_bytes)} ({label})"
-            if not report.exploration.get("complete", True):
+            if stats.get("walk_finished"):
+                if not report.coverage.get("complete", True):
+                    summary += " | Finished with logged gaps/exclusions"
+            elif not report.exploration.get("complete", True):
                 summary += " | Scan incomplete"
-            if stats.get("model_assessed") and stats.get("protected_files"):
+            if "model_assessed_files" in stats:
+                scope_label = "Whole disk" if stats.get("scope") == "startup-disk" else "Custom scope"
+                summary = (
+                    f"{scope_label} · {stats['observed_regular_files']:,} scanned · {stats['model_assessed_files']:,} assessed\n"
+                    f"{stats['fresh_model_inferences']:,} fresh / {stats['reused_model_decisions']:,} exact-input reused\n"
+                    + summary
+                )
+                self.query_one("#summary").styles.max_height = 5
+            elif stats.get("model_assessed") and stats.get("protected_files"):
                 summary += f"\n{stats['model_assessed']} model decisions · {stats['protected_files']} protected files"
         else:
             table.add_column("Location", width=max(12, self.size.width - 44))
             table.add_column("Usage", width=14)
             table.add_column("Share", width=5)
             table.add_column("Size", width=10)
-            rows = usage_rows(report.exploration.get("nodes", []), self.usage_parent)
+            rows = usage_rows(
+                report.exploration.get("nodes", []), self.usage_parent, observed_basis=bool(report.coverage)
+            )
             self.usage_by_id = {str(i): row for i, row in enumerate(rows)}
             for key, row in self.usage_by_id.items():
                 if query not in row.path.casefold():
@@ -280,12 +293,17 @@ class JevCleanApp(App):
                 table.add_row(
                     Text(label),
                     bar(row.percent),
-                    f"{row.percent:.0f}%" if row.percent is not None else "?",
+                    (("~" if not row.complete else "") + f"{row.percent:.0f}%")
+                    if row.percent is not None
+                    else "?",
                     human_bytes(row.allocated_bytes)
                     + ("+" if row.allocated_bytes is not None and not row.complete else ""),
                     key=key,
                 )
-            summary = "% of measured rows"
+            summary = "% of observed bytes" if report.coverage else "% of measured rows"
+            if report.coverage:
+                stats = report.exploration.get("stats", {})
+                summary += f" · {stats.get('observed_regular_files', 0):,} files · {stats.get('model_assessed_files', 0):,} model-assessed"
             if self.usage_parent:
                 summary = self.usage_parent.replace(str(self.home), "~", 1) + " · " + summary
             if any(r.percent is None for r in rows) or not report.exploration.get("complete", True):
@@ -346,7 +364,9 @@ class JevCleanApp(App):
             row = self.usage_by_id[key]
             if not row.is_dir:
                 return
-            children = usage_rows(self.report.exploration.get("nodes", []), row.path)
+            children = usage_rows(
+                self.report.exploration.get("nodes", []), row.path, observed_basis=bool(self.report.coverage)
+            )
             if children:
                 self.usage_parent = row.path
                 self.render_report()
@@ -434,7 +454,7 @@ class JevCleanApp(App):
                 f"System Data: {category.other_bytes} bytes\n"
                 f"Source: {category.source}\n"
                 f"Recorded: {category.timestamp}\n"
-                f"Report started: {self.report.created_at}\n"
+                f"Review created: {self.report.created_at}\n"
                 f"Field: StorageLogInvestigation - Other\n"
                 f"Recomputed residual: {category.residual_bytes} bytes\n"
                 "A recorded native value, not instantaneous free space."

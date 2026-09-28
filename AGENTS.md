@@ -5,8 +5,8 @@ Standalone public repository. Do not modify the parent Nexora workspace or publi
 ## Architecture
 
 - `domain`: typed reports + deterministic, fail-closed policy. No process/filesystem/UI/model imports.
-- `infrastructure`: native read-only diagnostics, bounded no-follow scanner, pinned local model, user-only Trash journal.
-- `application`: one shared model-driven exploration engine for Clean and Status, used by TUI and CLI. Model is mandatory; no fallback. Current product contract: docs/PRODUCT.md.
+- `infrastructure`: native read-only diagnostics, exhaustive no-follow metadata stream, pinned local model/cache, user-only Trash journal.
+- `application`: one exhaustive whole-startup-disk engine for Clean and Status, used by TUI and CLI. Every observed regular file is model-assessed before guards; no default sampling caps or cache-root restriction. Exact-input neural reuse is explicit. Model is mandatory; no fallback. Contract: docs/PRODUCT.md and docs/WHOLE-DISK.md.
 - `ui`: Textual client; cannot bypass the policy or directly delete files.
 
 ## Invariants
