@@ -45,11 +45,11 @@ def test_model_controls_explorer_not_static_directory_priority(tmp_path):
         def classify(self, node):
             return Decision("data", {"data": 1.0}, "test-model-boundary", 1)
 
-        def inspect(self, node, mode):
-            choice = "inspect" if node.path == str(right) else "skip"
+        def choose_directory(self, nodes, mode):
+            index = next(i for i, n in enumerate(nodes) if n.path == str(right))
             return Decision(
-                choice,
-                {"inspect": 1.0 if choice == "inspect" else 0.0, "skip": 0.0 if choice == "inspect" else 1.0},
+                f"n{index}",
+                {f"n{i}": 1.0 if i == index else 0.0 for i in range(len(nodes))},
                 "test-model-boundary",
                 1,
             )
@@ -58,7 +58,7 @@ def test_model_controls_explorer_not_static_directory_priority(tmp_path):
         [DiskNode(str(left), 4096, True, 0), DiskNode(str(right), 4096, True, 0)],
         Advisor(),
         "status",
-        max_nodes=4,
+        max_nodes=1,
     )
     assert str(right / "inspect-this") in {n.path for n in result.nodes}
     assert str(left / "do-not-inspect") not in {n.path for n in result.nodes}

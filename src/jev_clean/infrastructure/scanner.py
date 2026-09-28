@@ -53,6 +53,8 @@ def scan_candidates(
     seconds: float = 30,
     progress: Callable[[str], None] = lambda _: None,
     cancelled: Callable[[], bool] = lambda: False,
+    directories: list[Path] | None = None,
+    require_full_scope: bool = True,
 ) -> ScanReport:
     start = time.monotonic()
     report = ScanReport()
@@ -61,8 +63,14 @@ def scan_candidates(
         raise ValueError("HOME must not contain symlink ancestors")
     device = home.stat().st_dev
     seen: set[Path] = set()
-    for relative, _, _ in ROOTS:
-        root = home / relative
+    roots = directories if directories is not None else [home / relative for relative, _, _ in ROOTS]
+    for root in roots:
+        root = Path(os.path.abspath(root))
+        if not root.is_relative_to(home):
+            report.complete = False
+            report.warnings.append("Outside user-owned scan scope: " + str(root))
+            continue
+        relative = str(root.relative_to(home))
         if not root.exists():
             continue
         if not no_symlink_ancestors(root):
@@ -108,7 +116,7 @@ def scan_candidates(
                 break
         if report.warnings and report.warnings[-1].startswith("Scan interrupted"):
             break
-    if not report.complete:
+    if (not report.complete and require_full_scope) or cancelled():
         report.candidates = [apply_policy(replace(c, scan_complete=False)) for c in report.candidates]
     report.candidates.sort(key=lambda c: c.allocated_bytes, reverse=True)
     report.elapsed_ms = (time.monotonic() - start) * 1000

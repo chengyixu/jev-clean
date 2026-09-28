@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.3 — 2026-09-28
+
+- Fix real discovery failures: model-prioritized concrete locations replace vague-root skip-all; file inference is no longer exhausted classifying every immediate directory entry.
+- Preserve timed-out native output, independently measure slow HOME children, consume elevated root measurements, retain partial sizes and expose usable children under incomplete ancestors.
+- Replace misleading “Nothing to clean” with observed/assessed/approved/protected or unavailable/incomplete outcomes.
+- Label native System Data totals with source/time; S shows exact bytes and provenance. No hardcoded live total.
+- Add left/right focus to sudo and deletion Yes/No questions.
+- Keep the accepted minimal UI, mandatory model, per-file safety vetoes and human confirmation. No actual cleanup occurred during verification.
+
 ## 0.1.2 — 2026-09-28
 
 - Replace the dashboard with a plain two-choice terminal menu.

@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from jev_clean.application.cleanup import investigate_cleanup
 from jev_clean.application.exploration import explore
 from jev_clean.domain.models import (
     AuditReport,
@@ -37,22 +38,29 @@ def demo_report(home: Path, mode: str, advisor: LayaAdvisor, progress: Callable[
     candidates = []
     nodes = []
     steps = []
-    for i, (path, kind, size, age, active) in enumerate(specs):
-        node = DiskNode(str(home / Path(path).parent), size, True, 1)
-        node.decision = advisor.inspect(node, mode)
+    remaining = list(enumerate(specs))
+    while remaining:
+        options = [DiskNode(str(home / Path(s[0]).parent), s[2], True, 1) for _, s in remaining]
+        choice = advisor.choose_directory(options, mode)
+        position = int(choice.choice.removeprefix("n"))
+        if not 0 <= position < len(remaining):
+            raise ValueError("Model selected an unavailable demo directory")
+        i, (path, kind, size, age, active) = remaining.pop(position)
+        node = options[position]
+        node.decision = choice
         node.purpose = advisor.classify(node)
         nodes.append(asdict(node))
         steps.append(
             {
                 "path": node.path,
                 "decision": asdict(node.decision),
-                "children_seen": 1 if node.decision.choice == "inspect" else 0,
+                "children_seen": 1,
             }
         )
         progress(
             f"Laya explorer → {Path(path).parent.name} → {node.decision.choice} · {node.decision.elapsed_ms:.1f} ms"
         )
-        if mode == "clean" and node.decision.choice == "inspect":
+        if mode == "clean":
             item = Candidate(
                 str(i),
                 str(home / path),
@@ -124,18 +132,14 @@ def audit(
     for root in scope:
         if not root.is_absolute() or ".." in root.parts or not any(root.is_relative_to(a) for a in allowed):
             raise ValueError("Read scope must stay in HOME, /Library, /private/var or /opt/homebrew")
-    handles = native.open_files() if mode == "clean" else None
+    handles = (native.open_files(deep=True) if deep else native.open_files()) if mode == "clean" else None
     report.diagnostics = native.status_snapshot(home)
     report.diagnostics["coverage"] = (
         "deep native diagnostics requested" if deep else "unprivileged; permission gaps reported"
     )
     # Native totals provide grounding, not exploration decisions.
     if __import__("platform").system() == "Darwin":
-        for name in [
-            "categories",
-            "snapshots",
-            *(["system-library", "private-var", "homebrew-data"] if deep else []),
-        ]:
+        for name in ["categories", "snapshots"]:
             progress(f"Grounding: {name}")
             if deep:
                 evidence = native.deep_probe(name)
@@ -150,23 +154,29 @@ def audit(
             else:
                 report.diagnostics[name] = evidence
     initial = [DiskNode(str(root), None, True, 0) for root in scope if root.is_dir()]
-    result = explore(
-        initial, advisor, mode, home=home, open_paths=handles, progress=progress, cancelled=cancelled
-    )
+    if mode == "clean":
+        result = investigate_cleanup(
+            home, advisor, roots=roots, open_paths=handles, progress=progress, cancelled=cancelled
+        )
+    else:
+        result = explore(initial, advisor, mode, home=home, deep=deep, progress=progress, cancelled=cancelled)
     report.exploration = {
         "nodes": [asdict(n) for n in result.nodes],
         "steps": [asdict(s) for s in result.steps],
         "warnings": result.warnings,
         "complete": result.complete,
+        "stats": result.stats,
     }
     report.measurements = [
         Measurement(
             n.path, n.allocated_bytes, n.complete, "Model-selected breakdown; nested rows overlap, do not sum"
         )
         for n in result.nodes
-        if n.is_dir and n.decision and n.decision.choice == "inspect"
+        if n.is_dir
     ]
-    report.scan = ScanReport(result.candidates, True, result.warnings, len(result.candidates))
+    report.scan = ScanReport(
+        result.candidates, True, result.warnings, result.stats.get("observed_files", len(result.candidates))
+    )
     report.model_status = f"Mandatory local Laya-MLX · {len(result.steps)} exploration decisions · {len(result.candidates)} file decisions · load {advisor.load_ms:.0f} ms"
     if mode == "clean" and handles is None:
         report.scan.warnings.append("Open-file status unavailable: all removal candidates vetoed")

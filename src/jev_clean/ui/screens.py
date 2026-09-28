@@ -10,7 +10,13 @@ from jev_clean.domain.models import Candidate, human_bytes
 
 
 class QuestionScreen(ModalScreen[bool | None]):
-    BINDINGS = [("y", "yes", "Yes"), ("n", "no", "No"), ("escape", "cancel", "Back")]
+    BINDINGS = [
+        ("y", "yes", "Yes"),
+        ("n", "no", "No"),
+        ("left", "focus_yes", "Yes"),
+        ("right", "focus_no", "No"),
+        ("escape", "cancel", "Back"),
+    ]
 
     def __init__(self, question: str, detail: str = "", *, id: str):
         super().__init__(id=id)
@@ -27,6 +33,12 @@ class QuestionScreen(ModalScreen[bool | None]):
                 yield Button("No", id="no")
 
     def on_mount(self) -> None:
+        self.query_one("#no", Button).focus()
+
+    def action_focus_yes(self) -> None:
+        self.query_one("#yes", Button).focus()
+
+    def action_focus_no(self) -> None:
         self.query_one("#no", Button).focus()
 
     @on(Button.Pressed, "#yes")

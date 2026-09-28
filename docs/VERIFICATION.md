@@ -1,5 +1,14 @@
 # Verification record
 
+## 0.1.3 — Live discovery and measurement fixes
+
+- 106 tests pass; coverage 81.04%; lint/types/safety gates pass. New failing-then-passing regressions cover timeout stdout retention, partial subtree parsing, unknown-ancestor masking, wide-directory budget starvation, left/right dialog focus, truthful empty outcomes, source/timestamp display, reader cancellation/reaping and elevated-output consumption.
+- Real read-only default Clean, after the fixes: 122,041 nonempty file observations; 412 model assessments; 272 approved review candidates (~60.8 MB). This is a point-in-time run under unchanged safety rules, not a reclaim promise; no files were removed.
+- Real read-only default Status: 623 measured nodes and 419 numeric-share rows, instead of four unknown roots. Coverage remains explicitly partial. Slow HOME children no longer suppress all measurements.
+- The reported native number was traced to actual StorageManagementService log records that round to the user's value. Exact source/recorded time is now displayed and available via S/JSON; raw private logs remain excluded.
+- Authenticated sudo diagnostics were not exercised by the agent because no cached authorization existed; safe failure and elevated-output wiring are covered by boundary tests. No password was requested or recorded.
+- All subsequent diagnostics, implementation and verification after the user's restriction ran directly in foreground, without monitors or delegated agents.
+
 ## 0.1.2 — Minimal terminal
 
 - 87 tests pass; coverage 80.43%; lint/type/safety gates pass. A real 80x24 PTY run verified startup → Status with actual model inference and percentage rows → clean quit.
