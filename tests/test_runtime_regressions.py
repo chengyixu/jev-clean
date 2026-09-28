@@ -12,11 +12,12 @@ def test_timeout_preserves_captured_stdout_and_stderr():
     code, out, err = native.run(
         [
             sys.executable,
+            "-S",  # no third-party site hooks before the fixture writes its first byte
             "-u",
             "-c",
-            "import sys,time;print('4\\t/tmp/finished');print('diagnostic',file=sys.stderr);time.sleep(2)",
+            "import sys,time;print('4\\t/tmp/finished');print('diagnostic',file=sys.stderr);time.sleep(5)",
         ],
-        timeout=0.15,
+        timeout=1,
     )
     assert code == 124 and "4\t/tmp/finished" in out and "diagnostic" in err
 
