@@ -52,9 +52,11 @@ def test_model_discovery_and_policy_veto_with_real_files(monkeypatch, tmp_path, 
     monkeypatch.setattr(native, "open_files", lambda: set())
     monkeypatch.setattr(native, "run", lambda *a, **k: (1, "", "unavailable"))
     report = service.audit(tmp_path, "clean", roots=[p.parent])
-    item = report.scan.candidates[0]
-    assert item.decision.choice == "remove" and not item.eligible and not item.selectable
+    assert not any(c.selectable for c in report.scan.candidates)
+    assert report.exploration["stats"]["observed_files"] == 1
+    assert report.exploration["stats"]["protected_files"] == 1
     assert report.exploration["steps"][0]["children_seen"] == 1
+    assert report.exploration["steps"][0]["decision"]["backend"] == "test neural boundary"
 
 
 def test_cancelled_model_investigation_cannot_authorize(monkeypatch, tmp_path, neural_boundary):

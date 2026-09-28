@@ -114,6 +114,8 @@ class AuditReport:
             if category
             else "unavailable",
             "timestamp": category.timestamp if category else None,
+            "source": category.source if category else None,
+            "native_field": "StorageLogInvestigation - Other" if category else None,
             "native_other_bytes": category.other_bytes if category else None,
             "residual_bytes": category.residual_bytes if category else None,
             "discrepancy_bytes": category.discrepancy_bytes if category else None,
@@ -154,6 +156,7 @@ class ExplorationStep:
 
 @dataclass
 class ExplorationResult:
+    stats: dict[str, Any] = field(default_factory=dict)
     nodes: list[DiskNode] = field(default_factory=list)
     steps: list[ExplorationStep] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)

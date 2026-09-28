@@ -1,29 +1,26 @@
-"""Model-directed bounded exploration. The model, not a directory rule, chooses expansion."""
+"""Measured inventory first; mandatory model chooses the next concrete breakdown."""
 
 from __future__ import annotations
 
 import os
 import stat
 import time
-from collections import deque
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Callable
 
 from jev_clean.domain.models import DiskNode, ExplorationResult, ExplorationStep
-from jev_clean.domain.policy import apply_policy
 from jev_clean.infrastructure import native
-from jev_clean.infrastructure.scanner import candidate_from_stat, no_symlink_ancestors
+from jev_clean.infrastructure.scanner import no_symlink_ancestors
 
 
-def inspect_children(node: DiskNode, *, limit: int = 200) -> tuple[list[DiskNode], bool]:
-    """Shallow no-follow listing, with bounded directory measurements. Never file contents."""
+def inspect_children(node: DiskNode, *, limit: int = 1000) -> tuple[list[DiskNode], bool]:
     path = Path(node.path)
     if not no_symlink_ancestors(path):
         return [], False
-    device = path.stat().st_dev
     children: list[DiskNode] = []
     complete = True
     try:
+        device = path.stat().st_dev
         with os.scandir(path) as entries:
             for entry in entries:
                 if len(children) >= limit:
@@ -35,13 +32,14 @@ def inspect_children(node: DiskNode, *, limit: int = 200) -> tuple[list[DiskNode
                         continue
                     if not (stat.S_ISDIR(st.st_mode) or stat.S_ISREG(st.st_mode)):
                         continue
+                    directory = stat.S_ISDIR(st.st_mode)
                     children.append(
                         DiskNode(
                             entry.path,
-                            None if entry.is_dir(follow_symlinks=False) else st.st_blocks * 512,
-                            entry.is_dir(follow_symlinks=False),
+                            None if directory else st.st_blocks * 512,
+                            directory,
                             node.depth + 1,
-                            True,
+                            not directory,
                             max(0, (time.time() - st.st_mtime) / 86400),
                         )
                     )
@@ -59,75 +57,106 @@ def explore(
     *,
     home: Path | None = None,
     open_paths: set[str] | None = None,
-    max_nodes: int = 60,
-    max_depth: int = 5,
+    max_nodes: int = 8,
+    max_depth: int = 4,
     max_candidates: int = 160,
-    seconds: float = 100,
-    progress: Callable[[str], None] = lambda _: None,
-    cancelled: Callable[[], bool] = lambda: False,
+    seconds: float = 150,
+    deep: bool = False,
+    progress=lambda _: None,
+    cancelled=lambda: False,
     child_reader=inspect_children,
 ) -> ExplorationResult:
     result = ExplorationResult(nodes=list(roots))
-    queue = deque(roots)
-    visited: set[str] = set()
+    nodes = {n.path: n for n in roots}
     started = time.monotonic()
-    steps = 0
-    model_calls = 0
-    while queue and steps < max_nodes and time.monotonic() - started < seconds and not cancelled():
-        node = queue.popleft()
-        if node.path in visited or not node.is_dir:
+    observed: dict[str, list] = {}
+
+    def inventory(node):
+        if home is not None and Path(node.path) == home:
+            return native.measure_children(
+                home, timeout=min(60, seconds), progress=progress, cancelled=cancelled
+            )
+        return native.measure_tree(
+            Path(node.path), timeout=min(60, seconds), deep=deep, progress=progress, cancelled=cancelled
+        )
+
+    # The model requires facts to choose useful reads. Native inventory itself is not a cleanup decision.
+    with ThreadPoolExecutor(max_workers=min(4, max(1, len(roots)))) as pool:
+        pending = {pool.submit(inventory, n): n for n in roots}
+        for future in as_completed(pending):
+            root = pending[future]
+            measurements = future.result()
+            observed[root.path] = measurements
+            for m in measurements:
+                if m.path in nodes:
+                    node = nodes[m.path]
+                    node.allocated_bytes = m.allocated_bytes
+                    node.complete = m.complete
+                else:
+                    node = DiskNode(
+                        m.path, m.allocated_bytes, Path(m.path).is_dir(), root.depth + 1, m.complete
+                    )
+                    nodes[m.path] = node
+            if not all(m.complete for m in measurements):
+                result.complete = False
+                result.warnings.append("Partial native inventory: " + root.path)
+    queue = list(roots)
+    visited = set()
+    while (
+        queue and len(result.steps) < max_nodes and time.monotonic() - started < seconds and not cancelled()
+    ):
+        choices = queue[:6]
+        decision = advisor.choose_directory(choices, mode)
+        index = int(decision.choice.removeprefix("n"))
+        if not 0 <= index < len(choices):
+            raise ValueError("Model chose an unavailable directory")
+        node = choices[index]
+        queue.remove(node)
+        if node.path in visited:
             continue
         visited.add(node.path)
-        decision = advisor.inspect(node, mode)
-        model_calls += 1
         node.decision = decision
-        steps += 1
-        progress(
-            f"Laya explorer → {Path(node.path).name} → {decision.choice.upper()} "
-            f"{max(decision.probabilities.values()):.0%} · {decision.elapsed_ms:.1f} ms"
-        )
-        children: list[DiskNode] = []
-        if decision.choice == "inspect" and node.depth < max_depth:
-            if node.allocated_bytes is None:
-                measured = native.measure(Path(node.path), timeout=8)
-                node.allocated_bytes = measured.allocated_bytes
-                node.complete = measured.complete
-            children, complete = child_reader(node)
-            if not complete:
-                result.complete = False
-                result.warnings.append(f"Partial directory inventory: {node.path}")
-            for child in children:
-                if cancelled() or model_calls >= 200 or time.monotonic() - started >= seconds:
-                    result.complete = False
-                    result.warnings.append("Model exploration budget reached; remaining items unassessed")
-                    break
-                # Every displayed purpose is a model classification, never inferred by the UI.
-                child.purpose = advisor.classify(child)
-                model_calls += 1
-                if child.is_dir:
-                    queue.append(child)
-                elif mode == "clean" and home and len(result.candidates) < max_candidates and complete:
-                    try:
-                        st = Path(child.path).lstat()
-                        item = candidate_from_stat(Path(child.path), st, home, open_paths)
-                        proposed = advisor.predict(item)
-                        model_calls += 1
-                        item = apply_policy(item, proposed)
-                        result.candidates.append(item)
-                        progress(
-                            f"Laya file → {proposed.choice.upper()} {max(proposed.probabilities.values()):.0%} "
-                            f"· {proposed.elapsed_ms:.1f} ms · guard {'PASS' if item.eligible else 'VETO'}"
-                        )
-                    except OSError:
-                        result.warnings.append(f"Changed/unreadable file: {child.path}")
-                        result.complete = False
-            result.nodes.extend(children)
+        node.purpose = advisor.classify(node)
+        progress("Laya chose " + node.path)
+        if node.path not in observed:
+            left = max(0.1, seconds - (time.monotonic() - started))
+            measurements = native.measure_tree(
+                Path(node.path), timeout=min(20, left), deep=deep, progress=progress, cancelled=cancelled
+            )
+            observed[node.path] = measurements
+            for m in measurements:
+                if m.path in nodes:
+                    nodes[m.path].allocated_bytes = m.allocated_bytes
+                    nodes[m.path].complete = m.complete
+                else:
+                    nodes[m.path] = DiskNode(
+                        m.path, m.allocated_bytes, Path(m.path).is_dir(), node.depth + 1, m.complete
+                    )
+        children, complete = child_reader(node)
+        if not complete:
+            result.complete = False
+            result.warnings.append("Partial child listing: " + node.path)
+        for child in children:
+            existing = nodes.get(child.path)
+            if existing is None:
+                nodes[child.path] = child
+            if (
+                child.is_dir
+                and child.depth < max_depth
+                and child.path not in visited
+                and not any(n.path == child.path for n in queue)
+            ):
+                queue.append(nodes[child.path])
+        # Completed roots stay ahead; afterwards offer the largest observed branches to the model.
+        queue.sort(key=lambda n: (n.depth, -(n.allocated_bytes or 0)))
         result.steps.append(ExplorationStep(node.path, decision, len(children)))
-        if model_calls >= 200:
-            break
     if queue or cancelled():
         result.complete = False
-        result.warnings.append(
-            "Exploration budget/depth/cancellation boundary reached; undiscovered data is not zero. Narrow roots and rescan for more detail."
-        )
+        result.warnings.append("Further breakdown bounded; remaining directories are not fully investigated")
+    result.nodes = list(nodes.values())
+    result.stats = {
+        "directories_inspected": len(result.steps),
+        "measured_nodes": sum(n.allocated_bytes is not None for n in result.nodes),
+        "remaining_directories": len(queue),
+    }
     return result

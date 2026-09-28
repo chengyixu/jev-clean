@@ -16,8 +16,20 @@ class UsageRow:
 def usage_rows(nodes: list[dict], parent: str | None = None) -> list[UsageRow]:
     unique = {str(PurePath(n["path"])): n for n in nodes}
     paths = {p for p in unique if parent is None or (p != parent and PurePath(p).is_relative_to(parent))}
-    # Show only siblings at the current view's frontier. Descendants become a drill-down.
+    # Incomplete ancestors must not hide completed native child measurements.
     frontier = [p for p in paths if not any(str(a) in paths for a in PurePath(p).parents)]
+    expanded = []
+    gaps = []
+    while frontier:
+        p = frontier.pop(0)
+        descendants = {x for x in paths if x != p and PurePath(x).is_relative_to(p)}
+        children = [x for x in descendants if not any(str(a) in descendants for a in PurePath(x).parents)]
+        if not unique[p].get("complete", False) and children:
+            frontier.extend(children)
+            gaps.append(UsageRow(p + " [unmeasured]", None, None, False, False))
+        else:
+            expanded.append(p)
+    frontier = expanded
 
     def known(p: str) -> bool:
         return (
@@ -37,7 +49,7 @@ def usage_rows(nodes: list[dict], parent: str | None = None) -> list[UsageRow]:
         )
         for p in frontier
     ]
-    return sorted(rows, key=lambda r: (r.percent is None, -(r.allocated_bytes or 0), r.path))
+    return sorted(rows + gaps, key=lambda r: (r.percent is None, -(r.allocated_bytes or 0), r.path))
 
 
 def bar(percent: float | None, width: int = 14) -> str:

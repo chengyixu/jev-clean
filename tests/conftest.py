@@ -20,6 +20,13 @@ def neural_boundary(monkeypatch):
     monkeypatch.setattr(LayaAdvisor, "load", lambda self: None)
     monkeypatch.setattr(
         LayaAdvisor,
+        "choose_directory",
+        lambda self, nodes, mode: Decision(
+            "n0", {f"n{i}": 1.0 if i == 0 else 0.0 for i in range(len(nodes))}, "test neural boundary", 1.0
+        ),
+    )
+    monkeypatch.setattr(
+        LayaAdvisor,
         "inspect",
         lambda self, node, mode: Decision(
             "inspect", {"inspect": 0.9, "skip": 0.1}, "test neural boundary", 1.0

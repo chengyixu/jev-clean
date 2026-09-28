@@ -23,7 +23,8 @@ from jev_clean.ui.screens import ConfirmScreen, DepthScreen, InfoScreen
 HELP = """1 Clean    2 Status
 ↑↓ / j k   Move    Space select    A all    N none
 Enter      Delete / open directory    Esc back
-/ filter   I file details   R rescan   E export   H history   U update
+/ filter   I file details   S number source   R rescan
+E export   H history   U update
 Q quit
 
 Deletion moves files to Trash. Model approval and safety checks still apply."""
@@ -66,6 +67,7 @@ class JevCleanApp(App):
             ("e", "export", "Export"),
             ("h", "history", "History"),
             ("i", "details", "Details"),
+            ("s", "source", "Source"),
             ("j", "down", "Down"),
             ("k", "up", "Up"),
             ("escape", "cancel", "Back"),
@@ -242,15 +244,28 @@ class JevCleanApp(App):
                     key=c.id,
                 )
             size = sum(self.candidate_by_id[i].allocated_bytes for i in self.selected)
-            summary = (
-                f"{len(self.selected)}/{len(approved)} selected · {human_bytes(size)}"
-                if approved
-                else "Nothing to clean."
+            stats = report.exploration.get("stats", {})
+            assessed = stats.get(
+                "model_assessed", sum(c.decision is not None for c in report.scan.candidates)
             )
+            if approved:
+                summary = f"{len(self.selected)}/{len(approved)} selected · {human_bytes(size)}"
+            elif stats.get("open_file_check_available") is False:
+                summary = "No cleanup authorized: open-file check unavailable"
+            elif assessed:
+                summary = f"0 approved · {assessed} assessed by model"
+            elif report.scan.files_seen:
+                summary = f"0 approved · {report.scan.files_seen} observed · protected by safety checks"
+            else:
+                summary = "No files assessed"
             if report.categories:
-                summary += "  |  System Data " + human_bytes(report.categories.other_bytes)
+                recorded = report.categories.timestamp.split(" ")[1].split(".")[0]
+                label = "demo" if report.demo else "macOS log " + recorded
+                summary += f" | System Data {human_bytes(report.categories.other_bytes)} ({label})"
             if not report.exploration.get("complete", True):
-                summary += "  |  Partial scan"
+                summary += " | Scan incomplete"
+            if stats.get("model_assessed") and stats.get("protected_files"):
+                summary += f"\n{stats['model_assessed']} model decisions · {stats['protected_files']} protected files"
         else:
             table.add_column("Location", width=max(12, self.size.width - 44))
             table.add_column("Usage", width=14)
@@ -266,7 +281,8 @@ class JevCleanApp(App):
                     Text(label),
                     bar(row.percent),
                     f"{row.percent:.0f}%" if row.percent is not None else "?",
-                    human_bytes(row.allocated_bytes),
+                    human_bytes(row.allocated_bytes)
+                    + ("+" if row.allocated_bytes is not None and not row.complete else ""),
                     key=key,
                 )
             summary = "% of measured rows"
@@ -407,6 +423,24 @@ class JevCleanApp(App):
         else:
             row = self.usage_by_id[key]
             text = f"{row.path}\n{human_bytes(row.allocated_bytes)}"
+        self.push_screen(InfoScreen(text))
+
+    def action_source(self) -> None:
+        if not self.report:
+            return
+        category = self.report.categories
+        if category:
+            text = (
+                f"System Data: {category.other_bytes} bytes\n"
+                f"Source: {category.source}\n"
+                f"Recorded: {category.timestamp}\n"
+                f"Report started: {self.report.created_at}\n"
+                f"Field: StorageLogInvestigation - Other\n"
+                f"Recomputed residual: {category.residual_bytes} bytes\n"
+                "A recorded native value, not instantaneous free space."
+            )
+        else:
+            text = "Native System Data value unavailable. No substitute is invented."
         self.push_screen(InfoScreen(text))
 
     def action_help(self) -> None:

@@ -52,6 +52,8 @@ Where available, jev-clean reconciles a same-timestamp native record:
 Used space − macOS − named categories = System Data (“Other”)
 ```
 
+The displayed System Data number is labeled **macOS log + recorded time**. Press `S` for its exact bytes/source/timestamp. It is a native historical reading, not a hardcoded total or a promise of instant freshness.
+
 It keeps that accounting separate from filesystem allocation. Nested directories overlap; sparse VM files and APFS clones complicate reclaim estimates. Large folders are **not automatically proven members of System Data**. Unavailable native logs, permissions gaps and unexplored branches remain visible. No invented “263 GB explained” headline.
 
 ## Install
@@ -59,7 +61,7 @@ It keeps that accounting separate from filesystem allocation. Nested directories
 Requires **Apple Silicon macOS** and `python3` to run the installer. It provisions uv if needed, an isolated Python 3.12 app environment, and the required model automatically. The underlying MLX runtime declares macOS 14+ support; live inference is tested here on macOS 27.0. Intel Macs and Linux cannot run the application model.
 
 ```bash
-d="$(mktemp -d)" && curl -fL https://github.com/chengyixu/jev-clean/releases/download/v0.1.2/install.py -o "$d/install.py" && python3 "$d/install.py"
+d="$(mktemp -d)" && curl -fL https://github.com/chengyixu/jev-clean/releases/download/v0.1.3/install.py -o "$d/install.py" && python3 "$d/install.py"
 jev-clean
 ```
 
@@ -99,7 +101,7 @@ jev-clean apply "$HOME/.local/state/jev-clean/review.json" \
   --ids ID1,ID2 --confirm TRASH
 ```
 
-`--root` narrows the model's investigation, not its deletion permissions. The JSON `system_data` section carries native total/residual, candidate bytes and attribution limits for **both** modes. Plans expire in one hour. Every chosen file needs a `remove` decision and a guard pass; applying a plan re-runs model assessment and identity/open-file checks. Invalid or missing model output stops the operation. Reports contain private paths: **do not upload them**.
+`--root` narrows the model's investigation, not its deletion permissions. The JSON `system_data` section carries native total/residual, source/time, candidate bytes and attribution limits for **both** modes. `exploration.stats` separates observed files, protected files, model decisions and approved candidates. Zero approvals no longer means “nothing to clean”: the result explains incomplete discovery, model retention or safety vetoes. Plans expire in one hour. Every chosen file needs a `remove` decision and a guard pass; applying a plan re-runs model assessment and identity/open-file checks. Invalid or missing model output stops the operation. Reports contain private paths: **do not upload them**.
 
 ## Controls and utilities
 
@@ -107,6 +109,8 @@ jev-clean apply "$HOME/.local/state/jev-clean/review.json" \
 |---|---|
 | `1` / `2` | Clean System Data / Status |
 | `↑ ↓` or `j k` | Navigate |
+| `← →`, then `Enter` | Choose Yes/No in the sudo and deletion questions |
+| `S` | Show exact native System Data bytes, source and recorded timestamp |
 | `Space` | Toggle a model-approved, safety-checked file |
 | `A` / `N` | Select all visible approved / select none |
 | `/` | Filter paths |
@@ -117,7 +121,7 @@ jev-clean apply "$HOME/.local/state/jev-clean/review.json" \
 | `U` | Check release updates |
 | `?` / `Esc` / `Q` | Help / back or cancel / quit |
 
-Status percentages are shares of **fully measured, non-overlapping rows at the current level**—not percentages of Apple's System Data category. Unknown or partial measurements show `?`, not a fake percentage. Enter opens an already measured child breakdown or asks the model to investigate that directory. Details and utility shortcuts are available on demand, not in a permanent footer.
+Status percentages are shares of **fully measured, non-overlapping rows at the current level**—not percentages of Apple's System Data category. Usable child measurements are not hidden by an incomplete parent. Partial sizes retain their measured lower bound (`+`); unknown percentages show `?`, not a fake value. Enter opens an already measured child breakdown or asks the model to investigate that directory. Details and utility shortcuts are available on demand, not in a permanent footer.
 
 ```bash
 jev-clean doctor

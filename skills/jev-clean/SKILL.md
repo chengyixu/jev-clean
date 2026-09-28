@@ -23,9 +23,9 @@ For deep native diagnostics, the human runs `sudo -v` in their terminal first, t
 
 ## Explain evidence
 
-Read `exploration.steps` for actual model inspect/skip decisions and `exploration.nodes` for measured/model-classified locations. Scores are model distributions, not deletion-safety guarantees. Laya does not generate explanations: show the evidence and actual typed choices, not invented chain-of-thought.
+Read `exploration.steps` for actual model directory-choice decisions and `exploration.nodes` for measured/model-classified locations. Scores are model distributions, not deletion-safety guarantees. Laya does not generate explanations: show the evidence and actual typed choices, not invented chain-of-thought.
 
-Read `categories.timestamp`, `used_bytes`, `system_bytes`, `named`, `other_bytes` together. Residual = used - system - sum(named). Never mix timestamps. Directory allocation is **not** proof of System Data category membership; measurements are explicitly unattributed. Native logs are private/version-dependent and may be unavailable. Nested directory rows overlap and must not be summed.
+Read `categories.timestamp`, `used_bytes`, `system_bytes`, `named`, `other_bytes` together. The native figure is a recorded log reading, not instantaneous usage; `system_data.source` and `timestamp` identify it, and the TUI's S key shows provenance. `exploration.stats` explains observed/protected/model-assessed/approved counts. Never interpret zero approved files or an exhausted budget as a clean disk. Residual = used - system - sum(named). Never mix timestamps. Directory allocation is **not** proof of System Data category membership; measurements are explicitly unattributed. Native logs are private/version-dependent and may be unavailable. Nested directory rows overlap and must not be summed.
 
 ## Human authority
 
