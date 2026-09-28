@@ -79,7 +79,10 @@ def open_files(*, deep: bool = False) -> set[str] | None:
     code, out, err = run(command, timeout=15)
     if code != 0 or err.strip():
         return None
-    return {line[1:] for line in out.splitlines() if line.startswith("n/")}
+    from jev_clean.infrastructure.paths import firmlinks, logical_path
+
+    mappings = firmlinks()
+    return {str(logical_path(Path(line[1:]), mappings)) for line in out.splitlines() if line.startswith("n/")}
 
 
 def parse_categories(text: str) -> CategoryReport | None:

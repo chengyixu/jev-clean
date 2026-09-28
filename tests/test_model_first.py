@@ -30,9 +30,8 @@ def test_removed_modes_are_not_accepted(tmp_path):
             audit(tmp_path, mode)
 
 
-def test_model_controls_explorer_not_static_directory_priority(tmp_path):
-    from jev_clean.application.exploration import explore
-    from jev_clean.domain.models import DiskNode
+def test_model_prioritizes_volumes_without_skipping_the_rest(tmp_path):
+    from jev_clean.application.whole_disk import investigate_disk
 
     left = tmp_path / "left"
     right = tmp_path / "right"
@@ -46,7 +45,7 @@ def test_model_controls_explorer_not_static_directory_priority(tmp_path):
             return Decision("data", {"data": 1.0}, "test-model-boundary", 1)
 
         def choose_directory(self, nodes, mode):
-            index = next(i for i, n in enumerate(nodes) if n.path == str(right))
+            index = next((i for i, n in enumerate(nodes) if n.path == str(right)), 0)
             return Decision(
                 f"n{index}",
                 {f"n{i}": 1.0 if i == index else 0.0 for i in range(len(nodes))},
@@ -54,14 +53,15 @@ def test_model_controls_explorer_not_static_directory_priority(tmp_path):
                 1,
             )
 
-    result = explore(
-        [DiskNode(str(left), 4096, True, 0), DiskNode(str(right), 4096, True, 0)],
-        Advisor(),
-        "status",
-        max_nodes=1,
+        def predict(self, item):
+            return Decision("keep", {"remove": 0.0, "review": 0.0, "keep": 1.0}, "test-model-boundary", 1)
+
+    result = investigate_disk(
+        tmp_path, Advisor(), "status", roots=[left, right], state_dir=tmp_path / "state", open_paths=set()
     )
-    assert str(right / "inspect-this") in {n.path for n in result.nodes}
-    assert str(left / "do-not-inspect") not in {n.path for n in result.nodes}
+    assert result.steps[0].path == str(right)
+    assert result.stats["observed_regular_files"] == result.stats["model_assessed_files"] == 2
+    assert result.stats["walk_finished"]
     assert result.steps[0].decision.backend == "test-model-boundary"
 
 

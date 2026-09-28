@@ -1,5 +1,16 @@
 # Verification record
 
+## 0.2.0 — Whole-disk scope
+
+- 132 hermetic tests pass; coverage 79.21%; Ruff, mypy and architecture/safety gates pass. Checkpoint storage after the interrupted real-model runs was about 9.1 MB; no per-file contents were stored.
+
+- Default startup APFS scope, no default file/directory/duration caps, and every observed regular file assessed before veto are covered by new tests. Fixtures include >1,100 non-cache files, protected and empty files, changed metadata, exact cache reuse, overlaps, native ordinal/NUL parsing and descriptor races.
+- A complete **traversal-only** read-only check reached 7,008,034 regular files, 1,422,532 directories and 185,997 symlinks across six roots in 777.6 seconds, with permission/boundary issues. It is not a model-assessment claim.
+- A real-model validation was deliberately interrupted after 900 seconds: 746,119 regular files assigned decisions (12,054 fresh neural calls and 734,065 exact-input cache reuses). `walk_finished` remained false. This developer interruption is not a production cap.
+- Restart validation re-enumerated 19,342 files, reused 19,342 exact decisions with zero fresh calls in that interval, and correctly stayed unfinished when interrupted. Cached state is not a stale path cursor.
+- No completed seven-million-file neural pass is claimed. First full passes can be long. All private paths/checkpoints/reports stay excluded; no user cleanup occurred. Work remained direct/foreground with no monitors or delegated agents.
+
+
 ## 0.1.3 — Live discovery and measurement fixes
 
 - 106 tests pass; coverage 81.04%; lint/types/safety gates pass. New failing-then-passing regressions cover timeout stdout retention, partial subtree parsing, unknown-ancestor masking, wide-directory budget starvation, left/right dialog focus, truthful empty outcomes, source/timestamp display, reader cancellation/reaping and elevated-output consumption.

@@ -77,6 +77,8 @@ def state_for(item: Candidate) -> str:
         "package-cache": "downloaded package cache root",
         "rotated-log": "rotated diagnostic logs root",
     }.get(item.kind, "protected or unknown storage")
+    if item.context_hint and item.kind not in ("user-cache", "package-cache", "rotated-log"):
+        location = item.context_hint + " location"
     activity = (
         "A process is using this file."
         if item.open_file is True

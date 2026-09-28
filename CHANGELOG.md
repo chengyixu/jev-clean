@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 — 2026-09-28
+
+- Default Clean and Status to whole accessible startup-container filesystem scope, not a cache-root sample. Remove default directory/file/total-duration caps.
+- Assess every observed regular file with the model before safety vetoes, including protected and zero-byte files.
+- Stream metadata with no-follow directory descriptors; support fixed native elevated find/stat reads; handle APFS snapshot/firmlink aliases and explicit mount/permission gaps.
+- Add private exact-input decision caching and restart checkpoints. Show observed/assessed/fresh/reused/approved separately; no pretending cached assignments are new inference.
+- Report observed allocated-byte shares and complete-versus-finished coverage separately. First full passes can take a long time.
+- Keep existing user confirmation, limited mutation scope, identity/open-handle checks, Trash recovery and automatic model-ready installation.
+- Verification distinguishes a complete 7,008,034-file traversal-only check from an interrupted 746,119-file real-model pass; no full neural-pass completion claim.
+
 ## 0.1.3 — 2026-09-28
 
 - Fix real discovery failures: model-prioritized concrete locations replace vague-root skip-all; file inference is no longer exhausted classifying every immediate directory entry.

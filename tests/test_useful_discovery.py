@@ -1,7 +1,8 @@
 import os
 import time
 
-from jev_clean.domain.models import Decision, DiskNode
+from jev_clean.application.whole_disk import investigate_disk
+from jev_clean.domain.models import Decision
 
 
 class ChoosingModel:
@@ -17,9 +18,7 @@ class ChoosingModel:
         return Decision("remove", {"remove": 1.0, "keep": 0.0, "review": 0.0}, "test neural boundary", 1)
 
 
-def test_status_measures_model_chosen_roots_without_classifying_every_child(tmp_path):
-    from jev_clean.application.exploration import explore
-
+def test_status_finishes_wide_roots_without_immediate_child_budget_starvation(tmp_path):
     root = tmp_path / "tree"
     root.mkdir()
     for i in range(230):
@@ -27,54 +26,58 @@ def test_status_measures_model_chosen_roots_without_classifying_every_child(tmp_
     other = tmp_path / "other"
     other.mkdir()
     (other / "data").write_bytes(b"x" * 8192)
-    result = explore(
-        [DiskNode(str(root), None, True, 0), DiskNode(str(other), None, True, 0)],
+    result = investigate_disk(
+        tmp_path,
         ChoosingModel(),
         "status",
-        max_nodes=2,
+        roots=[root, other],
+        state_dir=tmp_path / "state",
+        open_paths=set(),
     )
-    known = {n.path: n.allocated_bytes for n in result.nodes}
-    assert known[str(root)] is not None and known[str(other)] >= 8192
-    assert len(result.steps) == 2
+    assert result.stats["observed_regular_files"] == 1
+    assert result.stats["directories_observed"] >= 232
+    assert result.stats["walk_finished"] and len(result.steps) == 2
+    assert sum(n.allocated_bytes or 0 for n in result.nodes) >= 8192
 
 
 def test_clean_assesses_observed_disposable_files_not_vague_roots(tmp_path):
-    from jev_clean.application.cleanup import investigate_cleanup
-
     p = tmp_path / "Library/Caches/app/blob"
     p.parent.mkdir(parents=True)
     p.write_bytes(b"x" * 4096)
     old = time.time() - 60 * 86400
     os.utime(p, (old, old))
-    report = investigate_cleanup(tmp_path, ChoosingModel(), open_paths=set())
-    assert report.stats["observed_files"] == 1
-    assert report.stats["model_assessed"] == 1
-    assert report.candidates[0].selectable
-    assert report.steps[0].decision.backend == "test neural boundary"
+    result = investigate_disk(
+        tmp_path, ChoosingModel(), "clean", roots=[p.parent], state_dir=tmp_path / "state", open_paths=set()
+    )
+    assert result.stats["observed_files"] == 1 and result.stats["model_assessed_files"] == 1
+    assert result.candidates[0].selectable
 
 
-def test_clean_does_not_recommend_guard_rejected_files(tmp_path):
-    from jev_clean.application.cleanup import investigate_cleanup
-
+def test_guard_rejected_files_still_reach_model(tmp_path):
     p = tmp_path / "Library/Caches/app/fresh"
     p.parent.mkdir(parents=True)
     p.write_bytes(b"x" * 4096)
-    report = investigate_cleanup(tmp_path, ChoosingModel(), open_paths=set())
-    assert not any(c.selectable for c in report.candidates)
-    assert report.stats["observed_files"] == 1 and report.stats["protected_files"] == 1
+    result = investigate_disk(
+        tmp_path, ChoosingModel(), "clean", roots=[p.parent], state_dir=tmp_path / "state", open_paths=set()
+    )
+    assert not result.candidates
+    assert result.stats["model_assessed_protected_files"] == 1
 
 
-def test_clean_scope_does_not_scan_unrequested_roots(tmp_path):
-    from jev_clean.application.cleanup import investigate_cleanup
-
+def test_explicit_scope_stays_explicit(tmp_path):
     for part in ("a", "b"):
         p = tmp_path / f"Library/Caches/{part}/blob"
         p.parent.mkdir(parents=True)
         p.write_bytes(b"x" * 4096)
         old = time.time() - 60 * 86400
         os.utime(p, (old, old))
-    report = investigate_cleanup(
-        tmp_path, ChoosingModel(), open_paths=set(), roots=[tmp_path / "Library/Caches/a"]
+    result = investigate_disk(
+        tmp_path,
+        ChoosingModel(),
+        "clean",
+        roots=[tmp_path / "Library/Caches/a"],
+        state_dir=tmp_path / "state",
+        open_paths=set(),
     )
-    assert report.stats["observed_files"] == 1
-    assert all("/a/" in c.path for c in report.candidates)
+    assert result.stats["observed_files"] == 1 and result.stats["scope"] == "custom"
+    assert all("/a/" in c.path for c in result.candidates)
