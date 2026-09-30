@@ -1,5 +1,16 @@
 # Verification record
 
+## 0.3.0 — Model-owned judgments (2026-09-30)
+
+- RED-first regressions cover removal of classification vetoes; model judgment versus staging readiness; recent/outside-old-root database staging and undo on temporary files; refreshed activity/identity; app manifest observations; evidence-aware cache identity; visible nonselectable review rows; input overflow; neutral-label translation.
+- Final local and fresh-sdist/Python-3.12 gates pass **156 tests, 80.21% coverage**, Ruff, mypy and repository guards. Release-consistency tests bind installer/fallback/lock versions to package metadata. Test manifest discovery is isolated from host `/Applications`; synthetic HOME manifests remain real.
+- Earlier runs had five timing-related failures under measured host load **655.57 / 439.53 / 205.98**. Subsequent full runs, including the isolated source-archive run, passed without relaxing their assertions or stopping user processes. Those earlier failures are retained here rather than described as a continuously green history.
+- Real pinned-model evaluation used 24 synthetic scenarios, each as plain evidence and application-style structured input. Structured results: **16/24 correct, two false removes** (unique private key and required offline weights). Full method and representation sensitivity: [ADR 0005](adr/0005-model-owned-judgment.md) and [raw synthetic results](model-authority-evaluation.json). The owner explicitly authorized this alpha release after reviewing the errors. This is not validation of deletion safety.
+- A real pipeline over five temporary files completed with five fresh inferences; it recommended removal of synthetic source/database/VM-shaped files from thin metadata. This verifies model authority wiring, **not correctness or useful real cleanup**. No user cleanup or whole-disk model re-run occurred.
+- Offline wheel/sdist build passed. Extracted the source archive into a new directory, created a fresh locked Python 3.12 environment, ran all gates, and used the turnkey installer with isolated `UV_TOOL_DIR` / `UV_TOOL_BIN_DIR`. Version **0.3.0**, pinned checkpoint integrity and real inference readiness all verified. The existing model cache was reused; this is not a new cold-network download test. An initial offline attempt chose Python 3.13 and lacked a cached mypy wheel; explicitly selecting the documented Python 3.12 resolved that environment issue.
+- Real model TUI demo was rerun: all five old demo items were kept. Existing public walkthrough media is therefore explicitly labeled historical v0.2.0, not presented as current model output. Private diagnostics stay under ignored `.private/`; published evaluation cases are synthetic only. No user cleanup, remote inference, monitors or delegation.
+- Remote CI and release/installation receipts are reported in the PR and GitHub release, not claimed here before execution.
+
 ## 0.2.0 — Whole-disk scope
 
 - 132 hermetic tests pass; coverage 79.21%; Ruff, mypy and architecture/safety gates pass. Checkpoint storage after the interrupted real-model runs was about 9.1 MB; no per-file contents were stored.

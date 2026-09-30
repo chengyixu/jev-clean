@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 REPO = "https://github.com/chengyixu/jev-clean"
 
 

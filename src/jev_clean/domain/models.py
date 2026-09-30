@@ -43,10 +43,12 @@ class Candidate:
     decision: Decision | None = None
     recommended: bool = False
     context_hint: str = ""
+    evidence: dict[str, str] = field(default_factory=dict)
+    execution_issue: str = ""
 
     @property
     def selectable(self) -> bool:
-        return self.eligible and self.recommended and self.decision is not None
+        return bool(self.eligible and self.recommended and self.decision and self.decision.choice == "remove")
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Candidate:

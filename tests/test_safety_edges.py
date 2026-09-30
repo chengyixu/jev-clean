@@ -21,13 +21,13 @@ def test_forged_eligible_flag_cannot_delete_recent_file(tmp_path):
     assert result.moved == 0 and p.read_text() == "recent"
 
 
-def test_symlink_root_and_sensitive_suffixes_not_deletable(tmp_path):
+def test_explicit_symlink_root_is_not_traversed(tmp_path):
     outside = tmp_path / "actual"
     outside.mkdir()
     (tmp_path / "Library").mkdir()
     (tmp_path / "Library/Caches").symlink_to(outside, target_is_directory=True)
     (outside / "file").write_text("secret")
-    report = scan_candidates(tmp_path, open_paths=set())
+    report = scan_candidates(tmp_path, open_paths=set(), directories=[tmp_path / "Library/Caches"])
     assert not report.candidates and report.warnings
 
 

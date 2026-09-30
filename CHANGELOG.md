@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.3.0 — 2026-09-30
+
+**Breaking change: the model alone decides keep/review/remove.** The previous
+four-root, extension-list and fixed-retention mutation policy is removed. This is
+the accepted consequence of [ADR 0005](docs/adr/0005-model-owned-judgment.md).
+
+- Delete directory allowlists, protected extension/component lists and 14/30-day
+  retention gates. Code no longer classifies a path, extension, age, open handle
+  or hard-link count as trash or as worth keeping.
+- `recommended` now records exactly what the model decided; `eligible` records
+  only whether the executor can stage that exact target. A mechanical refusal no
+  longer rewrites a remove answer into a keep.
+- Enrich model evidence with bounded local directory labels, file extension,
+  measured filesystem facts and installed application identifier/version read
+  from bounded `Info.plist` metadata. Reference, regenerability and obsolescence
+  stay explicitly `unknown` until actually measured. No resource contents or
+  basenames enter inference.
+- Refresh metadata, activity and manifest observations before mandatory
+  re-inference when a plan is applied; refuse a changed target identity and
+  refuse a changed activity observation at the rename boundary.
+- Key the decision cache by the full input, question, label mapping, input
+  contract and pinned runtime so legacy coarse-input decisions cannot be reused.
+  Reject model inputs that exceed the real token budget instead of silently
+  truncating evidence.
+- Use neutral A/B/C choice labels and translate them to dispositions, after
+  measuring that descriptive labels biased the checkpoint toward one answer.
+- Show `?` for model review and `!` for removal proposals the executor cannot
+  stage, next to selectable removals. Same two modes, same minimal UI.
+- Known model failures retained and published: 24 synthetic scenarios
+  answered 16/24 with structured application-style input, including two
+  incorrect-remove answers (unique private key, required offline model weights).
+  The owner reviewed and accepted this risk. Human review of every file is the
+  load-bearing safeguard; no rule hides the errors.
+- No hosted model, no metadata upload, no official Jev API call and no
+  credentials. Installed weights and runtime remain pinned as before.
+
 ## 0.2.0 — 2026-09-28
 
 - Default Clean and Status to whole accessible startup-container filesystem scope, not a cache-root sample. Remove default directory/file/total-duration caps.

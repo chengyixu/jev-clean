@@ -53,15 +53,15 @@ def test_clean_assesses_observed_disposable_files_not_vague_roots(tmp_path):
     assert result.candidates[0].selectable
 
 
-def test_guard_rejected_files_still_reach_model(tmp_path):
+def test_recent_files_are_not_excluded_by_a_retention_rule(tmp_path):
     p = tmp_path / "Library/Caches/app/fresh"
     p.parent.mkdir(parents=True)
     p.write_bytes(b"x" * 4096)
     result = investigate_disk(
         tmp_path, ChoosingModel(), "clean", roots=[p.parent], state_dir=tmp_path / "state", open_paths=set()
     )
-    assert not result.candidates
-    assert result.stats["model_assessed_protected_files"] == 1
+    assert result.candidates[0].selectable
+    assert result.stats["model_assessed_files"] == 1
 
 
 def test_explicit_scope_stays_explicit(tmp_path):

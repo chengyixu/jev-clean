@@ -12,7 +12,8 @@
   ],
   "behavior": [
     ["O_NOFOLLOW", "Symlink-safe descriptor traversal"],
-    ["apply_policy", "One deterministic authorization gate"],
+    ["apply_policy", "Model judgment separate from technical staging readiness"],
+    ["EvidenceCollector", "Local metadata observations without disposal labels"],
     ["MODEL_REVISION", "Pinned local model provenance"],
     ["scan_complete", "Partial evidence never authorizes cleanup"]
   ],

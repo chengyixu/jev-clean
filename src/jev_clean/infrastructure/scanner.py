@@ -11,7 +11,8 @@ from pathlib import Path
 from typing import Callable
 
 from jev_clean.domain.models import Candidate, Fingerprint, ScanReport
-from jev_clean.domain.policy import ROOTS, apply_policy, kind_for_path
+from jev_clean.domain.policy import apply_policy
+from jev_clean.infrastructure.evidence import EvidenceCollector
 
 
 def fingerprint(st: os.stat_result) -> Fingerprint:
@@ -24,14 +25,20 @@ def no_symlink_ancestors(path: Path) -> bool:
     return not any(p.is_symlink() for p in (path, *path.parents))
 
 
-def candidate_from_stat(path: Path, st: os.stat_result, home: Path, open_paths: set[str] | None) -> Candidate:
+def candidate_from_stat(
+    path: Path,
+    st: os.stat_result,
+    home: Path,
+    open_paths: set[str] | None,
+    evidence: EvidenceCollector | None = None,
+) -> Candidate:
     stamp = fingerprint(st)
     identity = hashlib.sha256(f"{path}:{stamp}".encode()).hexdigest()[:20]
-    kind = kind_for_path(path, home) or "protected"
+    facts = (evidence or EvidenceCollector(home)).collect(path)
     item = Candidate(
         identity,
         str(path),
-        kind,
+        "file",
         st.st_blocks * 512,
         max(0, time.time() - st.st_mtime),
         stamp,
@@ -39,9 +46,11 @@ def candidate_from_stat(path: Path, st: os.stat_result, home: Path, open_paths: 
         stat.S_ISLNK(st.st_mode),
         True,
         None if open_paths is None else str(path) in open_paths,
+        evidence=facts,
+        execution_issue="Current-user staging cannot act for another owner"
+        if st.st_uid != os.getuid()
+        else "",
     )
-    if st.st_uid != os.getuid():
-        item = replace(item, kind="protected")
     return apply_policy(item)
 
 
@@ -63,7 +72,8 @@ def scan_candidates(
         raise ValueError("HOME must not contain symlink ancestors")
     device = home.stat().st_dev
     seen: set[Path] = set()
-    roots = directories if directories is not None else [home / relative for relative, _, _ in ROOTS]
+    roots = directories if directories is not None else [home]
+    evidence = EvidenceCollector(home)
     for root in roots:
         root = Path(os.path.abspath(root))
         if not root.is_relative_to(home):
@@ -106,7 +116,7 @@ def scan_candidates(
                     st = os.stat(name, dir_fd=fd, follow_symlinks=False)
                     if st.st_dev != device:
                         continue
-                    item = candidate_from_stat(path, st, home, open_paths)
+                    item = candidate_from_stat(path, st, home, open_paths, evidence)
                     if item.allocated_bytes > 0:
                         report.candidates.append(item)
                 except OSError as error:

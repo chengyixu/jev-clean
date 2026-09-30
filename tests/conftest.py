@@ -1,9 +1,24 @@
 """The external neural boundary is substituted only in hermetic tests, never in production/demo."""
 
+from pathlib import Path
+
 import pytest
 
 from jev_clean.domain.models import Decision
 from jev_clean.infrastructure.model import LayaAdvisor
+
+
+@pytest.fixture(autouse=True)
+def isolate_host_application_manifests(monkeypatch):
+    """Synthetic HOME manifests stay real; never enumerate the host's installed apps."""
+    glob = Path.glob
+
+    def fixture_glob(path, pattern, *args, **kwargs):
+        if path == Path("/Applications"):
+            return iter(())
+        return glob(path, pattern, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "glob", fixture_glob)
 
 
 def prediction(choice="remove"):

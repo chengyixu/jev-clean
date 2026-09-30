@@ -1,4 +1,4 @@
-"""Entire declared filesystem scope, every regular file assessed before safety veto.
+"""Entire declared filesystem scope, every regular file receives a model judgment.
 
 No default file/directory/time cap. Exact model-input cache reuse is reported separately.
 """
@@ -15,37 +15,24 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from jev_clean.domain.models import Candidate, DiskNode, ExplorationResult, ExplorationStep, Fingerprint
-from jev_clean.domain.policy import apply_policy, kind_for_path
+from jev_clean.domain.policy import apply_policy
 from jev_clean.infrastructure.decision_cache import DecisionCache
 from jev_clean.infrastructure.disk_walk import FileMeta, walk_privileged, walk_user
+from jev_clean.infrastructure.evidence import EvidenceCollector
 from jev_clean.infrastructure.model import state_for
 from jev_clean.infrastructure.paths import aliases_covered_elsewhere, firmlinks, logical_path
 from jev_clean.infrastructure.scanner import no_symlink_ancestors
 from jev_clean.infrastructure.volumes import DiskScope, normalize_roots, startup_scope
 
 
-def context_hint(path: Path, kind: str) -> str:
-    if kind in ("user-cache", "package-cache", "rotated-log"):
-        return kind
-    suffix = path.suffix.lower()
-    if suffix in {".db", ".sqlite", ".sqlite3", ".sql", ".wal"}:
-        return "database"
-    if suffix in {".safetensors", ".gguf", ".onnx", ".pt", ".pth"}:
-        return "model weights"
-    if suffix in {".py", ".js", ".ts", ".tsx", ".rs", ".go", ".c", ".cpp", ".h", ".swift", ".java", ".kt"}:
-        return "source code"
-    if suffix in {".pem", ".key", ".p12", ".pfx"} or path.name.startswith(".env"):
-        return "credentials or configuration"
-    if suffix in {".zip", ".gz", ".zst", ".tar", ".age", ".7z"}:
-        return "archive or backup"
-    if suffix in {".dmg", ".vmdk", ".qcow2", ".raw", ".iso"}:
-        return "disk image"
-    if suffix in {".jpg", ".jpeg", ".png", ".heic", ".mp4", ".mov", ".mp3", ".wav"}:
-        return "personal media"
-    return "unclassified file"
-
-
-def candidate(path: Path, meta: FileMeta, home: Path, opened: set[str] | None, epoch: float) -> Candidate:
+def candidate(
+    path: Path,
+    meta: FileMeta,
+    home: Path,
+    opened: set[str] | None,
+    epoch: float,
+    evidence: EvidenceCollector | None = None,
+) -> Candidate:
     exact = True
     try:
         current = FileMeta.from_stat(path.lstat())
@@ -56,14 +43,12 @@ def candidate(path: Path, meta: FileMeta, home: Path, opened: set[str] | None, e
     except OSError:
         exact = False
     fp = Fingerprint(meta.device, meta.inode, meta.size, meta.mtime_ns, meta.ctime_ns, meta.uid, meta.nlink)
-    kind = kind_for_path(path, home) or "protected"
-    if meta.uid != os.getuid():
-        kind = "protected"
+    facts = (evidence or EvidenceCollector(home)).collect(path)
     identity = hashlib.sha256(f"{path}:{fp}".encode(errors="surrogatepass")).hexdigest()[:20]
     return Candidate(
         identity,
         str(path),
-        kind,
+        "file",
         meta.blocks * 512,
         max(0, epoch - meta.mtime_ns / 1e9),
         fp,
@@ -71,7 +56,10 @@ def candidate(path: Path, meta: FileMeta, home: Path, opened: set[str] | None, e
         stat.S_ISLNK(meta.mode),
         exact,
         None if opened is None else str(path) in opened,
-        context_hint=context_hint(path, kind),
+        evidence=facts,
+        execution_issue="Current-user staging cannot act for another owner"
+        if meta.uid != os.getuid()
+        else "",
     )
 
 
@@ -115,6 +103,7 @@ def investigate_disk(
     exclusions = [state_dir, Path("/System/Volumes/Data") / state_dir.relative_to("/")]
     mappings = firmlinks()
     result = ExplorationResult()
+    evidence = EvidenceCollector(home)
     stats: dict = {
         "scope": scope.kind,
         "observed_entries": 0,
@@ -241,7 +230,7 @@ def investigate_disk(
                     allocated = 0
                 bucket = bucket_for(path, home)
                 buckets[bucket] = buckets.get(bucket, 0) + allocated
-                item = candidate(path, meta, home, open_paths, cache.epoch)
+                item = candidate(path, meta, home, open_paths, cache.epoch, evidence)
                 state = state_for(item)
                 decision = cache.get(state)
                 if decision is None:
@@ -258,10 +247,11 @@ def investigate_disk(
                 if not reviewed.eligible:
                     stats["protected_files"] += 1
                     stats["model_assessed_protected_files"] += 1
-                    guards[reviewed.reason] += 1
-                if mode == "clean" and reviewed.selectable:
+                    guards[reviewed.execution_issue] += 1
+                if mode == "clean" and decision.choice in {"review", "remove"}:
                     result.candidates.append(reviewed)
-                    stats["approved"] += 1
+                    if reviewed.selectable:
+                        stats["approved"] += 1
                 if time.monotonic() - last_progress >= 1:
                     progress(
                         f"{stats['observed_regular_files']:,} files scanned · {stats['model_assessed_files']:,} model-assessed "
@@ -302,6 +292,11 @@ def investigate_disk(
         )
         stats["model_assessed"] = stats["model_assessed_files"]
         stats["observed_files"] = stats["observed_regular_files"]
+        stats["execution_unavailable"] = stats["protected_files"]
+        stats["execution_issues"] = dict(guards)
+        stats["judgment_authority"] = (
+            "model only; legacy protected counters denote execution readiness, not trash classification"
+        )
         stats["guard_reasons"] = dict(guards)
         stats["coverage"] = {
             "roots": roots_coverage,

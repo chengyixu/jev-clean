@@ -45,16 +45,16 @@ def test_missing_model_fails_not_fallback(monkeypatch, tmp_path):
         service.audit(tmp_path, "clean")
 
 
-def test_model_discovery_and_policy_veto_with_real_files(monkeypatch, tmp_path, neural_boundary):
+def test_model_authority_with_real_synthetic_files(monkeypatch, tmp_path, neural_boundary):
     p = tmp_path / "Library/Caches/com.test/item"
     p.parent.mkdir(parents=True)
     p.write_text("fixture")
     monkeypatch.setattr(native, "open_files", lambda: set())
     monkeypatch.setattr(native, "run", lambda *a, **k: (1, "", "unavailable"))
     report = service.audit(tmp_path, "clean", roots=[p.parent])
-    assert not any(c.selectable for c in report.scan.candidates)
+    assert report.scan.candidates[0].selectable
     assert report.exploration["stats"]["observed_files"] == 1
-    assert report.exploration["stats"]["protected_files"] == 1
+    assert report.exploration["stats"]["execution_unavailable"] == 0
     assert report.exploration["steps"][0]["children_seen"] == 1
     assert report.exploration["steps"][0]["decision"]["backend"] == "test neural boundary"
 

@@ -127,14 +127,16 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("Unknown or empty selected IDs")
             selected = [i for i in items if i.id in ids]
             if not all(i.selectable for i in selected):
-                raise ValueError("Selection includes protected files; rescan/review")
+                raise ValueError(
+                    "Selection lacks model-remove judgment or execution readiness; rescan/review"
+                )
             print(
                 f"Stage {len(selected)} selected files in Trash. This does not free space.", file=sys.stderr
             )
             for item in selected:
                 print(item.path, file=sys.stderr)
             confirm("TRASH", args.confirm)
-            assessed = reassess_selection(selected)
+            assessed = reassess_selection(selected, home=home)
             result = TrashStore(home).move(assessed, open_paths=native.open_files())
             emit(asdict(result))
             return 1 if result.failed else 0

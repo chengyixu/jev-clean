@@ -22,17 +22,19 @@ macOS calls hundreds of gigabytes **System Data**. That label doesn't tell you w
 
 **Status:** whole startup-disk scan + model assessment → usage bars and percentages.
 
-**Not a cache sample anymore.** Both modes walk the mounted startup-disk scope. Every observed regular file—including protected files—gets a model-derived assessment **before** safety vetoes. No default 600-file, six-directory or two-minute cutoff. Progress separates scanned files, model-assessed files, fresh neural calls and exact-input reused decisions. [Scope, restart/cache behavior and verification](docs/WHOLE-DISK.md).
+**Model-only cleanup.** The model alone decides keep/review/remove; no directory, extension or retention rule can veto that judgment. Execution still verifies the exact selected target and your confirmation. Known limitation: a 24-scenario diagnostic answered 16/24 with structured input and included two incorrect-remove answers, so **review every proposed file**. See [ADR 0005](docs/adr/0005-model-owned-judgment.md) and [model-authority-evaluation.json](docs/model-authority-evaluation.json).
+
+**Not a cache sample anymore.** Both modes walk the mounted startup-disk scope. Every observed regular file gets a model-derived keep/review/remove judgment. Technical execution readiness is recorded separately. No default 600-file, six-directory or two-minute cutoff. Progress separates scanned files, model-assessed files, fresh neural calls and exact-input reused decisions. [Scope, restart/cache behavior and verification](docs/WHOLE-DISK.md).
 
 No dashboard, banners, permanent captions or competing panels. The accounting and full model evidence remain in the shared engine and JSON report, not plastered over the screen.
 
-Laya prioritizes volume inspection, classifies the evidence, and proposes what to keep or remove. You see the actual choices and scores as they happen. You approve the files. Hard safety protections can veto a model proposal, never replace the model.
+Laya prioritizes volume inspection, classifies the evidence, and proposes what to keep or remove. You see the actual choices and scores as they happen. You approve the files. Code cannot override that judgment using directories, extensions or retention rules; execution still verifies the selected target and permissions.
 
 > **Alpha software.** No model = no Clean or Status operation. There is no rules-only fallback. Model scores are **not deletion-safety guarantees**. Begin with the real-inference demo and review [SECURITY.md](SECURITY.md). The project name does not imply affiliation with TypeSafe AI; the shipped engine is Laya-MLX.
 
 <p align="center"><img src="docs/assets/walkthrough.gif" alt="Real jev-clean TUI: model decisions, selection and disk breakdown" width="960"></p>
 
-*Actual TUI and real local inference; synthetic filesystem metadata. This is a screen-sequence walkthrough, not real-time playback. No private files or canned neural scores.*
+*Historical v0.2.0 TUI walkthrough with real local inference and synthetic filesystem metadata. It illustrates navigation, not v0.3.0 model answers. This is a screen sequence, not real-time playback. No private files or canned neural scores.*
 
 ## Two modes. The model drives both.
 
@@ -44,7 +46,7 @@ Laya prioritizes volume inspection, classifies the evidence, and proposes what t
 | Your control | Select all approved items or some; review and confirm | Read-only investigation; narrow the next scope |
 | Result | System Data context + model findings + selected cleanup + receipt/undo | Private JSON report and model decision trace |
 
-**The loop:** model prioritizes → tools walk every declared root → model assesses every regular file → safeguards veto unsafe actions → you review. Esc pauses; restarting re-enumerates with exact prior decisions reused. The first full pass over millions of files can take hours. Filesystem checks can veto symlinks, active files, databases and unsafe paths. They cannot mark something as trash without a model decision.
+**The loop:** model prioritizes → tools walk every declared root → model assesses factual evidence → you review. `?` marks further investigation, `!` an execution-unavailable removal proposal; only model-remove checkboxes can be selected. Esc pauses; restarting re-enumerates with exact prior decisions reused. The first full pass over millions of files can take hours. The file mover supports current-user regular files with unchanged identity and no-follow paths. It never classifies trash. Autonomous dependency investigation and resource grouping are not yet implemented.
 
 ### Honest about the gray bar
 
@@ -63,7 +65,7 @@ It keeps that accounting separate from filesystem allocation. Nested directories
 Requires **Apple Silicon macOS** and `python3` to run the installer. It provisions uv if needed, an isolated Python 3.12 app environment, and the required model automatically. The underlying MLX runtime declares macOS 14+ support; live inference is tested here on macOS 27.0. Intel Macs and Linux cannot run the application model.
 
 ```bash
-d="$(mktemp -d)" && curl -fL https://github.com/chengyixu/jev-clean/releases/download/v0.2.0/install.py -o "$d/install.py" && python3 "$d/install.py"
+d="$(mktemp -d)" && curl -fL https://github.com/chengyixu/jev-clean/releases/download/v0.3.0/install.py -o "$d/install.py" && python3 "$d/install.py"
 jev-clean
 ```
 
@@ -103,7 +105,7 @@ jev-clean apply "$HOME/.local/state/jev-clean/review.json" \
   --ids ID1,ID2 --confirm TRASH
 ```
 
-`--root` selects an explicitly labeled custom scope, not deletion permissions. With no `--root`, the entire mounted startup-container scope is attempted. The JSON `system_data` section carries native total/residual, source/time, candidate bytes and attribution limits for **both** modes. `exploration.stats` separates observed files, protected files, model decisions and approved candidates. Zero approvals no longer means “nothing to clean”: the result explains incomplete discovery, model retention or safety vetoes. Plans expire in one hour. Every chosen file needs a `remove` decision and a guard pass; applying a plan re-runs model assessment and identity/open-file checks. Invalid or missing model output stops the operation. Reports contain private paths: **do not upload them**.
+`--root` selects an explicitly labeled custom scope, not deletion permissions. With no `--root`, the entire mounted startup-container scope is attempted. The JSON `system_data` section carries native total/residual, source/time, candidate bytes and attribution limits for **both** modes. `exploration.stats` separates observed files, protected files, model decisions and approved candidates. Zero approvals does not mean “nothing to clean.” It can reflect missing evidence, model error/retention or execution limits. Plans expire in one hour. Every chosen file needs a `remove` decision and technical staging readiness; applying a plan collects fresh evidence, re-runs model assessment and checks identity/activity. Invalid or missing model output stops the operation. Reports contain private paths: **do not upload them**.
 
 ## Controls and utilities
 
@@ -146,7 +148,9 @@ We researched the English, multilingual and typed-decision Laya families plus op
 
 ### What the measurements actually say
 
-A local 12-case synthetic-metadata diagnostic produced **7/12 exact expected choices**. None of the nine protected/uncertain fixtures became selectable; **that is the combined model-plus-veto result, not proof that the model is safe**. Model proposals can be wrong. The diagnostic is small, hand-authored and related to prompt-development examples—not an independent accuracy benchmark. Raw outputs, timings, mismatches and limitations are published in [model-evaluation.json](docs/model-evaluation.json).
+Historical v0.1/v0.2 evidence: a local 12-case synthetic-metadata diagnostic produced **7/12 exact expected choices**. None of the nine protected/uncertain fixtures became selectable; **that is the combined model-plus-veto result, not proof that the model is safe**. Model proposals can be wrong. The diagnostic is small, hand-authored and related to prompt-development examples—not an independent accuracy benchmark. Raw outputs, timings, mismatches and limitations are published in [model-evaluation.json](docs/model-evaluation.json).
+
+Version 0.3.0 evidence: the 24-scenario structured-input diagnostic answered **16/24**, with **two false-remove answers**, including a unique private key and required offline model weights. No type veto masks these errors. These small authored examples are not an accuracy benchmark; the results were reviewed and accepted before release. Reproduce with `uv run python scripts/evaluate_model_authority.py --output .private/authority.json`.
 
 We do not claim superior cleanup accuracy to Mole or that local inference understands every file. The distinction is a visible, mandatory model-driven investigation and a strict human-controlled execution boundary.
 
@@ -154,10 +158,10 @@ We do not claim superior cleanup accuracy to Mole or that local inference unders
 
 - No root deletion, recursive tree deletion, app uninstallation or automatic Trash emptying.
 - Databases, VM disks, model weights, source work, credentials and backups are not blanket cleanup targets.
-- Read/model scope is the whole mounted startup disk. Mutation scope remains narrow: only approved stale regular files in disposable cache/rotated-log roots can be staged.
-- Scope, owner, age, symlink/hard-link status, inode/mtime/ctime and open handles are checked again at execution.
-- Unknown open-file status or incomplete file metadata is a veto.
-- Model decisions are mandatory; safety checks only restrict them.
+- Read/model scope is the whole mounted startup disk. No cleanup root, extension or retention classifier overrides the model.
+- Current-user regular-file staging checks canonical paths, owner, device/inode/size/mtime/ctime/link count and refreshed activity.
+- Unknown activity is model evidence; unavailable exact target metadata is an execution limitation, not a keep judgment.
+- Model decisions are mandatory. Only valid remove answers with technical staging readiness can be selected.
 - Same-user concurrent writers remain a race risk. Close relevant apps before cleanup. See [threat model](SECURITY.md).
 
 ## Develop / reproduce

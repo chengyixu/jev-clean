@@ -21,7 +21,9 @@ from jev_clean.domain.models import (
 )
 from jev_clean.domain.policy import apply_policy
 from jev_clean.infrastructure import native
+from jev_clean.infrastructure.evidence import EvidenceCollector
 from jev_clean.infrastructure.model import LayaAdvisor
+from jev_clean.infrastructure.scanner import candidate_from_stat, no_symlink_ancestors
 from jev_clean.infrastructure.trash import read_private, save_private
 
 
@@ -187,7 +189,7 @@ def audit(
         f"{result.stats.get('directory_model_decisions', 0):,} directory classifications"
     )
     if mode == "clean" and handles is None:
-        report.scan.warnings.append("Open-file status unavailable: all removal candidates vetoed")
+        report.scan.warnings.append("Open-file status unavailable: model received unknown activity")
     if cancelled():
         report.scan.complete = False
         report.scan.candidates = [
@@ -197,12 +199,23 @@ def audit(
     return report
 
 
-def reassess_selection(items: list[Candidate]) -> list[Candidate]:
+def reassess_selection(items: list[Candidate], *, home: Path | None = None) -> list[Candidate]:
     advisor = LayaAdvisor()
     advisor.load()
-    assessed = [apply_policy(item, advisor.predict(item)) for item in items]
+    home = home or Path.home()
+    evidence = EvidenceCollector(home)
+    handles = native.open_files()
+    assessed = []
+    for item in items:
+        path = Path(item.path)
+        if not path.is_absolute() or ".." in path.parts or not no_symlink_ancestors(path):
+            raise ValueError("Target path changed or is not canonical; rescan and review")
+        fresh = candidate_from_stat(path, path.lstat(), home, handles, evidence)
+        if fresh.fingerprint != item.fingerprint:
+            raise ValueError("Target identity changed since review")
+        assessed.append(apply_policy(fresh, advisor.predict(fresh)))
     if not all(c.selectable for c in assessed):
-        raise ValueError("Model or safety gate withheld approval on recheck; rescan and review")
+        raise ValueError("Model no longer recommends removal or target cannot be staged; rescan and review")
     return assessed
 
 
