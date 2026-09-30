@@ -24,7 +24,8 @@ def test_cli_demo_uses_neural_boundary_and_labels_metadata(neural_boundary, caps
     report = json.loads(capsys.readouterr().out)
     assert report["demo"] and report["exploration"]["steps"]
     assert report["scan"]["candidates"][0]["decision"]["backend"] == "test neural boundary"
-    assert all(not c["eligible"] for c in report["scan"]["candidates"] if c["kind"] == "database")
+    # This boundary double always chooses remove; extension/kind cannot override it.
+    assert all(c["selectable"] for c in report["scan"]["candidates"])
 
 
 def test_cli_no_model_off_or_removed_modes():
@@ -34,7 +35,7 @@ def test_cli_no_model_off_or_removed_modes():
 
 def test_cli_help_and_completion():
     assert cli("--help").returncode == 0
-    assert cli("--version").stdout.strip() == "0.2.0"
+    assert cli("--version").stdout.strip() == "0.3.0"
     for shell in ["bash", "zsh", "fish"]:
         result = cli("completion", shell)
         assert result.returncode == 0 and "jev-clean" in result.stdout

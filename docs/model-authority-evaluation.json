@@ -1,0 +1,751 @@
+{
+  "model": "aac6fef/laya-mlx",
+  "revision": "20aed815fc6acde75733882e7ec0e3f28aeb9717",
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "load_ms": 1951.3609999557957,
+  "questions": {
+    "disposition": {
+      "type": "choice",
+      "instructions": "Which action is supported by this evidence?",
+      "criteria": {
+        "A": "Remove: the file is no longer needed.",
+        "B": "Investigate: whether the file is needed is unknown.",
+        "C": "Keep: the file is needed."
+      }
+    }
+  },
+  "label_mapping": {
+    "A": "remove",
+    "B": "review",
+    "C": "keep"
+  },
+  "summary": {
+    "development": {
+      "plain": {
+        "correct": 10,
+        "total": 12,
+        "false_remove": 0,
+        "missed_remove": 2
+      },
+      "structured": {
+        "correct": 7,
+        "total": 12,
+        "false_remove": 1,
+        "missed_remove": 2
+      }
+    },
+    "post_selection": {
+      "plain": {
+        "correct": 11,
+        "total": 12,
+        "false_remove": 1,
+        "missed_remove": 0
+      },
+      "structured": {
+        "correct": 9,
+        "total": 12,
+        "false_remove": 1,
+        "missed_remove": 1
+      }
+    }
+  },
+  "rows": [
+    {
+      "split": "development",
+      "name": "unique_database",
+      "expected": "keep",
+      "synthetic_evidence": "This SQLite database is the only copy of the user's business records. The application needs it. It has not been modified for 80 days. No process currently has it open.",
+      "plain_choice": "keep",
+      "raw": {
+        "choice": "C",
+        "probabilities": {
+          "A": 0.0356,
+          "B": 0.0271,
+          "C": 0.9373
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 427.36149998381734,
+        "reused": false
+      },
+      "structured": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.1031,
+          "review": 0.1201,
+          "keep": 0.7768
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 400.13462502975017,
+        "reused": false
+      }
+    },
+    {
+      "split": "development",
+      "name": "required_vm",
+      "expected": "keep",
+      "synthetic_evidence": "This disk image is the installed application's current virtual machine. The application needs it to start. The VM is stopped now. It contains unique local work.",
+      "plain_choice": "keep",
+      "raw": {
+        "choice": "C",
+        "probabilities": {
+          "A": 0.0991,
+          "B": 0.107,
+          "C": 0.7939
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 385.1189579581842,
+        "reused": false
+      },
+      "structured": {
+        "choice": "review",
+        "probabilities": {
+          "remove": 0.1147,
+          "review": 0.5154,
+          "keep": 0.3699
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 422.74937499314547,
+        "reused": false
+      }
+    },
+    {
+      "split": "development",
+      "name": "unknown_vm",
+      "expected": "review",
+      "synthetic_evidence": "There is an old 10 GB disk image in an application support folder. Its owner, references, contents, and regenerability are unknown. No open handle was observed.",
+      "plain_choice": "review",
+      "raw": {
+        "choice": "B",
+        "probabilities": {
+          "A": 0.1567,
+          "B": 0.7713,
+          "C": 0.072
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 353.01495797466487,
+        "reused": false
+      },
+      "structured": {
+        "choice": "review",
+        "probabilities": {
+          "remove": 0.209,
+          "review": 0.4291,
+          "keep": 0.3619
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 378.84137500077486,
+        "reused": false
+      }
+    },
+    {
+      "split": "development",
+      "name": "disposable_cache",
+      "expected": "remove",
+      "synthetic_evidence": "The package manager identifies this object as an unreferenced, reproducible download cache. No environment uses it. It can be fetched again. It contains no user work.",
+      "plain_choice": "keep",
+      "raw": {
+        "choice": "C",
+        "probabilities": {
+          "A": 0.0869,
+          "B": 0.0719,
+          "C": 0.8412
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 392.05254206899554,
+        "reused": false
+      },
+      "structured": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.1443,
+          "review": 0.3633,
+          "keep": 0.4924
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 407.1418329840526,
+        "reused": false
+      }
+    },
+    {
+      "split": "development",
+      "name": "unique_key",
+      "expected": "keep",
+      "synthetic_evidence": "This is the only private key for the user's encrypted backups. It is required to recover the backups. It is 900 days old and not open.",
+      "plain_choice": "keep",
+      "raw": {
+        "choice": "C",
+        "probabilities": {
+          "A": 0.2932,
+          "B": 0.1321,
+          "C": 0.5747
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 312.62408301699907,
+        "reused": false
+      },
+      "structured": {
+        "choice": "remove",
+        "probabilities": {
+          "remove": 0.3779,
+          "review": 0.3312,
+          "keep": 0.2909
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 391.75787498243153,
+        "reused": false
+      }
+    },
+    {
+      "split": "development",
+      "name": "closed_logs",
+      "expected": "remove",
+      "synthetic_evidence": "These are completed diagnostic logs. The user does not need them for any investigation. The application has rotated to a different current log. Removing these old logs does not affect the application.",
+      "plain_choice": "remove",
+      "raw": {
+        "choice": "A",
+        "probabilities": {
+          "A": 0.9483,
+          "B": 0.0197,
+          "C": 0.0321
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 416.071749990806,
+        "reused": false
+      },
+      "structured": {
+        "choice": "remove",
+        "probabilities": {
+          "remove": 0.4152,
+          "review": 0.2549,
+          "keep": 0.3299
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 383.01824999507517,
+        "reused": false
+      }
+    },
+    {
+      "split": "development",
+      "name": "unknown_log",
+      "expected": "review",
+      "synthetic_evidence": "This .xlog file occupies 5 GB. It was modified yesterday. Its format, writer, references, retention needs and contents are unknown.",
+      "plain_choice": "review",
+      "raw": {
+        "choice": "B",
+        "probabilities": {
+          "A": 0.1043,
+          "B": 0.534,
+          "C": 0.3617
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 338.14979100134224,
+        "reused": false
+      },
+      "structured": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.0863,
+          "review": 0.4432,
+          "keep": 0.4705
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 428.45720890909433,
+        "reused": false
+      }
+    },
+    {
+      "split": "development",
+      "name": "active_logs",
+      "expected": "keep",
+      "synthetic_evidence": "This file is the active log for an incident currently being investigated. A process is writing to it. The user needs this evidence.",
+      "plain_choice": "keep",
+      "raw": {
+        "choice": "C",
+        "probabilities": {
+          "A": 0.0715,
+          "B": 0.0675,
+          "C": 0.861
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 400.56450001429766,
+        "reused": false
+      },
+      "structured": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.0481,
+          "review": 0.2027,
+          "keep": 0.7491
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 334.6010410459712,
+        "reused": false
+      }
+    },
+    {
+      "split": "development",
+      "name": "source",
+      "expected": "keep",
+      "synthetic_evidence": "This Python source file contains the user's unpublished project work. It is the only copy. It is needed for an active project, although it was modified 60 days ago.",
+      "plain_choice": "keep",
+      "raw": {
+        "choice": "C",
+        "probabilities": {
+          "A": 0.0604,
+          "B": 0.0492,
+          "C": 0.8904
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 297.9392090346664,
+        "reused": false
+      },
+      "structured": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.0394,
+          "review": 0.1058,
+          "keep": 0.8548
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 373.91399999614805,
+        "reused": false
+      }
+    },
+    {
+      "split": "development",
+      "name": "new_generated_db",
+      "expected": "remove",
+      "synthetic_evidence": "This SQLite file was created today by a completed disposable test run. The test framework identifies it as throwaway generated data. There is no unique work, no active reference and the test can regenerate it.",
+      "plain_choice": "keep",
+      "raw": {
+        "choice": "C",
+        "probabilities": {
+          "A": 0.1982,
+          "B": 0.1639,
+          "C": 0.638
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 309.9485000129789,
+        "reused": false
+      },
+      "structured": {
+        "choice": "review",
+        "probabilities": {
+          "remove": 0.2039,
+          "review": 0.6041,
+          "keep": 0.192
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 330.11937502305955,
+        "reused": false
+      }
+    },
+    {
+      "split": "development",
+      "name": "old_installer_unknown",
+      "expected": "review",
+      "synthetic_evidence": "An old installer archive was found. It is not known whether it is the only copy or whether the user needs it. No application ownership is established.",
+      "plain_choice": "review",
+      "raw": {
+        "choice": "B",
+        "probabilities": {
+          "A": 0.036,
+          "B": 0.8872,
+          "C": 0.0769
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 364.7006250685081,
+        "reused": false
+      },
+      "structured": {
+        "choice": "review",
+        "probabilities": {
+          "remove": 0.0387,
+          "review": 0.8699,
+          "keep": 0.0914
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 849.2969170911238,
+        "reused": false
+      }
+    },
+    {
+      "split": "development",
+      "name": "old_file_unknown",
+      "expected": "review",
+      "synthetic_evidence": "An old, unopened regular file occupies 2 GB. Its purpose, references and unique content are unknown.",
+      "plain_choice": "review",
+      "raw": {
+        "choice": "B",
+        "probabilities": {
+          "A": 0.1436,
+          "B": 0.6489,
+          "C": 0.2075
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 398.7154579954222,
+        "reused": false
+      },
+      "structured": {
+        "choice": "review",
+        "probabilities": {
+          "remove": 0.1569,
+          "review": 0.4854,
+          "keep": 0.3577
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 374.9114170204848,
+        "reused": false
+      }
+    },
+    {
+      "split": "post_selection",
+      "name": "offline_model",
+      "expected": "keep",
+      "synthetic_evidence": "The user depends on these model weights for offline work. The download source no longer exists. The weights are not currently loaded into a process.",
+      "plain_choice": "remove",
+      "raw": {
+        "choice": "A",
+        "probabilities": {
+          "A": 0.8254,
+          "B": 0.0627,
+          "C": 0.112
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 319.92862501647323,
+        "reused": false
+      },
+      "structured": {
+        "choice": "remove",
+        "probabilities": {
+          "remove": 0.5249,
+          "review": 0.1705,
+          "keep": 0.3046
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 439.8457499919459,
+        "reused": false
+      }
+    },
+    {
+      "split": "post_selection",
+      "name": "backup_required",
+      "expected": "keep",
+      "synthetic_evidence": "This is the last restorable backup of a lost project. The original project was deleted accidentally. Recovery depends on this backup.",
+      "plain_choice": "keep",
+      "raw": {
+        "choice": "C",
+        "probabilities": {
+          "A": 0.0576,
+          "B": 0.0506,
+          "C": 0.8918
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 320.069249952212,
+        "reused": false
+      },
+      "structured": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.1707,
+          "review": 0.3935,
+          "keep": 0.4359
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 290.8604579279199,
+        "reused": false
+      }
+    },
+    {
+      "split": "post_selection",
+      "name": "unused_installer",
+      "expected": "remove",
+      "synthetic_evidence": "The user explicitly confirms this installer is no longer wanted. Installation completed, the installed app runs independently, and the user has no need for the installer.",
+      "plain_choice": "remove",
+      "raw": {
+        "choice": "A",
+        "probabilities": {
+          "A": 0.8811,
+          "B": 0.0406,
+          "C": 0.0784
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 335.8954170253128,
+        "reused": false
+      },
+      "structured": {
+        "choice": "remove",
+        "probabilities": {
+          "remove": 0.5114,
+          "review": 0.3577,
+          "keep": 0.1309
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 302.9768340056762,
+        "reused": false
+      }
+    },
+    {
+      "split": "post_selection",
+      "name": "unidentified_archive",
+      "expected": "review",
+      "synthetic_evidence": "A large .zip file is in a folder named cache. Its contents, purpose and owner needs have not been checked.",
+      "plain_choice": "review",
+      "raw": {
+        "choice": "B",
+        "probabilities": {
+          "A": 0.177,
+          "B": 0.4808,
+          "C": 0.3422
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 379.6223329845816,
+        "reused": false
+      },
+      "structured": {
+        "choice": "review",
+        "probabilities": {
+          "remove": 0.1379,
+          "review": 0.5736,
+          "keep": 0.2885
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 361.2545420182869,
+        "reused": false
+      }
+    },
+    {
+      "split": "post_selection",
+      "name": "active_build",
+      "expected": "keep",
+      "synthetic_evidence": "The compiler is currently using this generated object file for an ongoing build. Removing it would interrupt the current build.",
+      "plain_choice": "keep",
+      "raw": {
+        "choice": "C",
+        "probabilities": {
+          "A": 0.201,
+          "B": 0.0508,
+          "C": 0.7482
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 308.05020907428116,
+        "reused": false
+      },
+      "structured": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.1218,
+          "review": 0.2817,
+          "keep": 0.5965
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 414.3425840884447,
+        "reused": false
+      }
+    },
+    {
+      "split": "post_selection",
+      "name": "completed_render",
+      "expected": "remove",
+      "synthetic_evidence": "A completed rendering job left this temporary intermediate. The final output has been verified and saved elsewhere. The intermediate has no remaining use and the owner does not want it.",
+      "plain_choice": "remove",
+      "raw": {
+        "choice": "A",
+        "probabilities": {
+          "A": 0.9278,
+          "B": 0.0236,
+          "C": 0.0486
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 333.4106659749523,
+        "reused": false
+      },
+      "structured": {
+        "choice": "review",
+        "probabilities": {
+          "remove": 0.3939,
+          "review": 0.4077,
+          "keep": 0.1984
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 369.95916708838195,
+        "reused": false
+      }
+    },
+    {
+      "split": "post_selection",
+      "name": "version_not_proven_old",
+      "expected": "review",
+      "synthetic_evidence": "Two application bundles have different directory names. Their installed versions and runtime references have not been measured. It is not known which is current.",
+      "plain_choice": "review",
+      "raw": {
+        "choice": "B",
+        "probabilities": {
+          "A": 0.0756,
+          "B": 0.5511,
+          "C": 0.3733
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 353.0452080303803,
+        "reused": false
+      },
+      "structured": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.1346,
+          "review": 0.4109,
+          "keep": 0.4545
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 454.9434999935329,
+        "reused": false
+      }
+    },
+    {
+      "split": "post_selection",
+      "name": "database_named_cache",
+      "expected": "keep",
+      "synthetic_evidence": "The directory is named cache, but the application's documented behavior stores the user's only account ledger here. The ledger must be retained.",
+      "plain_choice": "keep",
+      "raw": {
+        "choice": "C",
+        "probabilities": {
+          "A": 0.0623,
+          "B": 0.0348,
+          "C": 0.903
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 320.7978749414906,
+        "reused": false
+      },
+      "structured": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.1099,
+          "review": 0.3068,
+          "keep": 0.5833
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 392.8440420422703,
+        "reused": false
+      }
+    },
+    {
+      "split": "post_selection",
+      "name": "unknown_hardlink",
+      "expected": "review",
+      "synthetic_evidence": "This file has two hard links. Nothing is known about the other link, ownership of the data, references or the user's need for this path.",
+      "plain_choice": "review",
+      "raw": {
+        "choice": "B",
+        "probabilities": {
+          "A": 0.0574,
+          "B": 0.6631,
+          "C": 0.2795
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 397.0636249287054,
+        "reused": false
+      },
+      "structured": {
+        "choice": "review",
+        "probabilities": {
+          "remove": 0.1143,
+          "review": 0.6935,
+          "keep": 0.1922
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 343.1005000602454,
+        "reused": false
+      }
+    },
+    {
+      "split": "post_selection",
+      "name": "obsolete_export",
+      "expected": "remove",
+      "synthetic_evidence": "This export is a redundant generated copy. The owner explicitly requests its removal and the original plus verified backup are retained. No process references the export.",
+      "plain_choice": "remove",
+      "raw": {
+        "choice": "A",
+        "probabilities": {
+          "A": 0.9737,
+          "B": 0.0069,
+          "C": 0.0194
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 324.5793329551816,
+        "reused": false
+      },
+      "structured": {
+        "choice": "remove",
+        "probabilities": {
+          "remove": 0.9022,
+          "review": 0.0562,
+          "keep": 0.0416
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 566.0408749245107,
+        "reused": false
+      }
+    },
+    {
+      "split": "post_selection",
+      "name": "retained_incident_log",
+      "expected": "keep",
+      "synthetic_evidence": "This old diagnostic log is evidence needed for an unresolved support case. The user must keep it despite its age and size.",
+      "plain_choice": "keep",
+      "raw": {
+        "choice": "C",
+        "probabilities": {
+          "A": 0.03,
+          "B": 0.0273,
+          "C": 0.9427
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 384.1078330297023,
+        "reused": false
+      },
+      "structured": {
+        "choice": "keep",
+        "probabilities": {
+          "remove": 0.0348,
+          "review": 0.0712,
+          "keep": 0.894
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 384.73362498916686,
+        "reused": false
+      }
+    },
+    {
+      "split": "post_selection",
+      "name": "unknown_owner",
+      "expected": "review",
+      "synthetic_evidence": "The application identifier matches a directory name. This does not establish that its files are unused. The current application references and regenerability are unknown.",
+      "plain_choice": "review",
+      "raw": {
+        "choice": "B",
+        "probabilities": {
+          "A": 0.1879,
+          "B": 0.6069,
+          "C": 0.2052
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 272.93295809067786,
+        "reused": false
+      },
+      "structured": {
+        "choice": "review",
+        "probabilities": {
+          "remove": 0.1327,
+          "review": 0.5599,
+          "keep": 0.3074
+        },
+        "backend": "aac6fef/laya-mlx",
+        "elapsed_ms": 378.8060829974711,
+        "reused": false
+      }
+    }
+  ],
+  "limitations": "24 synthetic scenarios; not real filesystem ground truth or deletion-safety calibration. Development cases influenced prompt selection. Production evidence collection cannot yet establish all these facts. Model errors are not hidden by a policy veto."
+}

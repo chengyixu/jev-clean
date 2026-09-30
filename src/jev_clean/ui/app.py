@@ -1,4 +1,4 @@
-"""Minimal sequential terminal: choose → logs → result. Model/safety engine unchanged."""
+"""Minimal sequential terminal: choose → logs → model judgments → human selection."""
 
 from __future__ import annotations
 
@@ -27,7 +27,8 @@ Enter      Delete / open directory    Esc back
 E export   H history   U update
 Q quit
 
-Deletion moves files to Trash. Model approval and safety checks still apply."""
+Deletion moves selected model-remove files to Trash after target verification.
+? = model requests investigation; ! = executor cannot stage the proposed target."""
 
 
 class JevCleanApp(App):
@@ -234,11 +235,20 @@ class JevCleanApp(App):
             table.add_column("Files", width=max(15, self.size.width - 25))
             table.add_column("Size", width=10)
             approved = [c for c in report.scan.candidates if c.selectable]
-            for c in approved:
+            visible = [
+                c for c in report.scan.candidates if c.decision and c.decision.choice in {"review", "remove"}
+            ]
+            for c in visible:
                 if query not in c.path.casefold():
                     continue
                 table.add_row(
-                    Text("[x]" if c.id in self.selected else "[ ]"),
+                    Text(
+                        ("[x]" if c.id in self.selected else "[ ]")
+                        if c.selectable
+                        else "?"
+                        if c.decision and c.decision.choice == "review"
+                        else "!"
+                    ),
                     Text(c.path.replace(str(self.home), "~", 1)),
                     human_bytes(c.allocated_bytes),
                     key=c.id,
@@ -250,14 +260,18 @@ class JevCleanApp(App):
             )
             if approved:
                 summary = f"{len(self.selected)}/{len(approved)} selected · {human_bytes(size)}"
-            elif stats.get("open_file_check_available") is False:
-                summary = "No cleanup authorized: open-file check unavailable"
             elif assessed:
                 summary = f"0 approved · {assessed} assessed by model"
             elif report.scan.files_seen:
-                summary = f"0 approved · {report.scan.files_seen} observed · protected by safety checks"
+                summary = f"0 recommended · {report.scan.files_seen} observed"
             else:
                 summary = "No files assessed"
+            review_count = sum(c.decision is not None and c.decision.choice == "review" for c in visible)
+            unavailable_count = sum(c.recommended and not c.eligible for c in visible)
+            if review_count:
+                summary += f" · ? {review_count} investigate"
+            if unavailable_count:
+                summary += f" · ! {unavailable_count} cannot stage"
             if report.categories:
                 recorded = report.categories.timestamp.split(" ")[1].split(".")[0]
                 label = "demo" if report.demo else "macOS log " + recorded
@@ -275,8 +289,8 @@ class JevCleanApp(App):
                     + summary
                 )
                 self.query_one("#summary").styles.max_height = 5
-            elif stats.get("model_assessed") and stats.get("protected_files"):
-                summary += f"\n{stats['model_assessed']} model decisions · {stats['protected_files']} protected files"
+            elif stats.get("model_assessed") and stats.get("execution_unavailable"):
+                summary += f"\n{stats['model_assessed']} model decisions · {stats['execution_unavailable']} cannot stage"
         else:
             table.add_column("Location", width=max(12, self.size.width - 44))
             table.add_column("Usage", width=14)
@@ -387,7 +401,7 @@ class JevCleanApp(App):
     @work(thread=True)
     def move_worker(self, items: list[Candidate]) -> None:
         try:
-            assessed = reassess_selection(items)
+            assessed = reassess_selection(items, home=self.home)
             result = TrashStore(self.home).move(assessed, open_paths=native.open_files())
             text = f"{result.moved} files moved to Trash."
             if result.failed:

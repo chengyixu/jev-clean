@@ -5,7 +5,7 @@ description: Use jev-clean's mandatory local model to investigate macOS System D
 
 # jev-clean · Nexora
 
-The model drives discovery, not just labels. Use the installed CLI; it is the same engine as the TUI.
+Use the installed CLI; it is the same engine as the TUI. Check `jev-clean --version` before assuming 0.3.0 behavior. ADR 0005 records known real-model errors and the owner's alpha-release authorization; never present that authorization as validated cleanup accuracy. The actual backend is local Laya-MLX, not official TypeSafe Jev.
 
 ## Setup and investigation
 
@@ -17,7 +17,7 @@ jev-clean clean --json --output "$HOME/.local/state/jev-clean/review.json"
 
 The normal installer provisions and verifies the model automatically. No separate setup command. Direct-package installs also provision missing weights on first operation (about 0.85 GB); downloading or inference failure stops the operation. Once cached, inference is local. There is no `--model off`, rules-only mode, Analyze or Optimize command.
 
-Clean is the flagship **mysterious macOS System Data cleanup** flow: native accounting → model-directed contributor investigation → model file decisions → user review → cleanup receipt. Its `system_data` context is not exclusive to Status. Status provides the read-only deeper breakdown. The TUI is intentionally minimal: Clean → sudo or not → agent logs → files → Yes/No deletion. Status → logs → measured usage bars. No persistent dashboard or investigation toggle; detailed accounting remains in JSON. Without `--root`, both modes attempt the whole mounted startup APFS scope, with no default file/directory/duration cap. Every observed regular file, including protected files, receives a model decision before deletion vetoes. `--root /path` explicitly selects a custom scope; never call it whole-disk coverage. It does not authorize deletion. Permission/unmounted/external/symlink/scanner-state gaps remain explicit.
+Clean is the flagship **mysterious macOS System Data cleanup** flow: native accounting → model-directed contributor investigation → model file decisions → user review → cleanup receipt. Its `system_data` context is not exclusive to Status. Status provides the read-only deeper breakdown. The TUI is intentionally minimal: Clean → sudo or not → agent logs → files → Yes/No deletion. Status → logs → measured usage bars. No persistent dashboard or investigation toggle; detailed accounting remains in JSON. Without `--root`, both modes attempt the whole mounted startup APFS scope, with no default file/directory/duration cap. Every observed regular file receives a model judgment. In 0.3.0, classification is model-only; execution readiness is separate. `--root /path` explicitly selects a custom scope; never call it whole-disk coverage. It does not authorize deletion. Permission/unmounted/external/symlink/scanner-state gaps remain explicit.
 
 For deep native diagnostics, the human runs `sudo -v` in their terminal first, then `jev-clean status --deep --json`. Never collect or pipe a password, run the whole app as root, or send credentials to a model. Sudo does not grant Full Disk Access/TCC.
 
@@ -29,7 +29,7 @@ Read `categories.timestamp`, `used_bytes`, `system_bytes`, `named`, `other_bytes
 
 ## Human authority
 
-Show the user each proposed path, size, age, actual model choice and guard reason. Only `remove` + guard pass is selectable. Do not bypass model `keep`/`review` decisions. Protected databases/models/VMs/backups/credentials/source work must not be erased just to shrink the chart.
+Show each proposed path, size, measured facts, actual model choice and separate execution issue. Only a valid model `remove` plus technical staging readiness is selectable. `review` is visible but not selectable; do not pretend its dependency investigation has been completed. Do not infer disposal from a directory, extension or fixed age. Never bypass model keep/review or choose targets yourself just to shrink a chart. Human selection and confirmation remain mandatory. Known model failures remain disclosed; do not conceal them with filesystem-type rules.
 
 After the human approves specific IDs, and only then:
 

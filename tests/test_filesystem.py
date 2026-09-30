@@ -33,7 +33,7 @@ def scan(home):
     return report
 
 
-def test_scan_never_follows_symlinks_or_treats_databases_as_cache(home, tmp_path):
+def test_scan_never_follows_symlinks_but_leaves_database_judgment_to_model(home, tmp_path):
     file = stale_file(home)
     stale_file(home, "history.sqlite")
     secret = tmp_path / "password.txt"
@@ -43,12 +43,14 @@ def test_scan_never_follows_symlinks_or_treats_databases_as_cache(home, tmp_path
     report = scan(home)
     assert any(c.path == str(file) for c in report.candidates)
     assert not any(c.path.endswith("password.txt") for c in report.candidates)
-    assert all(not c.eligible for c in report.candidates if c.path.endswith(("linked", "history.sqlite")))
+    assert all(not c.eligible for c in report.candidates if c.path.endswith("linked"))
+    assert next(c for c in report.candidates if c.path.endswith("history.sqlite")).selectable
 
 
-def test_scan_unknown_open_files_is_never_deletable(home):
+def test_scan_unknown_activity_is_evidence_and_does_not_fabricate_approval(home):
     stale_file(home)
-    assert all(not c.eligible for c in scan_candidates(home, open_paths=None).candidates)
+    items = scan_candidates(home, open_paths=None).candidates
+    assert all(c.open_file is None and not c.selectable for c in items)
 
 
 def test_review_move_restore_and_partial_selection(home):
@@ -97,11 +99,11 @@ def test_ancestor_symlink_swap_is_refused(home, tmp_path):
     assert result.moved == 0 and (moved / file.name).exists()
 
 
-def test_hardlinked_files_are_protected(home):
+def test_hardlink_fact_does_not_override_model(home):
     file = stale_file(home)
     os.link(file, file.parent / "hardlink")
     report = scan(home)
-    assert all(not c.eligible for c in report.candidates)
+    assert all(c.fingerprint.nlink == 2 and c.selectable for c in report.candidates)
 
 
 def test_restore_will_not_overwrite(home):

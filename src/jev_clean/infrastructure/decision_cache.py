@@ -15,7 +15,14 @@ from dataclasses import asdict
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-from jev_clean.infrastructure.model import MODEL_ID, MODEL_REVISION, QUESTIONS, parse_prediction
+from jev_clean.infrastructure.model import (
+    DISPOSITION_LABELS,
+    INPUT_CONTRACT,
+    MODEL_ID,
+    MODEL_REVISION,
+    QUESTIONS,
+    parse_prediction,
+)
 from jev_clean.infrastructure.scanner import no_symlink_ancestors
 from jev_clean.infrastructure.trash import secure_dir
 
@@ -75,6 +82,8 @@ class DecisionCache(AbstractContextManager):
             [
                 MODEL_ID,
                 MODEL_REVISION,
+                INPUT_CONTRACT,
+                DISPOSITION_LABELS,
                 runtime,
                 type(advisor).__module__,
                 type(advisor).__qualname__,

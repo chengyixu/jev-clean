@@ -18,7 +18,7 @@ class Model:
         return Decision("data", {"data": 1.0}, "test-model", 1.0)
 
 
-def test_all_regular_files_reach_model_before_guard_including_protected(tmp_path):
+def test_all_regular_files_receive_unfiltered_model_judgments(tmp_path):
     from jev_clean.application.whole_disk import investigate_disk
 
     home = tmp_path / "home"
@@ -33,8 +33,9 @@ def test_all_regular_files_reach_model_before_guard_including_protected(tmp_path
     )
     assert report.stats["observed_regular_files"] == 4
     assert report.stats["model_assessed_files"] == 4
-    assert report.stats["model_assessed_protected_files"] == 4
-    assert not report.candidates
+    assert report.stats["execution_unavailable"] == 0
+    assert len(report.candidates) == 4
+    assert all(c.selectable for c in report.candidates)
     assert report.stats["walk_finished"]
 
 

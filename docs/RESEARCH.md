@@ -1,6 +1,6 @@
 # Research notebook — macOS System Data and typed decisions
 
-Research date: 2026-09-27. This is a source-based engineering decision, not a clinical or statistical deletion-safety certification. No private machine paths, filenames, or audit records are published here.
+Historical release research, 2026-09-27. The release design below used classification vetoes; that decision is superseded in 0.3.0 by [ADR 0005](adr/0005-model-owned-judgment.md). Its new real-model evaluation contains wrong-remove answers, disclosed before the owner authorized the alpha release. Do not present this historical design or its small guarded evaluation as verification of model-only cleanup. No private machine paths, filenames, or audit records are published here.
 
 ## Decision
 

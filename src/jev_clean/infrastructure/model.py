@@ -9,11 +9,13 @@ import platform
 import sys
 import threading
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 from jev_clean.domain.models import Candidate, Decision, DiskNode
 
+INPUT_CONTRACT = "model-owned-evidence-v1"
 MODEL_ID = "aac6fef/laya-mlx"
 MODEL_REVISION = "20aed815fc6acde75733882e7ec0e3f28aeb9717"
 MODEL_FILES = ["*.json", "*.safetensors", "encoder/*.json", "tokenizer/*.json", "LICENSE", "NOTICE"]
@@ -32,14 +34,15 @@ class CheckpointMissing(RuntimeError):
     """A cold installation needs automatic provisioning, not a model-free fallback."""
 
 
+DISPOSITION_LABELS = {"A": "remove", "B": "review", "C": "keep"}
 QUESTIONS: dict[str, Any] = {
     "disposition": {
         "type": "choice",
-        "instructions": "Classify this file for disk cleanup.",
+        "instructions": "Which action is supported by this evidence?",
         "criteria": {
-            "remove": "Old disposable cache or diagnostic logs.",
-            "review": "Unknown or uncertain data.",
-            "keep": "Important or active data that should be preserved.",
+            "A": "Remove: the file is no longer needed.",
+            "B": "Investigate: whether the file is needed is unknown.",
+            "C": "Keep: the file is needed.",
         },
     }
 }
@@ -71,30 +74,27 @@ def parse_prediction(raw: dict[str, Any], elapsed_ms: float, backend: str) -> De
 
 
 def state_for(item: Candidate) -> str:
-    # Candidate filenames and contents do not enter removal decisions.
-    location = {
-        "user-cache": "application cache root",
-        "package-cache": "downloaded package cache root",
-        "rotated-log": "rotated diagnostic logs root",
-    }.get(item.kind, "protected or unknown storage")
-    if item.context_hint and item.kind not in ("user-cache", "package-cache", "rotated-log"):
-        location = item.context_hint + " location"
-    activity = (
-        "A process is using this file."
-        if item.open_file is True
-        else "No program was observed using this file."
-        if item.open_file is False
-        else "Whether a process uses this file is unknown."
+    # Metadata only. No contents, basename, absolute home, inferred disposability,
+    # or imperative such as 'preserve hardlinks' is smuggled into the state.
+    facts = item.evidence or {
+        "location": item.context_hint or item.kind,
+        "application": "unknown",
+        "references": "unknown",
+        "regenerability": "unknown",
+    }
+    context = "; ".join(
+        f"{key}={json.dumps(value, ensure_ascii=True) if key in {'location', 'extension'} else value}"
+        for key, value in sorted(facts.items())
     )
-    structure = (
-        "It is a regular file with one link."
-        if item.regular and not item.symlink and item.fingerprint.nlink == 1
-        else "It is a symlink, special file, or hardlinked file: preserve it."
+    activity = (
+        "observed open" if item.open_file else "not observed open" if item.open_file is False else "unknown"
     )
     return (
-        f"The file is in an {location}. It occupies {item.allocated_bytes / 10**6:.2f} MB. "
-        f"Last modified {item.age_seconds / 86400:.0f} days ago. {activity} {structure} "
-        f"Metadata measurement is {'complete' if item.scan_complete else 'incomplete'}."
+        f"Observed facts (directory labels do not prove purpose): {context}. "
+        f"Allocated MB={item.allocated_bytes / 10**6:.2f}; modified days ago={item.age_seconds / 86400:.0f}; "
+        f"activity={activity}; regular={item.regular}; symlink={item.symlink}; "
+        f"link count={item.fingerprint.nlink}; exact metadata={item.scan_complete}. "
+        "Age and absence of an open handle do not establish that data is unneeded."
     )
 
 
@@ -200,14 +200,28 @@ class LayaAdvisor:
             if type(self)._shared is None:
                 self.load()
             started = time.perf_counter()
-            raw = type(self)._shared.predict(
-                state, {key: {"type": "choice", "instructions": instructions, "criteria": criteria}}
-            )
+            backend = type(self)._shared
+            questions = {key: {"type": "choice", "instructions": instructions, "criteria": criteria}}
+            # Use the pinned runtime's own prefix construction, not a copied tokenizer budget.
+            prefix, _ = backend.prepare("", questions)
+            state_tokens = backend.tok(state.replace(backend.tok.mask_token, " "), add_special_tokens=False)[
+                "input_ids"
+            ]
+            if len(prefix[0]["ids"]) + len(state_tokens) > backend.cfg.get("max_len", 512):
+                raise ValueError("Evidence exceeds model context; refusing silently truncated judgment")
+            raw = backend.predict(state, questions)
             return parse_choice(raw, key, set(criteria), (time.perf_counter() - started) * 1000, MODEL_ID)
 
     def predict(self, item: Candidate) -> Decision:
         question = QUESTIONS["disposition"]
-        return self.decide(state_for(item), "disposition", question["instructions"], question["criteria"])
+        result = self.decide(state_for(item), "disposition", question["instructions"], question["criteria"])
+        # Neutral keys reduce observed label bias; this is a bijective wire translation,
+        # never a threshold, veto, or second classifier.
+        return replace(
+            result,
+            choice=DISPOSITION_LABELS[result.choice],
+            probabilities={DISPOSITION_LABELS[k]: v for k, v in result.probabilities.items()},
+        )
 
     def choose_directory(self, nodes: list[DiskNode], mode: str) -> Decision:
         if not nodes or len(nodes) > 6:
@@ -221,7 +235,7 @@ class LayaAdvisor:
             size = "unmeasured" if node.allocated_bytes is None else f"{node.allocated_bytes / 10**6:.0f} MB"
             criteria[f"n{i}"] = f"{label}, {size}"
         goal = (
-            "find disposable cache and log files for owner review"
+            "identify unneeded files and investigate uncertain resources for owner review"
             if mode == "clean"
             else "explain disk usage by measuring substantial directories"
         )
@@ -238,7 +252,7 @@ class LayaAdvisor:
         parts = Path(node.path).parts
         label = "/".join(parts[-3:])[:180]
         goal = (
-            "clean mysterious macOS System Data by investigating potential disposable caches, logs and support data for owner review"
+            "investigate potentially unneeded files contributing to macOS System Data for owner review"
             if mode == "clean"
             else "understand where disk space is used"
         )

@@ -13,8 +13,8 @@ from dataclasses import asdict
 from pathlib import Path
 
 from jev_clean.domain.models import Candidate, Fingerprint, MoveResult
-from jev_clean.domain.policy import kind_for_path
-from jev_clean.infrastructure.scanner import candidate_from_stat, fingerprint, no_symlink_ancestors
+from jev_clean.domain.policy import apply_policy
+from jev_clean.infrastructure.scanner import fingerprint, no_symlink_ancestors
 
 
 @contextmanager
@@ -102,26 +102,23 @@ class TrashStore:
                 for item in selected:
                     try:
                         source = Path(item.path)
-                        if not item.selectable:
-                            raise ValueError("Mandatory model approval or safety authorization absent")
+                        if not apply_policy(item, item.decision).selectable:
+                            raise ValueError("Mandatory model approval or execution readiness absent")
                         if item.path in seen:
                             raise ValueError("Duplicate selection")
                         seen.add(item.path)
-                        if (
-                            not source.is_absolute()
-                            or ".." in source.parts
-                            or not kind_for_path(source, self.home)
-                        ):
-                            raise ValueError("Outside disposable scope")
+                        self.validate_source(source)
                         if not item.scan_complete:
                             raise ValueError("Original scan incomplete")
                         with directory_fd(source.parent) as parent:
                             current = os.stat(source.name, dir_fd=parent, follow_symlinks=False)
                             if fingerprint(current) != item.fingerprint:
                                 raise ValueError("File identity changed since review")
-                            checked = candidate_from_stat(source, current, self.home, open_paths)
-                            if not checked.eligible:
-                                raise ValueError(checked.reason)
+                            if not stat.S_ISREG(current.st_mode) or current.st_uid != os.getuid():
+                                raise ValueError("Executor requires a current-user regular file")
+                            active = None if open_paths is None else str(source) in open_paths
+                            if active != item.open_file:
+                                raise ValueError("Activity evidence changed since model review; reassess")
                             token = uuid.uuid4().hex
                             entry = {
                                 "source": str(source),
@@ -149,6 +146,13 @@ class TrashStore:
                         result.failed.append(f"{item.path}: {error}")
             return result
 
+    def validate_source(self, source: Path) -> None:
+        if not source.is_absolute() or ".." in source.parts:
+            raise ValueError("Expected canonical absolute target")
+        # The mover cannot relocate its own transaction state or a staged item.
+        if source.is_relative_to(self.state) or source.is_relative_to(self.home / ".Trash"):
+            raise ValueError("Target conflicts with the executor's journal/Trash")
+
     def history(self) -> list[dict]:
         if not self.state.exists():
             return []
@@ -172,10 +176,9 @@ class TrashStore:
                         continue
                     try:
                         path = Path(entry["source"])
-                        if not kind_for_path(path, self.home) or not re.fullmatch(
-                            "[a-f0-9]{32}", entry["file"]
-                        ):
-                            raise ValueError("Invalid journal scope")
+                        self.validate_source(path)
+                        if not re.fullmatch("[a-f0-9]{32}", entry["file"]):
+                            raise ValueError("Invalid journal entry")
                         with directory_fd(path.parent) as parent:
                             try:
                                 os.stat(path.name, dir_fd=parent, follow_symlinks=False)
@@ -196,7 +199,7 @@ class TrashStore:
                                 old.nlink,
                             ):
                                 raise ValueError("Staged file changed")
-                            if not stat.S_ISREG(st.st_mode) or st.st_nlink != 1 or st.st_uid != os.getuid():
+                            if not stat.S_ISREG(st.st_mode) or st.st_uid != os.getuid():
                                 raise ValueError("Unsafe staged file")
                             # Link is atomic and refuses an existing destination; unlike rename it cannot overwrite.
                             os.link(

@@ -23,25 +23,22 @@ def candidate(**changes):
     return replace(item, **changes)
 
 
-def test_model_cannot_override_unsafe_files():
+def test_model_judgment_does_not_claim_unsupported_execution():
     for changes in (
         {"regular": False},
         {"symlink": True},
         {"scan_complete": False},
-        {"open_file": True},
-        {"open_file": None},
-        {"age_seconds": 2},
-        {"kind": "database"},
-        {"fingerprint": Fingerprint(1, 2, 4096, 1, 1, 501, 2)},
+        {"execution_issue": "Current-user staging cannot act for another owner"},
     ):
         result = apply_policy(
             candidate(**changes), Decision("remove", {"remove": 0.99, "keep": 0.01}, "laya", 1)
         )
         assert not result.eligible
-        assert result.reason
+        assert result.recommended and result.decision.choice == "remove"
+        assert result.execution_issue
 
 
-def test_low_confidence_or_keep_predictions_never_recommend():
+def test_keep_or_invalid_distribution_never_recommends():
     for decision in [
         Decision("keep", {"keep": 1.0}, "laya", 1),
         Decision("remove", {"remove": 0.4, "keep": 0.6}, "laya", 1),
