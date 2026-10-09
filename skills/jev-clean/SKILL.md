@@ -5,6 +5,8 @@ description: Use jev-clean's mandatory local model to investigate macOS System D
 
 # jev-clean · Nexora
 
+0.4.0.dev2 correction: a model remove is not permission. Require independently observed valid CACHEDIR.TAG disposal declarations with live scope/header/identity rechecks. No untagged personal/unknown whole-folder proposals; never create tags to force a cleanup. Raw model errors remain in JSON. Current clean coverage is narrower and not guaranteed safe; see ADR 0007. Historical model-only language below is not the dev2 permission contract.
+
 0.4.0.dev0 uses resource-level judgments and native concurrent measurement. Confirm the installed version. `model_assessed_resources` does not count descendant files. Directory proposals include the ENTIRE subtree; exact metadata manifests are sealed before human confirmation/export, then verified at apply. Native timeouts are coverage gaps. Do not mistake proposed allocated bytes for safe/exclusive reclaim. See ADR 0006; the per-file language below describes published 0.3.0 only.
 
 Use the installed CLI; it is the same engine as the TUI. Check `jev-clean --version` before assuming 0.3.0 behavior. ADR 0005 records known real-model errors and the owner's alpha-release authorization; never present that authorization as validated cleanup accuracy. The actual backend is local Laya-MLX, not official TypeSafe Jev.

@@ -12,6 +12,7 @@ from typing import Callable
 
 from jev_clean.domain.models import Candidate, Fingerprint, ScanReport
 from jev_clean.domain.policy import apply_policy
+from jev_clean.infrastructure.disposal import observe_disposal
 from jev_clean.infrastructure.evidence import EvidenceCollector
 
 
@@ -35,6 +36,12 @@ def candidate_from_stat(
     stamp = fingerprint(st)
     identity = hashlib.sha256(f"{path}:{stamp}".encode()).hexdigest()[:20]
     facts = (evidence or EvidenceCollector(home)).collect(path)
+    disposal = observe_disposal(path, home, directory=stat.S_ISDIR(st.st_mode))
+    facts["disposal_basis"] = (
+        "observed valid CACHEDIR.TAG cache declaration"
+        if disposal
+        else "none observed; disposability unverified"
+    )
     item = Candidate(
         identity,
         str(path),
@@ -47,6 +54,7 @@ def candidate_from_stat(
         True,
         None if open_paths is None else str(path) in open_paths,
         evidence=facts,
+        disposal=disposal,
         execution_issue="Current-user staging cannot act for another owner"
         if st.st_uid != os.getuid()
         else "",

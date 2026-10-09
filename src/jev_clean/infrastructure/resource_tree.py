@@ -7,26 +7,10 @@ import hashlib
 import os
 import platform
 import stat
-from contextlib import contextmanager
 from pathlib import Path
 
+from jev_clean.infrastructure.paths import directory_fd as directory_fd
 from jev_clean.infrastructure.scanner import fingerprint
-
-
-@contextmanager
-def directory_fd(path: Path):
-    """Open every component without following symlinks, not just the final one."""
-    if not path.is_absolute() or ".." in path.parts:
-        raise ValueError("Expected canonical absolute path")
-    fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY)
-    try:
-        for part in path.parts[1:]:
-            nxt = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
-            os.close(fd)
-            fd = nxt
-        yield fd
-    finally:
-        os.close(fd)
 
 
 def tree_manifest(path: Path) -> tuple[str, int, int]:

@@ -3,6 +3,7 @@
 from dataclasses import replace
 
 import pytest
+from cache_fixtures import declare_cache
 from test_contracts import candidate
 
 from jev_clean.domain.models import Decision
@@ -48,12 +49,12 @@ def test_execution_inability_does_not_rewrite_model_recommendation():
     assert result.decision.choice == "remove"
 
 
-def test_new_database_outside_old_roots_can_be_staged_and_restored(tmp_path):
+def test_declared_generated_database_outside_old_cache_roots_can_be_staged_and_restored(tmp_path):
     # Synthetic data ONLY. Proves extension, age and old-root vetoes are gone end-to-end.
     home = tmp_path / "home"
     home.mkdir()
-    path = tmp_path / "project/generated.sqlite"
-    path.parent.mkdir()
+    path = home / "project/generated.sqlite"
+    declare_cache(path.parent)
     path.write_bytes(b"synthetic disposable database")
     item = candidate_from_stat(path, path.stat(), home, set())
     item = apply_policy(item, answer("remove"))

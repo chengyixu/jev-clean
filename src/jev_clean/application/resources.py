@@ -150,7 +150,11 @@ def investigate_resources(
                                 item.scan_complete,
                             )
                         )
-                        progress(f"{human_bytes(item.allocated_bytes)} · {decision.choice} · {path}")
+                        # Progress is a cleanup-facing observation, not a license
+                        # to advertise unsupported raw model errors as garbage.
+                        progress(
+                            f"{'Candidate' if reviewed.selectable else 'Measured'} · {human_bytes(item.allocated_bytes)} · {path}"
+                        )
                         cache.save_progress(stats, False)
                     fill()
             finally:

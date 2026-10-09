@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0.dev2 — Repair unsupported personal-folder removal proposals
+
+- Require independently observed valid CACHEDIR.TAG cache declarations in addition to model approval; raw remove alone no longer authorizes personal/mixed/unknown data. No folder-name blacklist.
+- Revalidate live marker/header/scope at preparation, apply and staging; reject forged/missing/changed plans and declarations. Preserve raw model mistakes in JSON.
+- Keep resource speed, simple checkboxes and existing undo. Current cleanup coverage is narrower: untagged app caches/logs/downloads need future verified owner contracts.
+- Real synthetic evaluation: 10/20 raw unsupported removes, 0/20 selectable; 4/4 declared cache controls selectable. Live six-root/163-resource read-only check 18.494s, no personal proposals selectable, 12 cache proposals / 7.746 GB allocated. No cleanup or safety-guarantee claim.
+
 ## 0.4.0.dev1 — Checkbox-only Clean results
 
 - Show only selectable cleanup items with `[ ]` / `[x]`; remove `?` and `!` rows.

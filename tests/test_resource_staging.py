@@ -3,6 +3,7 @@
 from dataclasses import replace
 
 import pytest
+from cache_fixtures import declare_cache
 from test_model_owned_judgment import answer
 
 from jev_clean.application import service
@@ -16,6 +17,7 @@ def proposal(home):
     path = home / "cache"
     (path / "nested").mkdir(parents=True)
     (path / "nested/blob").write_bytes(b"resource data")
+    declare_cache(path)
     return apply_policy(measure_resource(path, home, EvidenceCollector(home), set()), answer("remove"))
 
 
@@ -33,7 +35,7 @@ def test_selected_resource_is_sealed_staged_and_restored(tmp_path, monkeypatch, 
     assert callable(getattr(service, "prepare_selection", None))
     sealed = service.prepare_selection([item], home=tmp_path)
     assert sealed[0].manifest_digest
-    assert sealed[0].member_count == 2
+    assert sealed[0].member_count == 3
     assessed = service.reassess_selection(sealed, home=tmp_path)
     store = TrashStore(tmp_path)
     r = store.move(assessed, open_paths=set())

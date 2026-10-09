@@ -12,7 +12,8 @@
   ],
   "behavior": [
     ["O_NOFOLLOW", "Symlink-safe descriptor traversal"],
-    ["apply_policy", "Model judgment separate from technical staging readiness"],
+    ["apply_policy", "Raw model output separate from evidence-backed authorization"],
+    ["require_current_disposal", "Untrusted plans must match live cache-owner declarations"],
     ["EvidenceCollector", "Local metadata observations without disposal labels"],
     ["investigate_resources", "Native resource totals and model-owned resource judgments"],
     ["tree_manifest", "Selected membership sealed before human confirmation"],

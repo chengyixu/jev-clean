@@ -1,6 +1,6 @@
 # Product contract — resource-first jev-clean
 
-Current local development version: **0.4.0.dev1**, not a published release.
+Current local development version: **0.4.0.dev2**, not a published release.
 [ADR 0006](adr/0006-resource-first-cleanup.md) supersedes per-file neural assessment
 as the default. Whole-startup-disk scope does not mean one AI call for every file.
 
@@ -12,7 +12,7 @@ as the default. Whole-startup-disk scope does not mean one AI call for every fil
 - **Status:** same resource inventory → disjoint allocated-byte shares → Enter on a
   directory to inventory its children. No deletion.
 
-Clean results are checkbox-only: `[ ]` and `[x]`, path, size, selection totals. Only model-approved, execution-ready items appear. No `?`/`!` status rows, blocked-item counts or scan-gap banners. Diagnostics and unselectable decisions remain in the private JSON report; hiding them never authorizes removal. Empty results say "No items to select", not "disk is clean".
+Clean results are checkbox-only: `[ ]` and `[x]`, path, size, selection totals. Only model-approved, independently evidenced and execution-ready items appear. No `?`/`!` status rows, blocked-item counts or scan-gap banners. Diagnostics and unselectable decisions remain in the private JSON report; hiding them never authorizes removal. Empty results say "No items to select", not "disk is clean".
 
 No new mode or dashboard. The default enumerates disjoint boundaries across the
 mounted startup APFS scope; explicit `--root` is custom scope. Known filesystem/home
@@ -30,10 +30,10 @@ Directory frontier enumeration is unprivileged even when native du uses sudo.
 
 Pinned local Laya-MLX is mandatory. Missing/error inference stops the operation,
 with no rules-only fallback. Inputs contain bounded enclosing/leaf directory labels,
-measured allocation/activity and installed-app manifest facts, not file contents or
-arbitrary file basenames. Directory names are not instructions or proof of garbage.
+measured allocation/activity and installed-app manifest facts, not user file contents or
+arbitrary file basenames. The exact 43-byte cache declaration header is read for evidence. Directory names are not instructions or proof of garbage.
 Unknown dependencies/regenerability remain unknown. Whole-directory questions have
-keep/review/remove options; no path/extension/age classification veto overrides them.
+keep/review/remove options. Raw answers remain auditable, but **remove alone cannot authorize cleanup**. Independently observed valid CACHEDIR.TAG cache declarations are currently required, with exact covered scope and marker identity revalidated before staging. Untagged personal/mixed/unknown data remains unselectable regardless of raw model answer. See [ADR 0007](adr/0007-evidence-backed-cleanup.md); no folder-name blacklist or confidence threshold.
 
 Exact serialized resource input + questions + label mapping + input contract +
 model/runtime key the private cache. Fresh and reused counts are separate. Counters

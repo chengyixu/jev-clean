@@ -15,7 +15,7 @@ from typing import Any
 
 from jev_clean.domain.models import Candidate, Decision, DiskNode
 
-INPUT_CONTRACT = "resource-evidence-v3"
+INPUT_CONTRACT = "observed-disposal-evidence-v4"
 MODEL_ID = "aac6fef/laya-mlx"
 MODEL_REVISION = "20aed815fc6acde75733882e7ec0e3f28aeb9717"
 MODEL_FILES = ["*.json", "*.safetensors", "encoder/*.json", "tokenizer/*.json", "LICENSE", "NOTICE"]

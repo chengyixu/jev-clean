@@ -1,8 +1,10 @@
 import os
 import time
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
+from cache_fixtures import declare_cache
 
 from jev_clean.domain.models import Decision
 from jev_clean.domain.policy import apply_policy
@@ -19,7 +21,7 @@ def home(tmp_path):
 
 def stale_file(home, name="cache.bin"):
     path = home / "Library/Caches/com.example.test" / name
-    path.parent.mkdir(parents=True, exist_ok=True)
+    declare_cache(path.parent)
     path.write_bytes(b"safe test data")
     old = time.time() - 90 * 86400
     os.utime(path, (old, old))
@@ -103,7 +105,11 @@ def test_hardlink_fact_does_not_override_model(home):
     file = stale_file(home)
     os.link(file, file.parent / "hardlink")
     report = scan(home)
-    assert all(c.fingerprint.nlink == 2 and c.selectable for c in report.candidates)
+    assert all(
+        c.fingerprint.nlink == 2 and c.selectable
+        for c in report.candidates
+        if Path(c.path).name != "CACHEDIR.TAG"
+    )
 
 
 def test_restore_will_not_overwrite(home):

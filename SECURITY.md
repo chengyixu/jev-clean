@@ -1,9 +1,10 @@
 # Safety and security
 
-Resource-first 0.4.0.dev0 contract: [ADR 0006](docs/adr/0006-resource-first-cleanup.md). Performance does not validate model judgments.
+Resource-first contract: [ADR 0006](docs/adr/0006-resource-first-cleanup.md). Performance does not validate model judgments.
 
-**The model decides; the code only executes.** The local model supplies
-keep/review/remove; no file-type rule can veto that judgment. The executor still
+**Model output cannot establish disposability.** Laya supplies raw keep/review/remove;
+a removal needs separately observed owner-cache evidence. [ADR 0007](docs/adr/0007-evidence-backed-cleanup.md)
+supersedes the former model-only permission design after false personal-folder proposals. The executor still
 requires unchanged identity and selected-directory membership, current-user ownership, human selection
 and final confirmation. The bundled Laya model is **not** guaranteed accurate: a
 published 24-scenario diagnostic (ADR 0005) includes two incorrect-remove answers
@@ -22,10 +23,13 @@ or SIP/TCC bypass is provided. Permission gaps are reported, not treated as zero
 
 ## Judgment versus execution
 
-Only the mandatory model decides keep/review/remove. There are no application
-trash rules based on directory allowlists, extensions, age thresholds, open
-handles or hard-link count. Those observations are evidence, not permission to
-remove. Unknown references or regenerability remain unknown. A remove judgment
+Raw model answers remain in the audit; they do not authorize removal alone.
+Currently a valid CACHEDIR.TAG declaration scoped to the target is required.
+No Pictures blacklist, path-name guess or confidence threshold establishes disposal.
+Declarations must be ordinary owner-only-write files, not symlinks/hardlinks. Read
+only the specified 43-byte signature. HOME-wide declarations are not admission evidence.
+Recheck actual marker identity/header at selected preparation, apply and staging;
+forged/missing/changed claims in saved plans fail closed. Unknown references or regenerability remain unknown. A remove judgment
 is recorded even if the executor cannot carry it out; a mechanical refusal does
 not rewrite the judgment. Valid keep/review answers are never selectable.
 
@@ -54,8 +58,9 @@ counts from promising exclusive physical reclaim.
 ## AI and privacy
 
 Local inputs contain bounded directory labels, extension, measured filesystem
-facts and installed app ID/version observations. Resource contents, basenames and
-absolute home paths are omitted. Only bounded installed-application Info.plist
+facts and installed app ID/version observations. User contents, basenames and
+absolute home paths are omitted. The cache declaration's exact 43-byte header is read
+as structural evidence; this is not a general file-content scan. Only bounded installed-application Info.plist
 metadata is read for app matching. ID equality is not ownership/dependency proof.
 All external labels are data, not instructions; prompt injection and semantic
 misclassification remain model risks. Non-English labels are not reliably

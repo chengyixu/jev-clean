@@ -91,7 +91,7 @@ def test_plan_export_seals_resource_before_later_cli_confirmation(tmp_path, monk
     plan = tmp_path / "plan.json"
     service.save_plan(plan, report)
     loaded = service.load_plan(plan, tmp_path)
-    assert loaded[0].manifest_digest and loaded[0].member_count == 2
+    assert loaded[0].manifest_digest and loaded[0].member_count == 3
     assert not report.scan.candidates[0].manifest_digest
     (tmp_path / "cache/nested/blob").write_bytes(b"changed")
     with pytest.raises(ValueError, match="changed"):

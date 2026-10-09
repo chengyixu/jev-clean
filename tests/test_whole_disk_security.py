@@ -31,7 +31,7 @@ def test_fresh_and_reused_counts_sum_to_every_model_assessed_file(tmp_path):
     )
     s = result.stats
     assert s["fresh_model_inferences"] + s["reused_model_decisions"] == s["model_assessed_files"] == 100
-    assert s["execution_unavailable"] == 0
+    assert s["execution_unavailable"] == 100
     assert s["model_remove"] == len(result.candidates) == 100
 
 

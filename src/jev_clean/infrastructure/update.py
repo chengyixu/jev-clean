@@ -14,7 +14,7 @@ def installed_version() -> str:
     try:
         return version("jev-clean")
     except PackageNotFoundError:
-        return "0.4.0.dev1"
+        return "0.4.0.dev2"
 
 
 def latest_version(data: dict) -> str:

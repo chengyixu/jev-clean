@@ -15,12 +15,14 @@ from jev_clean.domain.models import (
     Candidate,
     CategoryReport,
     DiskNode,
+    DisposalEvidence,
     Fingerprint,
     Measurement,
     ScanReport,
 )
 from jev_clean.domain.policy import apply_policy
 from jev_clean.infrastructure import native
+from jev_clean.infrastructure.disposal import require_current_disposal
 from jev_clean.infrastructure.evidence import EvidenceCollector
 from jev_clean.infrastructure.model import LayaAdvisor
 from jev_clean.infrastructure.resource_tree import tree_manifest
@@ -74,6 +76,15 @@ def demo_report(home: Path, mode: str, advisor: LayaAdvisor, progress: Callable[
                 False,
                 True,
                 active,
+                disposal=DisposalEvidence("cachedir-tag-v1", str(home / Path(path).parent), "0" * 64)
+                if i == 0
+                else None,
+                evidence={
+                    "location": str(Path(path).parent),
+                    "disposal_basis": "synthetic owner cache declaration" if i == 0 else "none observed",
+                    "references": "unknown",
+                    "regenerability": "unknown",
+                },
             )
             proposed = advisor.predict(item)
             candidates.append(apply_policy(item, proposed))
@@ -229,6 +240,7 @@ def _refresh_selection(
         fresh = candidate_from_stat(path, path.lstat(), home, handles, evidence)
         if fresh.fingerprint != item.fingerprint:
             raise ValueError("Target identity changed since review")
+        require_current_disposal(path, home, item.disposal, directory=item.unit == "directory")
         if item.unit == "directory":
             if require_manifest and not item.manifest_digest:
                 raise ValueError("Directory needs a pre-confirmation manifest; review/export it first")
@@ -236,6 +248,7 @@ def _refresh_selection(
             if item.manifest_digest and digest != item.manifest_digest:
                 raise ValueError("Resource contents changed since review")
             facts = evidence.collect(path / "[resource]")
+            facts["disposal_basis"] = fresh.evidence["disposal_basis"]
             facts["membership"] = f"exact metadata manifest of {count} descendants; contents not read"
             fresh = replace(
                 fresh,

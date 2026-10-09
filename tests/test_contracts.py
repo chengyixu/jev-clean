@@ -2,7 +2,7 @@ from dataclasses import replace
 
 import pytest
 
-from jev_clean.domain.models import Candidate, Decision, Fingerprint
+from jev_clean.domain.models import Candidate, Decision, DisposalEvidence, Fingerprint
 from jev_clean.domain.policy import apply_policy
 from jev_clean.infrastructure.model import parse_prediction
 from jev_clean.infrastructure.native import parse_categories
@@ -19,6 +19,7 @@ def candidate(**changes):
         True,
         False,
         True,
+        disposal=DisposalEvidence("cachedir-tag-v1", "/", "a" * 64),
     )
     return replace(item, **changes)
 

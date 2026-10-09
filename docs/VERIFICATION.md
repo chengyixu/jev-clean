@@ -1,5 +1,15 @@
 # Verification record
 
+## 0.4.0.dev2 — Evidence-backed cleanup admission
+
+- User reported Pictures/personal-data cleanup proposals. Exact earlier Pictures answer was not reproduced: current actual Pictures check returned review. Broader model-only failure reproduced on synthetic Documents/Desktop/Downloads/projects with unknown references/regenerability.
+- Independent current disposal declarations are now required in addition to raw model remove. No Pictures blacklist. Raw mistakes stay in JSON; progress announces unsupported data as measured, not garbage. Cache declaration headers are read; user contents are not.
+- **209 tests, 81.35% coverage** pass both local and fresh-sdist/locked Python 3.12 gates, plus lint/types/guards. RED-first tests cover untagged/renamed/cache-name controls, malformed/symlink/hardlink/writable markers, wrong scope, forged/missing/changed plans, UI selection, live rechecks, positive staging/undo and legacy recovery.
+- Real pinned-Laya authored evaluation: **10/20 raw unsupported remove answers; 0/20 selectable; 4/4 declared cache controls selectable**. This measures authorization, not corrected model accuracy. Script: `scripts/evaluate_disposal_authorization.py`; method/limits in ADR 0007.
+- Live six-root read-only resource scan: 163 resources, **18.494s**, no measurement gaps, no personal proposals selectable; 12 declaration-backed cache proposals / **7.746 GB allocated**, not verified garbage or reclaimed bytes. No user files moved.
+- Isolated turnkey install and actual local install verified **0.4.0.dev2**, pinned checksums and real model readiness; installed Python sources matched checkout. Actual installed CLI controls: seven synthetic outside-HOME resources all withheld (33.805s); five synthetic in-HOME controls permitted only `tool-generated` with a valid declaration (27.897s, including native diagnostics). No real cleanup, provider switch, monitors/delegates, public release or remote CI.
+- Untagged app caches/logs/downloads/old versions remain unsupported until additional verified owner contracts exist. CACHEDIR.TAG is an owner's cache declaration, not cryptographic authenticity, a universal cleanup policy or a guarantee of harmless deletion. Never add tags to force cleanup.
+
 ## 0.4.0.dev1 — Checkbox-only Clean UI
 
 - User requested removal of `?`/`!` rows, blocked counts and scan-gap chatter. Clean now renders only selectable `[ ]`/`[x]` rows; report diagnostics and non-actionable decisions remain in JSON. No authority/cleanup behavior changed.

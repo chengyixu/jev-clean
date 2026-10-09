@@ -1,6 +1,7 @@
 from dataclasses import replace
 
 import pytest
+from cache_fixtures import declare_cache
 from test_model_owned_judgment import answer
 
 from jev_clean.application import service
@@ -9,7 +10,8 @@ from jev_clean.infrastructure.scanner import candidate_from_stat
 
 
 def test_reassessment_uses_fresh_activity_not_saved_metadata(tmp_path, monkeypatch):
-    path = tmp_path / "file"
+    declare_cache(tmp_path / "cache")
+    path = tmp_path / "cache/file"
     path.write_bytes(b"fixture")
     item = candidate_from_stat(path, path.stat(), tmp_path, set())
     seen = []
@@ -22,7 +24,7 @@ def test_reassessment_uses_fresh_activity_not_saved_metadata(tmp_path, monkeypat
 
     monkeypatch.setattr(LayaAdvisor, "predict", predict)
     with pytest.raises(ValueError, match="Model"):
-        service.reassess_selection([item])
+        service.reassess_selection([item], home=tmp_path)
     assert seen[0].open_file is True
     assert path.exists()
 
@@ -36,7 +38,7 @@ def test_changed_target_is_not_silently_reauthorized(tmp_path, monkeypatch):
     monkeypatch.setattr(LayaAdvisor, "load", lambda self: None)
     monkeypatch.setattr(LayaAdvisor, "predict", lambda *a: answer("remove"))
     with pytest.raises(ValueError, match="changed"):
-        service.reassess_selection([item])
+        service.reassess_selection([item], home=tmp_path)
     assert path.read_bytes() == b"new owner work"
 
 

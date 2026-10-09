@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from pathlib import PurePath
 from typing import Any
 
 
@@ -27,6 +28,29 @@ class Decision:
 
 
 @dataclass(frozen=True)
+class DisposalEvidence:
+    """A runtime-observed cache declaration, not a model-generated assertion."""
+
+    kind: str
+    scope: str
+    marker_digest: str
+
+    def covers(self, path: str) -> bool:
+        scope, target = PurePath(self.scope), PurePath(path)
+        return bool(
+            self.kind == "cachedir-tag-v1"
+            and scope.is_absolute()
+            and target.is_absolute()
+            and ".." not in scope.parts
+            and ".." not in target.parts
+            and target.is_relative_to(scope)
+            and target != scope / "CACHEDIR.TAG"
+            and len(self.marker_digest) == 64
+            and all(c in "0123456789abcdef" for c in self.marker_digest)
+        )
+
+
+@dataclass(frozen=True)
 class Candidate:
     id: str
     path: str
@@ -48,10 +72,18 @@ class Candidate:
     unit: str = "file"
     manifest_digest: str = ""
     member_count: int = 0
+    disposal: DisposalEvidence | None = None
 
     @property
     def selectable(self) -> bool:
-        return bool(self.eligible and self.recommended and self.decision and self.decision.choice == "remove")
+        return bool(
+            self.eligible
+            and self.recommended
+            and self.decision
+            and self.decision.choice == "remove"
+            and self.disposal
+            and self.disposal.covers(self.path)
+        )
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Candidate:
@@ -59,6 +91,7 @@ class Candidate:
         value.pop("selectable", None)  # Derived, never trusted from a saved plan.
         value["fingerprint"] = Fingerprint(**value["fingerprint"])
         value["decision"] = Decision(**value["decision"]) if value.get("decision") else None
+        value["disposal"] = DisposalEvidence(**value["disposal"]) if value.get("disposal") else None
         return cls(**value)
 
 

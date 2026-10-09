@@ -3,6 +3,7 @@ import time
 from dataclasses import replace
 
 import pytest
+from cache_fixtures import declare_cache
 
 from jev_clean.domain.models import Decision
 from jev_clean.domain.policy import apply_policy
@@ -78,9 +79,10 @@ def test_copy_changed_after_staging_cannot_be_restored_as_original(tmp_path):
     path = tmp_path / "Library/Caches/com.test/cache"
     path.parent.mkdir(parents=True)
     path.write_text("original cache")
+    declare_cache(path.parent)
     old = time.time() - 90 * 86400
     os.utime(path, (old, old))
-    c = scan_candidates(tmp_path, open_paths=set()).candidates[0]
+    c = next(c for c in scan_candidates(tmp_path, open_paths=set()).candidates if c.path == str(path))
     c = apply_policy(
         c, Decision("remove", {"remove": 1.0, "keep": 0.0, "review": 0.0}, "test model boundary", 1)
     )

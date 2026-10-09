@@ -50,7 +50,8 @@ def test_clean_assesses_observed_disposable_files_not_vague_roots(tmp_path):
         tmp_path, ChoosingModel(), "clean", roots=[p.parent], state_dir=tmp_path / "state", open_paths=set()
     )
     assert result.stats["observed_files"] == 1 and result.stats["model_assessed_files"] == 1
-    assert result.candidates[0].selectable
+    assert result.candidates[0].decision.choice == "remove"
+    assert not result.candidates[0].selectable
 
 
 def test_recent_files_are_not_excluded_by_a_retention_rule(tmp_path):
@@ -60,7 +61,8 @@ def test_recent_files_are_not_excluded_by_a_retention_rule(tmp_path):
     result = investigate_disk(
         tmp_path, ChoosingModel(), "clean", roots=[p.parent], state_dir=tmp_path / "state", open_paths=set()
     )
-    assert result.candidates[0].selectable
+    assert result.candidates[0].decision.choice == "remove"
+    assert not result.candidates[0].selectable
     assert result.stats["model_assessed_files"] == 1
 
 
