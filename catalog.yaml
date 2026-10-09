@@ -51,6 +51,12 @@ regressions:
   - id: RESOURCE-CANCELLED-PLAN
     symptom: Cancellation leaves actionable partial resource proposals.
     observable_signal: tests/test_resource_cancellation.py
+  - id: LEARNING-SPLIT-INTEGRITY
+    symptom: Semantic-family variants or identical evidence text leak across training and reported holdouts.
+    observable_signal: tests/test_cleanup_learning_contract.py
+  - id: RAW-MODEL-QUALITY-NOT-PERMISSION
+    symptom: Model evaluation counts suppressed errors as correct or picks a checkpoint from final-test scores.
+    observable_signal: tests/test_learning_deployment_selection.py
   - id: CATEGORY-MIXING
     symptom: An exact System Data breakdown is invented by combining unrelated timestamps or paths.
     observable_signal: tests/test_contracts.py

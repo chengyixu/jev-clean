@@ -1,0 +1,125 @@
+{
+  "provenance": "Authored after scorer evaluation, frozen before head training/inference. Final set is now exposed; future model iterations require a new untouched final set. No user data.",
+  "cases": [
+    {
+      "family": "retained-financials",
+      "label": 2,
+      "state": "Observed resource evidence: The spreadsheets contain the owner's only historical financial records. These records are needed for an ongoing audit."
+    },
+    {
+      "family": "needed-textures",
+      "label": 2,
+      "state": "Observed resource evidence: This texture directory is required by an active game project. It contains the unique source art and is not disposable."
+    },
+    {
+      "family": "only-certificates",
+      "label": 2,
+      "state": "Observed resource evidence: These certificates and private signing keys are needed to publish updates. Losing them would make release signing impossible."
+    },
+    {
+      "family": "running-database",
+      "label": 2,
+      "state": "Observed resource evidence: A running database stores the user's unique transactions in this directory. The database is active and the data is required."
+    },
+    {
+      "family": "retained-installer",
+      "label": 2,
+      "state": "Observed resource evidence: This old installer is required for offline recovery. The download source has been withdrawn and the owner has no other copy."
+    },
+    {
+      "family": "active-cache",
+      "label": 2,
+      "state": "Observed resource evidence: Although the contents are regenerable cached data, the application is currently using this resource to complete an active job."
+    },
+    {
+      "family": "named-cache-originals",
+      "label": 2,
+      "state": "Observed resource evidence: A folder named cache contains irreplaceable original personal videos. The name does not describe the contents; the owner needs the originals."
+    },
+    {
+      "family": "not-discarded",
+      "label": 2,
+      "state": "Observed resource evidence: This draft was NOT discarded. The owner needs the only copy of the current work, which cannot be regenerated."
+    },
+    {
+      "family": "opaque-metadata",
+      "label": 1,
+      "state": "Observed resource evidence: application=unknown; references=unknown; regenerability=unknown; location=arbitrary-directory; allocated MB=2048; activity=not observed open; exact measurement=True."
+    },
+    {
+      "family": "opaque-photo-metadata",
+      "label": 1,
+      "state": "Observed resource evidence: application=unknown; references=unknown; regenerability=unknown; location=Pictures; allocated MB=12000; activity=not observed open; exact measurement=True."
+    },
+    {
+      "family": "no-tag-cache",
+      "label": 1,
+      "state": "Observed resource evidence: The name suggests a package cache, but it is not known whether it contains modified packages or unique local work. No authoritative references were checked."
+    },
+    {
+      "family": "other-kind-link",
+      "label": 1,
+      "state": "Observed resource evidence: The resource has more than one link. Nothing establishes whether data at this path is needed or disposable."
+    },
+    {
+      "family": "stopped-image",
+      "label": 1,
+      "state": "Observed resource evidence: The disk image has no open handles. Its purpose, recoverability, ownership and application references remain unknown."
+    },
+    {
+      "family": "removed-app-folder",
+      "label": 1,
+      "state": "Observed resource evidence: The application is not seen in the installed-app list. It is unknown whether this support directory still contains personal settings or required data."
+    },
+    {
+      "family": "unknown-downloads",
+      "label": 1,
+      "state": "Observed resource evidence: The download is not currently in use, but it has not been established whether it is unique or whether the owner wants to keep it."
+    },
+    {
+      "family": "mixed-generated",
+      "label": 1,
+      "state": "Observed resource evidence: The directory includes generated outputs and unclassified files. Whether the unclassified files are unique or needed is unknown."
+    },
+    {
+      "family": "unneeded-compiler",
+      "label": 0,
+      "state": "Observed resource evidence: The compiler confirms these cached intermediates are unused and reproducible from the retained source project. The owner no longer needs them."
+    },
+    {
+      "family": "discarded-preview",
+      "label": 0,
+      "state": "Observed resource evidence: This old preview export has no remaining use. The original and final copy are verified elsewhere and the owner explicitly discarded the preview."
+    },
+    {
+      "family": "unreferenced-cache",
+      "label": 0,
+      "state": "Observed resource evidence: The application reports no active references to this generated cache. All contents are reproducible; no unique data is present and the cache is unnecessary."
+    },
+    {
+      "family": "obsolete-test-index",
+      "label": 0,
+      "state": "Observed resource evidence: The temporary index belongs to a discarded test environment. It is no longer needed, contains no unique information and can be regenerated."
+    },
+    {
+      "family": "unused-synthetic-vm",
+      "label": 0,
+      "state": "Observed resource evidence: This VM image was generated for a completed disposable test. The owner confirms it has no unique work and is no longer wanted. The test can regenerate it."
+    },
+    {
+      "family": "unwanted-temp-log",
+      "label": 0,
+      "state": "Observed resource evidence: These temporary logs are not required by any investigation or application. The owner does not want them and there is no unique user work in them."
+    },
+    {
+      "family": "not-unique-cache",
+      "label": 0,
+      "state": "Observed resource evidence: The cached thumbnails are NOT original photographs. They are reproducible from originals retained elsewhere and the application confirms they are unused."
+    },
+    {
+      "family": "empty-job-scratch",
+      "label": 0,
+      "state": "Observed resource evidence: The completed job left regenerable scratch data with no references or remaining need. The owner explicitly requests removing the redundant scratch resource."
+    }
+  ]
+}

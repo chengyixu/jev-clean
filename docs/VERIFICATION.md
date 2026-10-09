@@ -1,5 +1,13 @@
 # Verification record
 
+## Laya learning experiments — not deployed (2026-10-09)
+
+- Actually fine-tuned the pinned Laya scorer, then original two-layer decision head/scorer with a frozen encoder. 26,245,121 head/scorer parameters, 30 changed tensors. Three seeds each; development-only checkpoint selection. No directory/tag authorization gates in raw metrics.
+- Authored family-disjoint 72 train / 12 dev / 30 diagnostic cases. Base factual prompt 27/30, scorer 28/30 with one false remove still present. Dev-selected head: 26/30, zero false removes but useful-removal recall dropped from 90% to 70%. New final 24 families, frozen after scorer exposure before head inference: base and every trained head 22/24 with two false removes (required offline installer, active cache). No model-only replacement was admitted.
+- Learned head reloaded in an isolated native Laya fp16 process; all diagnostic/final choices matched cached-feature evaluation. Durable seed-0 reproduction matched checkpoint step 140 and all metrics. No installed runtime/checkpoint/prompt change, external training provider, personal content/upload or user cleanup.
+- Evaluation-integrity/selection tests were observed RED before implementation. Final **217 tests, 81.35% coverage**, lint/mypy/guards pass locally and in a fresh source-archive/locked Python 3.12 environment. Built archive includes experiment scripts and synthetic final fixture, excludes private adapters/reports. Installed dev2 Python sources remained unchanged and matched checkout.
+- Method, errors, limitations and next steps: [LAYA-LEARNING.md](LAYA-LEARNING.md). Stored reports/adapters under private `.private/laya-*`. Final set is now exposed: new training needs a new untouched final holdout. Synthetic evidence is richer than production observations, so these counts are not real-filesystem deletion-safety calibration. No public release or remote CI for the research tools.
+
 ## 0.4.0.dev2 — Evidence-backed cleanup admission
 
 - User reported Pictures/personal-data cleanup proposals. Exact earlier Pictures answer was not reproduced: current actual Pictures check returned review. Broader model-only failure reproduced on synthetic Documents/Desktop/Downloads/projects with unknown references/regenerability.
