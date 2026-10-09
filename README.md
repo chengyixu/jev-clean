@@ -2,7 +2,7 @@
 
 # jev-clean · Nexora
 
-**Local development: 0.4.0.dev0 — resource-first scanning.** Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md). The published v0.3.0 installer below still installs the older engine; local preview installation is `python3 install.py --source .`.
+**Local development: 0.4.0.dev1 — resource-first scanning, checkbox-only Clean list.** Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md). The published v0.3.0 installer below still installs the older engine; local preview installation is `python3 install.py --source .`.
 
 **Clean the mysterious “System Data” on your Mac—with a local model doing the investigation.**
 
@@ -48,7 +48,7 @@ Laya prioritizes volume inspection, classifies the evidence, and proposes what t
 | Your control | Select all approved items or some; review and confirm | Read-only investigation; narrow the next scope |
 | Result | System Data context + model findings + selected cleanup + receipt/undo | Private JSON report and model decision trace |
 
-**The loop:** model prioritizes → tools walk every declared root → model assesses factual evidence → you review. `?` marks further investigation, `!` an execution-unavailable removal proposal; only model-remove checkboxes can be selected. Esc pauses; restarting re-enumerates with exact prior decisions reused. The default no longer waits for millions of per-file inferences. The mover supports current-user files and reviewed directory resources, with unchanged identity, no-follow metadata manifests and no-overwrite undo. It never classifies trash. App-native dependency investigation and permanent pruning are not implemented.
+**The loop:** model prioritizes → tools walk every declared root → model assesses factual evidence → you review. Clean shows only selectable items with `[ ]` / `[x]`. Other model decisions and measurement diagnostics stay in the JSON report, not the checklist. Esc pauses; restarting re-enumerates with exact prior decisions reused. The default no longer waits for millions of per-file inferences. The mover supports current-user files and reviewed directory resources, with unchanged identity, no-follow metadata manifests and no-overwrite undo. It never classifies trash. App-native dependency investigation and permanent pruning are not implemented.
 
 ### Honest about the gray bar
 

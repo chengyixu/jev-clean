@@ -30,8 +30,9 @@ into a minutes-scale review. See USEFULNESS-INVESTIGATION.md for the baseline.
    exact-input reuse, resource totals, time and coverage remain visible. No rules-only
    fallback or directory/extension deletion allowlist. No claim that every child
    received an individual neural judgment.
-4. Results are largest-first. Review rows remain unselectable; technical inability
-   does not rewrite model judgments. No automatic selection. Startup log lines show
+4. Results are largest-first. Since 0.4.0.dev1, Clean shows only selectable checkbox
+   rows. Review/unavailable rows and diagnostics remain in JSON, not the list;
+   technical inability does not rewrite model judgments. No automatic selection. Startup log lines show
    results as native jobs finish; the final review table opens after the inventory.
    No separate new mode or dashboard. Status enters a directory to inventory its
    children with the same engine.

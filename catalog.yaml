@@ -19,8 +19,11 @@ regressions:
     symptom: Expanded evidence is truncated without an explicit failure.
     observable_signal: tests/test_model_input_budget.py
   - id: VISIBLE-MODEL-ABSTENTION
-    symptom: A review answer disappears from the report or becomes selectable.
+    symptom: A review answer disappears from the JSON report or becomes selectable.
     observable_signal: tests/test_model_review_visibility.py
+  - id: CHECKBOX-ONLY-CLEAN
+    symptom: Non-actionable status rows or diagnostic banners clutter the Clean list, or hiding them changes removal authority.
+    observable_signal: tests/test_checkbox_only_review.py
   - id: SIZE-RANKED-REVIEW
     symptom: Large model proposals are hidden behind traversal-order small files, or totals show selected bytes only.
     observable_signal: tests/test_useful_review_order.py

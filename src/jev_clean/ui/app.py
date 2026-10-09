@@ -27,8 +27,8 @@ Enter      Delete / open directory    Esc back
 E export   H history   U update
 Q quit
 
-Deletion moves selected model-remove files to Trash after target verification.
-? = model requests investigation; ! = executor cannot stage the proposed target."""
+Select items with Space, then Enter to confirm moving them to Trash.
+Technical details are available in the JSON export."""
 
 
 class JevCleanApp(App):
@@ -219,8 +219,6 @@ class JevCleanApp(App):
             return
         self.report = report
         self.candidate_by_id = {c.id: c for c in report.scan.candidates}
-        for warning in report.exploration.get("warnings", []):
-            self.trace(warning)
         self.render_report()
         self.show_stage("review" if self.mode == "clean" else "status")
 
@@ -235,73 +233,28 @@ class JevCleanApp(App):
             table.add_column("Pick", width=3)
             table.add_column("Files", width=max(15, self.size.width - 25))
             table.add_column("Size", width=10)
-            approved = [c for c in report.scan.candidates if c.selectable]
-            visible = [
-                c
-                for c in ordered_candidates(report.scan.candidates)
-                if c.decision and c.decision.choice in {"review", "remove"}
-            ]
-            for c in visible:
+            approved = [c for c in ordered_candidates(report.scan.candidates) if c.selectable]
+            for c in approved:
                 if query not in c.path.casefold():
                     continue
                 table.add_row(
-                    Text(
-                        ("[x]" if c.id in self.selected else "[ ]")
-                        if c.selectable
-                        else "?"
-                        if c.decision and c.decision.choice == "review"
-                        else "!"
-                    ),
+                    Text("[x]" if c.id in self.selected else "[ ]"),
                     Text(c.path.replace(str(self.home), "~", 1)),
                     human_bytes(c.allocated_bytes),
                     key=c.id,
                 )
             size = sum(self.candidate_by_id[i].allocated_bytes for i in self.selected)
-            stats = report.exploration.get("stats", {})
-            assessed = stats.get(
-                "model_assessed", sum(c.decision is not None for c in report.scan.candidates)
-            )
             if approved:
                 proposed_bytes = sum(c.allocated_bytes for c in approved)
                 summary = f"{len(self.selected)}/{len(approved)} selected · {human_bytes(size)} · {human_bytes(proposed_bytes)} proposed"
-            elif assessed:
-                summary = f"0 approved · {assessed} assessed by model"
-            elif report.scan.files_seen:
-                summary = f"0 recommended · {report.scan.files_seen} observed"
             else:
-                summary = "No files assessed"
-            review_count = sum(c.decision is not None and c.decision.choice == "review" for c in visible)
-            unavailable_count = sum(c.recommended and not c.eligible for c in visible)
-            if review_count:
-                summary += f" · ? {review_count} investigate"
-            if unavailable_count:
-                summary += f" · ! {unavailable_count} cannot stage"
+                summary = "No items to select."
+            self.query_one("#summary").styles.max_height = 3
             if report.categories:
                 recorded = report.categories.timestamp.split(" ")[1].split(".")[0]
                 label = "demo" if report.demo else "macOS log " + recorded
                 summary += f" | System Data {human_bytes(report.categories.other_bytes)} ({label})"
-            if stats.get("walk_finished"):
-                if not report.coverage.get("complete", True):
-                    summary += " | Finished with logged gaps/exclusions"
-            elif not report.exploration.get("complete", True):
-                summary += " | Scan incomplete"
-            if "model_assessed_resources" in stats:
-                scope_label = "Startup disk" if stats.get("scope") == "startup-disk" else "Custom scope"
-                summary = (
-                    f"{scope_label} · {stats['model_assessed_resources']:,} resources · {stats.get('elapsed_seconds', 0):.1f}s\n"
-                    + summary
-                )
-                self.query_one("#summary").styles.max_height = 5
-            elif "model_assessed_files" in stats:
-                scope_label = "Whole disk" if stats.get("scope") == "startup-disk" else "Custom scope"
-                summary = (
-                    f"{scope_label} · {stats['observed_regular_files']:,} scanned · {stats['model_assessed_files']:,} assessed\n"
-                    f"{stats['fresh_model_inferences']:,} fresh / {stats['reused_model_decisions']:,} exact-input reused\n"
-                    + summary
-                )
-                self.query_one("#summary").styles.max_height = 5
-            elif stats.get("model_assessed") and stats.get("execution_unavailable"):
-                summary += f"\n{stats['model_assessed']} model decisions · {stats['execution_unavailable']} cannot stage"
+
         else:
             table.add_column("Location", width=max(12, self.size.width - 44))
             table.add_column("Usage", width=14)

@@ -1,6 +1,6 @@
 # Product contract — resource-first jev-clean
 
-Current local development version: **0.4.0.dev0**, not a published release.
+Current local development version: **0.4.0.dev1**, not a published release.
 [ADR 0006](adr/0006-resource-first-cleanup.md) supersedes per-file neural assessment
 as the default. Whole-startup-disk scope does not mean one AI call for every file.
 
@@ -11,6 +11,8 @@ as the default. Whole-startup-disk scope does not mean one AI call for every fil
   Yes/No explicitly including directory descendants → revalidate and stage in Trash.
 - **Status:** same resource inventory → disjoint allocated-byte shares → Enter on a
   directory to inventory its children. No deletion.
+
+Clean results are checkbox-only: `[ ]` and `[x]`, path, size, selection totals. Only model-approved, execution-ready items appear. No `?`/`!` status rows, blocked-item counts or scan-gap banners. Diagnostics and unselectable decisions remain in the private JSON report; hiding them never authorizes removal. Empty results say "No items to select", not "disk is clean".
 
 No new mode or dashboard. The default enumerates disjoint boundaries across the
 mounted startup APFS scope; explicit `--root` is custom scope. Known filesystem/home

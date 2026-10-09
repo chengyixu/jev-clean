@@ -35,7 +35,7 @@ def test_cli_no_model_off_or_removed_modes():
 
 def test_cli_help_and_completion():
     assert cli("--help").returncode == 0
-    assert cli("--version").stdout.strip() == "0.4.0.dev0"
+    assert cli("--version").stdout.strip() == "0.4.0.dev1"
     for shell in ["bash", "zsh", "fish"]:
         result = cli("completion", shell)
         assert result.returncode == 0 and "jev-clean" in result.stdout

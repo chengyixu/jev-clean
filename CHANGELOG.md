@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0.dev1 — Checkbox-only Clean results
+
+- Show only selectable cleanup items with `[ ]` / `[x]`; remove `?` and `!` rows.
+- Remove investigation/unavailable counts, scan-gap banners and inference counters from the Clean results summary.
+- Keep model decisions, coverage and errors in the JSON report. No change to model judgments, eligibility, confirmation or execution checks.
+
 ## 0.4.0.dev0 — Local resource-first preview
 
 - Replace default per-file neural scanning with disjoint resource discovery, four native measurement workers and mandatory model judgments per resource. No child-file AI coverage claim.

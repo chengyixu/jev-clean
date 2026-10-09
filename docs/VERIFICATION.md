@@ -1,5 +1,11 @@
 # Verification record
 
+## 0.4.0.dev1 — Checkbox-only Clean UI
+
+- User requested removal of `?`/`!` rows, blocked counts and scan-gap chatter. Clean now renders only selectable `[ ]`/`[x]` rows; report diagnostics and non-actionable decisions remain in JSON. No authority/cleanup behavior changed.
+- Four requested-behavior regressions were observed failing before the change. Final local and fresh-sdist/locked Python 3.12 gates: **185 tests, 80.95% coverage**, Ruff/mypy/guards passed. Tests verify Space/all/none cannot select hidden rows and coverage details survive export.
+- Actual local CLI updated via source installer to **0.4.0.dev1** with pinned-model integrity and real readiness checks. No user cleanup, new disk scan, remote CI or public release.
+
 ## 0.4.0.dev0 — Resource-first local preview (2026-10-09)
 
 - **184 tests pass**; 80.21% local / 80.33% fresh-sdist coverage; Ruff, mypy and local architecture guards green. Fresh locked Python 3.12 environment and isolated turnkey installation passed with pinned weight integrity and real inference. No remote CI/public release for this preview.

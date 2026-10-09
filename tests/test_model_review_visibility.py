@@ -30,7 +30,7 @@ def test_model_review_is_not_discarded_from_private_report(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_review_and_unavailable_removal_are_visible_but_not_selected(tmp_path):
+async def test_non_actionable_items_stay_in_report_not_checkbox_list(tmp_path):
     review = apply_policy(replace(candidate(), id="review", path=str(tmp_path / "unknown")), answer("review"))
     unavailable = apply_policy(
         replace(candidate(), id="unavailable", path=str(tmp_path / "missing"), scan_complete=False),
@@ -43,7 +43,11 @@ async def test_review_and_unavailable_removal_are_visible_but_not_selected(tmp_p
     async with app.run_test() as pilot:
         app.mode = "clean"
         app.accept_report(report)
-        assert app.query_one("#results", DataTable).row_count == 2
+        assert app.query_one("#results", DataTable).row_count == 0
         await pilot.press("a")
         assert not app.selected
-        assert "investigate" in str(app.query_one("#summary", Static).render())
+        assert "No items to select" in str(app.query_one("#summary", Static).render())
+        exported = app.report.to_dict()
+        assert len(exported["scan"]["candidates"]) == 2
+        assert not any(c["selectable"] for c in exported["scan"]["candidates"])
+        assert exported["scan"]["candidates"][0]["decision"]["choice"] == "review"

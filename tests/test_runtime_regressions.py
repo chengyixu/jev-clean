@@ -80,6 +80,6 @@ async def test_zero_assessed_is_not_presented_as_clean_disk(tmp_path, neural_bou
         app.mode = "clean"
         app.accept_report(report)
         text = str(app.query_one("#summary", Static).render())
-        assert "Nothing to clean" not in text and (
-            "incomplete" in text.lower() or "not assessed" in text.lower()
-        )
+        assert "Nothing to clean" not in text
+        assert "No items to select" in text
+        assert app.report.exploration["complete"] is False

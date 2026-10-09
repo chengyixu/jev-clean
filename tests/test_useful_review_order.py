@@ -36,7 +36,7 @@ async def test_review_ranks_size_without_changing_model_choices_or_autoselecting
         app.accept_report(report)
         table = app.query_one("#results", DataTable)
         ids = [str(table.coordinate_to_cell_key((i, 0)).row_key.value) for i in range(table.row_count)]
-        assert ids == ["review", "large", "small"]
+        assert ids == ["large", "small"]
         assert not app.selected
         assert "2.00 GB proposed" in str(app.query_one("#summary", Static).render())
         await pilot.press("a")
