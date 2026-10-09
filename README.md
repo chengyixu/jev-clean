@@ -2,6 +2,8 @@
 
 # jev-clean · Nexora
 
+**Local development: 0.4.0.dev0 — resource-first scanning.** Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md). The published v0.3.0 installer below still installs the older engine; local preview installation is `python3 install.py --source .`.
+
 **Clean the mysterious “System Data” on your Mac—with a local model doing the investigation.**
 
 [![CI](https://github.com/chengyixu/jev-clean/actions/workflows/ci.yml/badge.svg)](https://github.com/chengyixu/jev-clean/actions/workflows/ci.yml)
@@ -18,13 +20,13 @@ macOS calls hundreds of gigabytes **System Data**. That label doesn't tell you w
 2. Status
 ```
 
-**Clean:** sudo or not → whole startup-disk scan + model assessment → select files → delete or cancel.
+**Clean:** sudo or not → native resource inventory + model assessment → select resources → seal exact contents → confirm or cancel.
 
 **Status:** whole startup-disk scan + model assessment → usage bars and percentages.
 
 **Model-only cleanup.** The model alone decides keep/review/remove; no directory, extension or retention rule can veto that judgment. Execution still verifies the exact selected target and your confirmation. Known limitation: a 24-scenario diagnostic answered 16/24 with structured input and included two incorrect-remove answers, so **review every proposed file**. See [ADR 0005](docs/adr/0005-model-owned-judgment.md) and [model-authority-evaluation.json](docs/model-authority-evaluation.json).
 
-**Not a cache sample anymore.** Both modes walk the mounted startup-disk scope. Every observed regular file gets a model-derived keep/review/remove judgment. Technical execution readiness is recorded separately. No default 600-file, six-directory or two-minute cutoff. Progress separates scanned files, model-assessed files, fresh neural calls and exact-input reused decisions. [Scope, restart/cache behavior and verification](docs/WHOLE-DISK.md).
+**Resources, not millions of neural file judgments.** Both modes cover the declared mounted startup scope with disjoint directory/file resources. Four native workers measure subtrees; Laya decides per resource. Exact descendant metadata is collected only for selected review. Each native measurement has a 30-second deadline; failures remain explicit gaps, not zero-byte success. No total-resource sampling cap. [Current contract](docs/PRODUCT.md).
 
 No dashboard, banners, permanent captions or competing panels. The accounting and full model evidence remain in the shared engine and JSON report, not plastered over the screen.
 
@@ -41,12 +43,12 @@ Laya prioritizes volume inspection, classifies the evidence, and proposes what t
 | | **Clean** | **Status** |
 |---|---|---|
 | Question | “What can I remove to tackle mysterious System Data?” | “Where is the space actually going?” |
-| Model’s job | Prioritize volumes → assess every observed regular file → propose remove / review / keep | Assess the full filesystem scope → classify storage → expose unresolved areas |
+| Model’s job | Prioritize scope → assess measured resources → propose remove / review / keep | Assess the full filesystem scope → classify storage → expose unresolved areas |
 | Tools’ job | Stream filesystem metadata, not recommendations | Inventory full scope; collect native/APFS evidence |
 | Your control | Select all approved items or some; review and confirm | Read-only investigation; narrow the next scope |
 | Result | System Data context + model findings + selected cleanup + receipt/undo | Private JSON report and model decision trace |
 
-**The loop:** model prioritizes → tools walk every declared root → model assesses factual evidence → you review. `?` marks further investigation, `!` an execution-unavailable removal proposal; only model-remove checkboxes can be selected. Esc pauses; restarting re-enumerates with exact prior decisions reused. The first full pass over millions of files can take hours. The file mover supports current-user regular files with unchanged identity and no-follow paths. It never classifies trash. Autonomous dependency investigation and resource grouping are not yet implemented.
+**The loop:** model prioritizes → tools walk every declared root → model assesses factual evidence → you review. `?` marks further investigation, `!` an execution-unavailable removal proposal; only model-remove checkboxes can be selected. Esc pauses; restarting re-enumerates with exact prior decisions reused. The default no longer waits for millions of per-file inferences. The mover supports current-user files and reviewed directory resources, with unchanged identity, no-follow metadata manifests and no-overwrite undo. It never classifies trash. App-native dependency investigation and permanent pruning are not implemented.
 
 ### Honest about the gray bar
 
@@ -105,7 +107,7 @@ jev-clean apply "$HOME/.local/state/jev-clean/review.json" \
   --ids ID1,ID2 --confirm TRASH
 ```
 
-`--root` selects an explicitly labeled custom scope, not deletion permissions. With no `--root`, the entire mounted startup-container scope is attempted. The JSON `system_data` section carries native total/residual, source/time, candidate bytes and attribution limits for **both** modes. `exploration.stats` separates observed files, protected files, model decisions and approved candidates. Zero approvals does not mean “nothing to clean.” It can reflect missing evidence, model error/retention or execution limits. Plans expire in one hour. Every chosen file needs a `remove` decision and technical staging readiness; applying a plan collects fresh evidence, re-runs model assessment and checks identity/activity. Invalid or missing model output stops the operation. Reports contain private paths: **do not upload them**.
+`--root` selects an explicitly labeled custom scope, not deletion permissions. With no `--root`, the entire mounted startup-container scope is attempted. The JSON `system_data` section carries native total/residual, source/time, candidate bytes and attribution limits for **both** modes. `exploration.stats` separates resources discovered/measured, fresh/reused model decisions, measurement gaps and proposed bytes. Descendants are not reported as individually AI-assessed. Zero approvals does not mean “nothing to clean.” It can reflect missing evidence, model error/retention or execution limits. Plans expire in one hour. Every chosen file needs a `remove` decision and technical staging readiness; applying a plan collects fresh evidence, re-runs model assessment and checks identity/activity. Invalid or missing model output stops the operation. Reports contain private paths: **do not upload them**.
 
 ## Controls and utilities
 
@@ -156,10 +158,10 @@ We do not claim superior cleanup accuracy to Mole or that local inference unders
 
 ## Safety scope
 
-- No root deletion, recursive tree deletion, app uninstallation or automatic Trash emptying.
+- No root deletion, recursive permanent deletion, uninstall scripts or automatic Trash emptying. Directory staging includes all descendants and requires a reviewed manifest.
 - Databases, VM disks, model weights, source work, credentials and backups are not blanket cleanup targets.
 - Read/model scope is the whole mounted startup disk. No cleanup root, extension or retention classifier overrides the model.
-- Current-user regular-file staging checks canonical paths, owner, device/inode/size/mtime/ctime/link count and refreshed activity.
+- Current-user file/resource staging checks canonical paths, owner, device/inode/size/mtime/ctime/link count, refreshed activity and directory membership.
 - Unknown activity is model evidence; unavailable exact target metadata is an execution limitation, not a keep judgment.
 - Model decisions are mandatory. Only valid remove answers with technical staging readiness can be selected.
 - Same-user concurrent writers remain a race risk. Close relevant apps before cleanup. See [threat model](SECURITY.md).

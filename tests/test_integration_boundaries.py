@@ -53,9 +53,9 @@ def test_model_authority_with_real_synthetic_files(monkeypatch, tmp_path, neural
     monkeypatch.setattr(native, "run", lambda *a, **k: (1, "", "unavailable"))
     report = service.audit(tmp_path, "clean", roots=[p.parent])
     assert report.scan.candidates[0].selectable
-    assert report.exploration["stats"]["observed_files"] == 1
+    assert report.exploration["stats"]["resources_measured"] == 1
     assert report.exploration["stats"]["execution_unavailable"] == 0
-    assert report.exploration["steps"][0]["children_seen"] == 1
+    assert report.coverage["granularity"] == "resource"
     assert report.exploration["steps"][0]["decision"]["backend"] == "test neural boundary"
 
 

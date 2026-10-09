@@ -1,5 +1,7 @@
 # Whole-disk scope and honest model coverage
 
+**Historical per-file engine below.** Local 0.4.0.dev0 replaces it in Clean/Status with native resource measurements and model judgments per resource. See [ADR 0006](adr/0006-resource-first-cleanup.md) and [PRODUCT.md](PRODUCT.md). Never describe resource descendants as individually model-assessed. The legacy engine remains a diagnostic comparison, not a fallback.
+
 Version 0.3.0 model-authority changes and known model errors are documented in [ADR 0005](adr/0005-model-owned-judgment.md). The whole-disk traversal below remains unchanged. Historical verification figures refer to v0.2.0, not a new full-disk validation of this branch.
 
 ## What changed in 0.2.0

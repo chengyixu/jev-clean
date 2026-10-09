@@ -61,7 +61,7 @@ def test_whole_disk_mode_is_the_service_default(monkeypatch, tmp_path, neural_bo
         seen.append(kwargs["roots"])
         return ExplorationResult(stats={"coverage": {"scope": "startup-disk"}})
 
-    monkeypatch.setattr(service, "investigate_disk", whole)
+    monkeypatch.setattr(service, "investigate_resources", whole)
     monkeypatch.setattr(native, "run", lambda *a, **k: (1, "", "unavailable"))
     monkeypatch.setattr(native, "open_files", lambda: set())
     for mode in ("clean", "status"):

@@ -1,5 +1,14 @@
 # Verification record
 
+## 0.4.0.dev0 — Resource-first local preview (2026-10-09)
+
+- **184 tests pass**; 80.21% local / 80.33% fresh-sdist coverage; Ruff, mypy and local architecture guards green. Fresh locked Python 3.12 environment and isolated turnkey installation passed with pinned weight integrity and real inference. No remote CI/public release for this preview.
+- RED-first tests cover resource—not descendant—inference counts; disjoint scope; cancelled/incomplete measurements; path-swap enumeration; large-first review; deep-context preservation; selected manifests before confirmation/export; changed deep contents; executor-state containment; symlink targets; staging/restore and no destination overwrite. Only temporary fixture data was moved.
+- Live read-only benchmark: eight explicit storage roots, 175 resources, 174 fresh / 1 reused decisions, **20.391s** after load/lsof. Model proposed 27.50 GB remove and 6.17 GB review; these are not independently validated disposable bytes.
+- Startup frontier discovered 2,020 resources in 0.692s. Cold attempt remained incomplete when validation stopped it at 150s/1,558 resources. Subsequent warm pass completed the declared scope in **90.092s**: 253 fresh / 1,767 reused, **36 measurement gaps** plus frontier exclusions. Complete access remains false; no cold-90s or exact reclaim claim.
+- Actual `~/.local/bin/jev-clean` updated locally via `install.py --source .`, reports **0.4.0.dev0** and real model ready. An actual installed CLI cold custom-scope Clean run over uv/Gradle resources completed end-to-end in **16.902s**, 18 resources / 18 fresh decisions / 0 measurement gaps. All installed Python sources matched the verified checkout. No user cleanup, no current-process restart, no backend/model change.
+- Performance contract and remaining limitations: [ADR 0006](adr/0006-resource-first-cleanup.md). Directory manifest review adds work only for selected resources; exports seal all actionable proposals and may be slower. No permanent cleanup/native pruning, automatic Trash emptying or validated model safety claim.
+
 ## 0.3.0 — Model-owned judgments (2026-09-30)
 
 - RED-first regressions cover removal of classification vetoes; model judgment versus staging readiness; recent/outside-old-root database staging and undo on temporary files; refreshed activity/identity; app manifest observations; evidence-aware cache identity; visible nonselectable review rows; input overflow; neutral-label translation.

@@ -1,8 +1,10 @@
 # Safety and security
 
+Resource-first 0.4.0.dev0 contract: [ADR 0006](docs/adr/0006-resource-first-cleanup.md). Performance does not validate model judgments.
+
 **The model decides; the code only executes.** The local model supplies
 keep/review/remove; no file-type rule can veto that judgment. The executor still
-requires an unchanged target identity, current-user regular files, human selection
+requires unchanged identity and selected-directory membership, current-user ownership, human selection
 and final confirmation. The bundled Laya model is **not** guaranteed accurate: a
 published 24-scenario diagnostic (ADR 0005) includes two incorrect-remove answers
 (unique private key, required offline model weights). **Review every proposed
@@ -27,13 +29,14 @@ remove. Unknown references or regenerability remain unknown. A remove judgment
 is recorded even if the executor cannot carry it out; a mechanical refusal does
 not rewrite the judgment. Valid keep/review answers are never selectable.
 
-Execution supports current-user-owned regular files only, with human-selected
-IDs and final confirmation. No recursive deletion or automatic Trash emptying.
+Execution supports current-user regular files and directory resources, with human-selected
+IDs and final confirmation. Selected directories are metadata-sealed BEFORE Yes/No;
+the dialog explicitly includes ALL descendants. No recursive permanent deletion or automatic Trash emptying.
 No-follow directory descriptors, canonical paths, unchanged device/inode/size/
 mtime/ctime/UID/link-count fingerprints, operation permissions and a private
 transaction lock protect execution integrity. The executor cannot relocate its
 own state or already staged files. Cross-device rename fails rather than copying
-and deleting. Symlink/special-file staging is unsupported, not a trash label.
+and deleting. Top-level symlink/special-file staging is unsupported, not a trash label. Internal symlinks in a reviewed directory move as links without following their targets.
 
 Plans expire in one hour and bind HOME/schema/candidate completeness. Applying a
 plan collects fresh metadata, activity and manifest observations and reruns the
@@ -42,8 +45,8 @@ changing again at execution requires reassessment; unknown activity alone is not
 a classification veto. Cancellation does not leave an actionable scan. Partial
 whole-disk coverage is reported separately from exact individual target metadata.
 
-Files are journaled before moving to a unique batch under `~/.Trash`. Undo checks
-staged identity and uses no-overwrite link/unlink. A crash can leave a pending
+Files/resources are journaled before moving to a unique batch under `~/.Trash`. Undo checks
+staged identity and manifests; files use no-overwrite link/unlink, directories use atomic no-replace rename. A crash can leave a pending
 record; history and restore keep recovery possible. **Trash staging frees no
 space.** APFS sparse/shared/clone/hard-link allocation and snapshots prevent byte
 counts from promising exclusive physical reclaim.
@@ -78,8 +81,8 @@ inference; test doubles exist only at explicit external neural boundaries.
 Same-user concurrent processes can race observation and rename; this is not a
 sandbox against an adversary with the same permissions. Close writers and retain
 backups. Age, size, a cache-like name, an absent open handle or a stopped VM do not
-establish disposability. App-native dependency probes, resource grouping and validated cleanup accuracy
-remain unfinished. The owner authorized this alpha release with those limitations;
+establish disposability. App-native dependency probes and validated cleanup accuracy remain unfinished.
+Resource grouping is implemented; grouping itself is not evidence that a subtree is disposable. The owner authorized this alpha release with those limitations;
 that authorization does not establish safe judgments for other users.
 
 Report vulnerabilities with a minimal synthetic reproducer via GitHub private

@@ -12,8 +12,8 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import DataTable, Input, OptionList, RichLog, Static
 
-from jev_clean.application.service import audit, reassess_selection, save_plan
-from jev_clean.domain.models import AuditReport, Candidate, human_bytes
+from jev_clean.application.service import audit, prepare_selection, reassess_selection, save_plan
+from jev_clean.domain.models import AuditReport, Candidate, human_bytes, ordered_candidates
 from jev_clean.domain.usage import UsageRow, bar, usage_rows
 from jev_clean.infrastructure import native
 from jev_clean.infrastructure.trash import TrashStore
@@ -110,16 +110,17 @@ class JevCleanApp(App):
     def show_stage(self, stage: str) -> None:
         self.stage = stage
         self.query_one("#menu").display = stage == "menu"
-        self.query_one("#trace").display = stage in ("running", "deleting", "error")
+        self.query_one("#trace").display = stage in ("running", "preparing", "deleting", "error")
         self.query_one("#results").display = stage in ("review", "status")
         self.query_one("#search").display = False
-        self.query_one("#summary").display = stage not in ("menu", "running", "deleting")
+        self.query_one("#summary").display = stage not in ("menu", "running", "preparing", "deleting")
         self.query_one("#title", Static).update(
             "jev-clean" if stage == "menu" else self.mode.title() + (" (demo)" if self.demo else "")
         )
         hints = {
             "menu": "↑↓ Enter · q quit",
             "running": "Esc cancel",
+            "preparing": "Checking selected resource contents…",
             "deleting": "Finishing…",
             "review": "Space select · a all · Enter delete · Esc back",
             "status": "Enter open · Esc back",
@@ -236,7 +237,9 @@ class JevCleanApp(App):
             table.add_column("Size", width=10)
             approved = [c for c in report.scan.candidates if c.selectable]
             visible = [
-                c for c in report.scan.candidates if c.decision and c.decision.choice in {"review", "remove"}
+                c
+                for c in ordered_candidates(report.scan.candidates)
+                if c.decision and c.decision.choice in {"review", "remove"}
             ]
             for c in visible:
                 if query not in c.path.casefold():
@@ -259,7 +262,8 @@ class JevCleanApp(App):
                 "model_assessed", sum(c.decision is not None for c in report.scan.candidates)
             )
             if approved:
-                summary = f"{len(self.selected)}/{len(approved)} selected · {human_bytes(size)}"
+                proposed_bytes = sum(c.allocated_bytes for c in approved)
+                summary = f"{len(self.selected)}/{len(approved)} selected · {human_bytes(size)} · {human_bytes(proposed_bytes)} proposed"
             elif assessed:
                 summary = f"0 approved · {assessed} assessed by model"
             elif report.scan.files_seen:
@@ -281,7 +285,14 @@ class JevCleanApp(App):
                     summary += " | Finished with logged gaps/exclusions"
             elif not report.exploration.get("complete", True):
                 summary += " | Scan incomplete"
-            if "model_assessed_files" in stats:
+            if "model_assessed_resources" in stats:
+                scope_label = "Startup disk" if stats.get("scope") == "startup-disk" else "Custom scope"
+                summary = (
+                    f"{scope_label} · {stats['model_assessed_resources']:,} resources · {stats.get('elapsed_seconds', 0):.1f}s\n"
+                    + summary
+                )
+                self.query_one("#summary").styles.max_height = 5
+            elif "model_assessed_files" in stats:
                 scope_label = "Whole disk" if stats.get("scope") == "startup-disk" else "Custom scope"
                 summary = (
                     f"{scope_label} · {stats['observed_regular_files']:,} scanned · {stats['model_assessed_files']:,} assessed\n"
@@ -317,7 +328,10 @@ class JevCleanApp(App):
             summary = "% of observed bytes" if report.coverage else "% of measured rows"
             if report.coverage:
                 stats = report.exploration.get("stats", {})
-                summary += f" · {stats.get('observed_regular_files', 0):,} files · {stats.get('model_assessed_files', 0):,} model-assessed"
+                if stats.get("granularity") == "resource":
+                    summary += f" · {stats.get('resources_measured', 0):,} resources · {stats.get('model_assessed_resources', 0):,} model-assessed"
+                else:
+                    summary += f" · {stats.get('observed_regular_files', 0):,} files · {stats.get('model_assessed_files', 0):,} model-assessed"
             if self.usage_parent:
                 summary = self.usage_parent.replace(str(self.home), "~", 1) + " · " + summary
             if any(r.percent is None for r in rows) or not report.exploration.get("complete", True):
@@ -369,7 +383,12 @@ class JevCleanApp(App):
             return
         if self.stage == "review" and self.selected:
             items = [self.candidate_by_id[i] for i in self.selected]
-            self.push_screen(ConfirmScreen(items), lambda yes: self.move_selected(items) if yes else None)
+            if not self.demo and any(i.unit == "directory" for i in items):
+                self.busy = True
+                self.show_stage("preparing")
+                self.prepare_worker(items)
+            else:
+                self.present_confirmation(items)
         elif self.stage == "status" and self.report:
             table = self.query_one("#results", DataTable)
             if not table.row_count:
@@ -389,6 +408,25 @@ class JevCleanApp(App):
                 self.usage_parent = None
                 self.start_scan(False)
 
+    @work(thread=True)
+    def prepare_worker(self, items: list[Candidate]) -> None:
+        try:
+            sealed = prepare_selection(items, home=self.home)
+            self.call_from_thread(self.present_confirmation, sealed)
+        except Exception as error:
+            self.call_from_thread(self.scan_failed, str(error))
+
+    def present_confirmation(self, items: list[Candidate]) -> None:
+        self.busy = False
+        if self.cancel_event.is_set():
+            self.selected.clear()
+            self.show_stage("menu")
+            return
+        for item in items:
+            self.candidate_by_id[item.id] = item
+        self.show_stage("review")
+        self.push_screen(ConfirmScreen(items), lambda yes: self.move_selected(items) if yes else None)
+
     def move_selected(self, items: list[Candidate]) -> None:
         if self.demo:
             self.query_one("#summary", Static).update("Demo. No files deleted.")
@@ -403,7 +441,7 @@ class JevCleanApp(App):
         try:
             assessed = reassess_selection(items, home=self.home)
             result = TrashStore(self.home).move(assessed, open_paths=native.open_files())
-            text = f"{result.moved} files moved to Trash."
+            text = f"{result.moved} items moved to Trash."
             if result.failed:
                 text += f" {len(result.failed)} skipped."
             self.call_from_thread(self.trace, f"Undo: jev-clean restore {result.batch_id}")

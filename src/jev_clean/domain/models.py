@@ -45,6 +45,9 @@ class Candidate:
     context_hint: str = ""
     evidence: dict[str, str] = field(default_factory=dict)
     execution_issue: str = ""
+    unit: str = "file"
+    manifest_digest: str = ""
+    member_count: int = 0
 
     @property
     def selectable(self) -> bool:
@@ -57,6 +60,11 @@ class Candidate:
         value["fingerprint"] = Fingerprint(**value["fingerprint"])
         value["decision"] = Decision(**value["decision"]) if value.get("decision") else None
         return cls(**value)
+
+
+def ordered_candidates(items: list[Candidate]) -> list[Candidate]:
+    """Presentation order only; size never creates or overrides a model judgment."""
+    return sorted(items, key=lambda item: (-item.allocated_bytes, item.path))
 
 
 @dataclass

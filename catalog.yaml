@@ -21,6 +21,27 @@ regressions:
   - id: VISIBLE-MODEL-ABSTENTION
     symptom: A review answer disappears from the report or becomes selectable.
     observable_signal: tests/test_model_review_visibility.py
+  - id: SIZE-RANKED-REVIEW
+    symptom: Large model proposals are hidden behind traversal-order small files, or totals show selected bytes only.
+    observable_signal: tests/test_useful_review_order.py
+  - id: RESOURCE-CONTEXT-COLLISION
+    symptom: Deep cache and project files lose their distinct enclosing directory context in model input.
+    observable_signal: tests/test_deep_resource_context.py
+  - id: RESOURCE-NOT-PER-FILE-INFERENCE
+    symptom: Thousands of unselected descendants trigger thousands of model calls or manifest objects.
+    observable_signal: tests/test_fast_resources.py and tests/test_resource_cost_contract.py
+  - id: SEALED-RESOURCE-CONFIRMATION
+    symptom: A directory is staged without a pre-confirmation manifest or after descendant metadata changes.
+    observable_signal: tests/test_resource_confirmation.py and tests/test_resource_staging.py
+  - id: NO-RESOURCE-RESTORE-OVERWRITE
+    symptom: Directory restore overwrites a new destination or follows an internal symlink.
+    observable_signal: tests/test_resource_safety.py
+  - id: RESOURCE-TRANSACTION-CONFLICT
+    symptom: A selected resource contains the executor's own journal or Trash.
+    observable_signal: tests/test_resource_transaction_boundaries.py
+  - id: RESOURCE-CANCELLED-PLAN
+    symptom: Cancellation leaves actionable partial resource proposals.
+    observable_signal: tests/test_resource_cancellation.py
   - id: CATEGORY-MIXING
     symptom: An exact System Data breakdown is invented by combining unrelated timestamps or paths.
     observable_signal: tests/test_contracts.py

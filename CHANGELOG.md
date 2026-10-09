@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0.dev0 — Local resource-first preview
+
+- Replace default per-file neural scanning with disjoint resource discovery, four native measurement workers and mandatory model judgments per resource. No child-file AI coverage claim.
+- Show largest-first findings, proposed versus selected bytes, resource counters and explicit incomplete measurements.
+- Preserve enclosing resource context for deep paths; use a new exact-input cache namespace.
+- Seal selected directory membership before final human confirmation/export; stage whole resources to journaled Trash, revalidate membership and use atomic no-overwrite directory undo.
+- Keep both modes, no root deletion or permanent cleanup. Native reads have per-resource deadlines; selected resources may cost extra metadata work. Laya accuracy remains unvalidated.
+- Benchmarks: eight explicit roots/175 resources in 20.391s; warm startup scope/2,020 resources in 90.092s with 36 measurement gaps. Not a cold/full-access or reclaimed-space claim.
+
 ## 0.3.0 — 2026-09-30
 
 **Breaking change: the model alone decides keep/review/remove.** The previous

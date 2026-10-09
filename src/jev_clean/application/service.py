@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
-from jev_clean.application.whole_disk import investigate_disk
+from jev_clean.application.resources import investigate_resources
 from jev_clean.domain.models import (
     AuditReport,
     Candidate,
@@ -23,6 +23,7 @@ from jev_clean.domain.policy import apply_policy
 from jev_clean.infrastructure import native
 from jev_clean.infrastructure.evidence import EvidenceCollector
 from jev_clean.infrastructure.model import LayaAdvisor
+from jev_clean.infrastructure.resource_tree import tree_manifest
 from jev_clean.infrastructure.scanner import candidate_from_stat, no_symlink_ancestors
 from jev_clean.infrastructure.trash import read_private, save_private
 
@@ -152,7 +153,7 @@ def audit(
                 report.diagnostics["category_probe"] = {k: v for k, v in evidence.items() if k != "stdout"}
             else:
                 report.diagnostics[name] = evidence
-    result = investigate_disk(
+    result = investigate_resources(
         home,
         advisor,
         mode,
@@ -175,18 +176,18 @@ def audit(
     }
     report.measurements = [
         Measurement(
-            n.path, n.allocated_bytes, n.complete, "Model-selected breakdown; nested rows overlap, do not sum"
+            n.path,
+            n.allocated_bytes,
+            n.complete,
+            "Disjoint resource paths; allocated bytes, not exclusive APFS reclaim",
         )
         for n in result.nodes
         if n.is_dir
     ]
-    report.scan = ScanReport(
-        result.candidates, True, result.warnings, result.stats.get("observed_files", len(result.candidates))
-    )
+    report.scan = ScanReport(result.candidates, True, result.warnings, 0)
     report.model_status = (
-        f"Mandatory local Laya-MLX · {result.stats.get('model_assessed_files', 0):,} files assessed · "
-        f"{result.stats.get('fresh_model_inferences', 0):,} fresh / {result.stats.get('reused_model_decisions', 0):,} exact-input reused · "
-        f"{result.stats.get('directory_model_decisions', 0):,} directory classifications"
+        f"Mandatory local Laya-MLX · {result.stats.get('model_assessed_resources', 0):,} resources assessed · "
+        f"{result.stats.get('fresh_model_inferences', 0):,} fresh / {result.stats.get('reused_model_decisions', 0):,} exact-input reused"
     )
     if mode == "clean" and handles is None:
         report.scan.warnings.append("Open-file status unavailable: model received unknown activity")
@@ -199,7 +200,22 @@ def audit(
     return report
 
 
+def prepare_selection(items: list[Candidate], *, home: Path | None = None) -> list[Candidate]:
+    """Seal selected resource membership BEFORE the human sees final confirmation."""
+    return _refresh_selection(items, home=home, require_manifest=False)
+
+
 def reassess_selection(items: list[Candidate], *, home: Path | None = None) -> list[Candidate]:
+    return _refresh_selection(items, home=home, require_manifest=True)
+
+
+def _refresh_selection(
+    items: list[Candidate], *, home: Path | None, require_manifest: bool
+) -> list[Candidate]:
+    paths = [Path(i.path) for i in items]
+    for index, path in enumerate(paths):
+        if any(path.is_relative_to(other) or other.is_relative_to(path) for other in paths[:index]):
+            raise ValueError("Duplicate or overlapping selection; review disjoint resources")
     advisor = LayaAdvisor()
     advisor.load()
     home = home or Path.home()
@@ -213,6 +229,27 @@ def reassess_selection(items: list[Candidate], *, home: Path | None = None) -> l
         fresh = candidate_from_stat(path, path.lstat(), home, handles, evidence)
         if fresh.fingerprint != item.fingerprint:
             raise ValueError("Target identity changed since review")
+        if item.unit == "directory":
+            if require_manifest and not item.manifest_digest:
+                raise ValueError("Directory needs a pre-confirmation manifest; review/export it first")
+            digest, size, count = tree_manifest(path)
+            if item.manifest_digest and digest != item.manifest_digest:
+                raise ValueError("Resource contents changed since review")
+            facts = evidence.collect(path / "[resource]")
+            facts["membership"] = f"exact metadata manifest of {count} descendants; contents not read"
+            fresh = replace(
+                fresh,
+                id=item.id,
+                unit="directory",
+                manifest_digest=digest,
+                member_count=count,
+                allocated_bytes=size,
+                execution_issue="" if fresh.fingerprint.uid == os.getuid() else fresh.execution_issue,
+                evidence=facts,
+                open_file=None
+                if handles is None
+                else any(p == str(path) or p.startswith(str(path) + "/") for p in handles),
+            )
         assessed.append(apply_policy(fresh, advisor.predict(fresh)))
     if not all(c.selectable for c in assessed):
         raise ValueError("Model no longer recommends removal or target cannot be staged; rescan and review")
@@ -220,6 +257,15 @@ def reassess_selection(items: list[Candidate], *, home: Path | None = None) -> l
 
 
 def save_plan(path: Path, report: AuditReport) -> None:
+    # An exported actionable directory plan must bind exact membership before
+    # a later CLI --confirm TRASH; never silently seal after that confirmation.
+    resources = [c for c in report.scan.candidates if c.unit == "directory" and c.selectable]
+    if resources and not report.demo:
+        sealed = {c.id: c for c in prepare_selection(resources, home=Path(report.home))}
+        report = replace(
+            report,
+            scan=replace(report.scan, candidates=[sealed.get(c.id, c) for c in report.scan.candidates]),
+        )
     save_private(path, report.to_dict())
 
 

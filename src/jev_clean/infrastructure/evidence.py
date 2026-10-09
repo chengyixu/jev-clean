@@ -17,7 +17,7 @@ class EvidenceCollector:
         self.home = home
         self.applications: dict[str, set[str]] | None = None
 
-    def _applications(self) -> dict[str, set[str]]:
+    def application_metadata(self) -> dict[str, set[str]]:
         if self.applications is not None:
             return self.applications
         self.applications = {}
@@ -56,8 +56,11 @@ class EvidenceCollector:
             parts = path.parent.parts[1:]
             if len(parts) > 1 and parts[0] == "Users":
                 parts = ("Users", "[account]", *parts[2:])
+        # Keep enclosing storage context as well as leaf directories. Taking
+        # only the tail makes deep caches and project work indistinguishable.
+        shown = parts if len(parts) <= 4 else (*parts[:2], "…", *parts[-2:])
         facts = {
-            "location": "/".join(p[:40] for p in parts[-4:]) or "[home]",
+            "location": "/".join(p[:40] for p in shown) or "[home]",
             "extension": path.suffix[:20] or "[none]",
             "application": "unknown",
             "application_version": "unknown",
@@ -67,7 +70,9 @@ class EvidenceCollector:
         }
         # An identifier equality is evidence of a naming relationship, NOT ownership
         # proof, current use, obsolescence, or proof that another version is removable.
-        matches = [(part, self._applications()[part]) for part in parts if part in self._applications()]
+        matches = [
+            (part, self.application_metadata()[part]) for part in parts if part in self.application_metadata()
+        ]
         if len(matches) == 1:
             identifier, versions = matches[0]
             facts.update(

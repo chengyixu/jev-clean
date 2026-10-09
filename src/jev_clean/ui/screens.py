@@ -62,9 +62,13 @@ class ConfirmScreen(QuestionScreen):
     def __init__(self, items: list[Candidate]):
         count = len(items)
         size = human_bytes(sum(i.allocated_bytes for i in items))
+        directories = sum(i.unit == "directory" for i in items)
+        detail = f"{count} {'item' if count == 1 else 'items'} · {size}\nMoves to Trash; recoverable."
+        if directories:
+            detail += f"\n{directories} directory resources, including ALL descendants."
         super().__init__(
-            "Delete selected files?",
-            f"{count} {'file' if count == 1 else 'files'} · {size}\nMoves to Trash; recoverable.",
+            "Delete selected items?",
+            detail,
             id="confirm-cleanup",
         )
 

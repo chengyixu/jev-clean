@@ -14,23 +14,8 @@ from pathlib import Path
 
 from jev_clean.domain.models import Candidate, Fingerprint, MoveResult
 from jev_clean.domain.policy import apply_policy
+from jev_clean.infrastructure.resource_tree import directory_fd, rename_exclusive, tree_manifest
 from jev_clean.infrastructure.scanner import fingerprint, no_symlink_ancestors
-
-
-@contextmanager
-def directory_fd(path: Path):
-    """Open every component without following symlinks, not just the final one."""
-    if not path.is_absolute() or ".." in path.parts:
-        raise ValueError("Expected canonical absolute path")
-    fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY)
-    try:
-        for part in path.parts[1:]:
-            nxt = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
-            os.close(fd)
-            fd = nxt
-        yield fd
-    finally:
-        os.close(fd)
 
 
 def secure_dir(path: Path) -> None:
@@ -114,9 +99,26 @@ class TrashStore:
                             current = os.stat(source.name, dir_fd=parent, follow_symlinks=False)
                             if fingerprint(current) != item.fingerprint:
                                 raise ValueError("File identity changed since review")
-                            if not stat.S_ISREG(current.st_mode) or current.st_uid != os.getuid():
-                                raise ValueError("Executor requires a current-user regular file")
-                            active = None if open_paths is None else str(source) in open_paths
+                            directory = item.unit == "directory"
+                            if directory:
+                                if not item.manifest_digest:
+                                    raise ValueError("Directory requires a reviewed metadata manifest")
+                                if not stat.S_ISDIR(current.st_mode):
+                                    raise ValueError("Resource type changed")
+                                if tree_manifest(source)[0] != item.manifest_digest:
+                                    raise ValueError("Resource membership changed since review")
+                            elif not stat.S_ISREG(current.st_mode):
+                                raise ValueError("Executor requires a regular file or reviewed directory")
+                            if current.st_uid != os.getuid():
+                                raise ValueError("Executor requires current-user ownership")
+                            active = (
+                                None
+                                if open_paths is None
+                                else any(
+                                    p == str(source) or (directory and p.startswith(str(source) + "/"))
+                                    for p in open_paths
+                                )
+                            )
                             if active != item.open_file:
                                 raise ValueError("Activity evidence changed since model review; reassess")
                             token = uuid.uuid4().hex
@@ -126,6 +128,8 @@ class TrashStore:
                                 "state": "pending",
                                 "fingerprint": asdict(item.fingerprint),
                                 "bytes": item.allocated_bytes,
+                                "unit": item.unit,
+                                "manifest_digest": item.manifest_digest,
                             }
                             journal["entries"].append(entry)
                             save_private(journal_path, journal)
@@ -135,7 +139,7 @@ class TrashStore:
                                 != item.fingerprint
                             ):
                                 raise ValueError("File changed at execution")
-                            os.rename(source.name, token, src_dir_fd=parent, dst_dir_fd=target)
+                            rename_exclusive(source.name, token, parent, target)
                             after = os.stat(token, dir_fd=target, follow_symlinks=False)
                             entry["fingerprint"] = asdict(fingerprint(after))
                             entry["state"] = "staged"
@@ -150,7 +154,9 @@ class TrashStore:
         if not source.is_absolute() or ".." in source.parts:
             raise ValueError("Expected canonical absolute target")
         # The mover cannot relocate its own transaction state or a staged item.
-        if source.is_relative_to(self.state) or source.is_relative_to(self.home / ".Trash"):
+        if any(
+            source.is_relative_to(p) or p.is_relative_to(source) for p in (self.state, self.home / ".Trash")
+        ):
             raise ValueError("Target conflicts with the executor's journal/Trash")
 
     def history(self) -> list[dict]:
@@ -199,17 +205,26 @@ class TrashStore:
                                 old.nlink,
                             ):
                                 raise ValueError("Staged file changed")
-                            if not stat.S_ISREG(st.st_mode) or st.st_uid != os.getuid():
-                                raise ValueError("Unsafe staged file")
-                            # Link is atomic and refuses an existing destination; unlike rename it cannot overwrite.
-                            os.link(
-                                entry["file"],
-                                path.name,
-                                src_dir_fd=trash,
-                                dst_dir_fd=parent,
-                                follow_symlinks=False,
-                            )
-                            os.unlink(entry["file"], dir_fd=trash)
+                            if st.st_uid != os.getuid():
+                                raise ValueError("Unsafe staged owner")
+                            if entry.get("unit") == "directory":
+                                if not stat.S_ISDIR(st.st_mode) or not entry.get("manifest_digest"):
+                                    raise ValueError("Invalid staged directory manifest")
+                                if tree_manifest(batch / entry["file"])[0] != entry["manifest_digest"]:
+                                    raise ValueError("Staged resource changed")
+                                rename_exclusive(entry["file"], path.name, trash, parent)
+                            else:
+                                if not stat.S_ISREG(st.st_mode):
+                                    raise ValueError("Unsafe staged file")
+                                # Link is atomic and refuses an existing destination.
+                                os.link(
+                                    entry["file"],
+                                    path.name,
+                                    src_dir_fd=trash,
+                                    dst_dir_fd=parent,
+                                    follow_symlinks=False,
+                                )
+                                os.unlink(entry["file"], dir_fd=trash)
                             entry["state"] = "restored"
                             save_private(journal_path, journal)
                             result.moved += 1

@@ -12,8 +12,8 @@ from jev_clean.domain.models import Candidate, Decision
 def apply_policy(item: Candidate, decision: Decision | None = None) -> Candidate:
     """Preserve the model's judgment separately from supported staging mechanics."""
     execution_issue = item.execution_issue
-    if not item.regular or item.symlink:
-        execution_issue = "Executor supports regular non-symlink files only"
+    if item.symlink or (not item.regular and item.unit != "directory"):
+        execution_issue = "Executor supports regular files and non-symlink directory resources only"
     elif not item.scan_complete:
         execution_issue = "Exact target metadata unavailable"
     eligible = not execution_issue

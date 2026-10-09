@@ -14,7 +14,15 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
-from jev_clean.domain.models import Candidate, DiskNode, ExplorationResult, ExplorationStep, Fingerprint
+from jev_clean.domain.models import (
+    Candidate,
+    DiskNode,
+    ExplorationResult,
+    ExplorationStep,
+    Fingerprint,
+    human_bytes,
+    ordered_candidates,
+)
 from jev_clean.domain.policy import apply_policy
 from jev_clean.infrastructure.decision_cache import DecisionCache
 from jev_clean.infrastructure.disk_walk import FileMeta, walk_privileged, walk_user
@@ -116,6 +124,8 @@ def investigate_disk(
         "symlinks_observed": 0,
         "special_entries_observed": 0,
         "approved": 0,
+        "approved_candidate_bytes": 0,
+        "review_candidate_bytes": 0,
         "model_remove": 0,
         "model_kept": 0,
         "model_review": 0,
@@ -252,10 +262,13 @@ def investigate_disk(
                     result.candidates.append(reviewed)
                     if reviewed.selectable:
                         stats["approved"] += 1
+                        stats["approved_candidate_bytes"] += reviewed.allocated_bytes
+                    elif decision.choice == "review":
+                        stats["review_candidate_bytes"] += reviewed.allocated_bytes
                 if time.monotonic() - last_progress >= 1:
                     progress(
                         f"{stats['observed_regular_files']:,} files scanned · {stats['model_assessed_files']:,} model-assessed "
-                        f"({stats['fresh_model_inferences']:,} new / {stats['reused_model_decisions']:,} reused) · {stats['approved']:,} approved"
+                        f"({stats['fresh_model_inferences']:,} new / {stats['reused_model_decisions']:,} reused) · {stats['approved']:,} proposed · {human_bytes(stats['approved_candidate_bytes'])} (not freed)"
                     )
                     cache.save_progress(stats, False)
                     last_progress = time.monotonic()
@@ -318,5 +331,6 @@ def investigate_disk(
         result.warnings.append(
             "Not complete: cancelled, permission gaps or declared scope exclusions. See coverage."
         )
+    result.candidates = ordered_candidates(result.candidates)
     result.stats = stats
     return result
