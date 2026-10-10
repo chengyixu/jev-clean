@@ -47,7 +47,7 @@ a no-follow descendant metadata digest before final confirmation (and before an
 actionable CLI plan export). Exact target identity, membership, ownership and activity
 are rechecked at apply/staging. Overlapping targets and executor-state conflicts are
 refused. Directories move atomically into journaled user Trash; undo cannot overwrite.
-No root cleanup or automatic Trash emptying. Model-approved owner-native uv/pnpm pruning is a separate irreversible operation: fixed installed-tool interface, rediscovered path, fresh activity and model recheck, explicit Yes/No (CLI `CLEAN`) consent. No plan-generated argv/force flags; cache allocation is only a removed-byte upper bound. Staging alone frees no space. Existing regular-file undo is retained.
+No root cleanup or automatic Trash emptying. Model-approved owner-native uv/pnpm pruning, npm verification/garbage collection, pip cache purge and Go build-cache cleanup is a separate irreversible operation: fixed installed-tool interface, rediscovered path, fresh activity and model recheck, explicit Yes/No (CLI `CLEAN`) consent. No plan-generated argv/force flags; cache allocation is only a removed-byte upper bound. Staging alone frees no space. Existing regular-file undo is retained.
 
 Same-user concurrent writers remain a race risk; close writers and retain backups.
 Model errors remain known and resource-level accuracy is not validated by speed tests.

@@ -7,6 +7,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Static
 
 from jev_clean.domain.models import Candidate, human_bytes
+from jev_clean.infrastructure.owner_tools import action_label
 
 
 class QuestionScreen(ModalScreen[bool | None]):
@@ -66,8 +67,8 @@ class ConfirmScreen(QuestionScreen):
         native = [i for i in items if i.operation == "owner_prune"]
         detail = f"{count} {'item' if count == 1 else 'items'} · {size}\nMoves to Trash; recoverable."
         if native:
-            tools = ", ".join(i.owner_tool for i in native)
-            detail = f"{count} selected items · {size} allocated upper bound\n{tools} owner prune removes unused entries; cannot be undone."
+            tools = ", ".join(action_label(i.owner_tool) for i in native)
+            detail = f"{count} selected items · {size} allocated upper bound\n{tools}: owner cleanup/prune; cannot be undone."
             if len(native) < count:
                 detail += "\nOther selected items move to Trash; recoverable."
         if directories:

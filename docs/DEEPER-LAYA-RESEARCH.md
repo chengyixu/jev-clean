@@ -201,9 +201,27 @@ real-world safety bound. The user goal across all cleanup classes is not fully s
 general unverified folders defer, and only observed uv/pnpm operations have owner
 execution adapters in this preview.
 
+## Broader owner interfaces verified
+
+Added documented read-only discovery/command semantics for npm cache verify (integrity
+verification and garbage collection), pip cache purge, and Go build-cache-only clean.
+No npm force-clean, pnpm force mode or Go module/source cleanup. Exact operation labels
+appear in checklist and irreversible confirmation. These are typed owner tools, not
+folder-disposal rules; learned Laya must approve the actual observed operation.
+
+Live explicit owner-discovered stores plus personal roots: **318 resources, 4 owner
+actions assessed, 13.074s, no measurement gaps**. Laya approved uv, Go build cache and
+pnpm current store; zero personal proposals. Allocation upper bounds: uv3.066GB,
+Go1.114GB,pnpm20KB (~4.18GBcombined), not measured objects removed/exclusive reclaim.
+Laya withheld npm. Pip's tool reported a cache path that does not currently exist,
+so no target or bytes were invented. No cleanup operation executed. Final local/fresh-source gates: **266 tests,80.50%coverage**. Actual expanded
+installed preview check:318resources16.569s,scope finished,0measurement gaps,
+0personal proposals,uv/Go/pnpm approved. Verified learned adapter and installed source
+parity. Final receipts are in VERIFICATION.md.
+
 ## Remaining gaps
 
-Owner-native actions initially cover uv/pnpm, not all Mole categories. Old tool stores,
+Owner-native actions cover five verified tool interfaces, not all Mole categories. Old tool stores,
 Xcode device support, browser downloads, application state and logs need generating-tool
 observations or richer measured purpose—never inferred disposable from names. A model
 cannot recover missing unique-data/dependency facts from a size total. Independent user-

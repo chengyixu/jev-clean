@@ -41,7 +41,7 @@ changing again at execution requires reassessment; unknown activity alone is not
 a classification veto. Cancellation does not leave an actionable scan. Partial
 whole-disk coverage is reported separately from exact individual target metadata.
 
-Owner-native pruning is distinct from Trash staging. Only reobserved fixed uv/pnpm command interfaces may run without root, after explicit irreversible confirmation; unknown/active owner state blocks execution. No arbitrary argv/force flags from plans or model outputs. Native outputs/exit code are receipts, not exclusive reclaimed-byte promises. No native prune ran during development.
+Owner-native pruning is distinct from Trash staging. Only reobserved fixed uv/pnpm/npm/pip/Go command interfaces may run without root, after explicit irreversible confirmation; unknown/active owner state blocks execution. No arbitrary argv/force flags from plans or model outputs. Native outputs/exit code are receipts, not exclusive reclaimed-byte promises. No native prune ran during development.
 
 Files/resources are journaled before moving to a unique batch under `~/.Trash`. Undo checks
 staged identity and manifests; files use no-overwrite link/unlink, directories use atomic no-replace rename. A crash can leave a pending

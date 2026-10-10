@@ -16,6 +16,7 @@ from jev_clean.application.service import audit, execute_selection, prepare_sele
 from jev_clean.domain.models import AuditReport, Candidate, human_bytes, ordered_candidates
 from jev_clean.domain.usage import UsageRow, bar, usage_rows
 from jev_clean.infrastructure import native
+from jev_clean.infrastructure.owner_tools import action_label
 from jev_clean.infrastructure.trash import TrashStore
 from jev_clean.infrastructure.update import check_update
 from jev_clean.ui.screens import ConfirmScreen, DepthScreen, InfoScreen
@@ -241,7 +242,7 @@ class JevCleanApp(App):
                     Text("[x]" if c.id in self.selected else "[ ]"),
                     Text(
                         (
-                            f"{c.owner_tool} cache prune"
+                            action_label(c.owner_tool)
                             if c.operation == "owner_prune"
                             else c.path.replace(str(self.home), "~", 1)
                         )

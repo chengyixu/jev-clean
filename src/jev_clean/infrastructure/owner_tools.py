@@ -10,6 +10,62 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Any
+
+# Typed owner interfaces, not folder classification/approval rules. Detection,
+# documented semantics and argv share one definition used at scan/apply/staging.
+OWNER_INTERFACES: dict[str, dict[str, Any]] = {
+    "uv": {
+        "binary": "uv",
+        "path": ["cache", "dir"],
+        "help": ["cache", "prune", "--help"],
+        "phrase": "Prune all unreachable objects from the cache",
+        "action": ["cache", "prune"],
+        "source": "https://docs.astral.sh/uv/concepts/cache/",
+        "effect": "removes only unused generated objects with owner-managed cache locking; required projects are not the target",
+    },
+    "pnpm": {
+        "binary": "pnpm",
+        "path": ["store", "path"],
+        "help": ["store", "--help"],
+        "phrase": "Removes unreferenced",
+        "action": ["store", "prune"],
+        "source": "https://pnpm.io/cli/store",
+        "effect": "removes unreferenced package objects; no force mode or alien directory removal; project source is not targeted",
+    },
+    "npm": {
+        "binary": "npm",
+        "path": ["config", "get", "cache"],
+        "help": ["cache", "--help"],
+        "phrase": "npm cache verify",
+        "action": ["cache", "verify"],
+        "source": "https://docs.npmjs.com/cli/commands/npm-cache/",
+        "effect": "verifies cache integrity and garbage-collects unneeded cache data; does not force-clean the entire cache or alter source projects",
+    },
+    "pip": {
+        "binary": "pip3",
+        "path": ["cache", "dir"],
+        "help": ["cache", "--help"],
+        "phrase": "- purge: Remove all items from the cache.",
+        "action": ["cache", "purge"],
+        "source": "https://pip.pypa.io/en/stable/cli/pip_cache/",
+        "effect": "clears generated wheel/download cache items, not installed environments or source projects; cached packages will need fetching or rebuilding later",
+    },
+    "go": {
+        "binary": "go",
+        "path": ["env", "GOCACHE"],
+        "help": ["help", "clean"],
+        "phrase": "-cache flag causes clean to remove the entire go build cache",
+        "action": ["clean", "-cache"],
+        "source": "https://pkg.go.dev/cmd/go#hdr-Remove_object_files_and_cached_files",
+        "effect": "clears only generated Go build-cache artifacts, not module download cache or source projects; future builds recompile necessary objects",
+    },
+}
+
+
+def action_label(owner):
+    interface = OWNER_INTERFACES.get(owner)
+    return f"{owner} {' '.join(interface['action'])}" if interface else f"{owner} owner cleanup"
 
 
 def readonly_run(argv):
@@ -49,16 +105,17 @@ def active_owner(name):
 
 def owner_observations(executables=None, *, run=readonly_run, active=active_owner):
     executables = (
-        {name: shutil.which(name) for name in ("uv", "pnpm")} if executables is None else executables
+        {name: shutil.which(spec["binary"]) for name, spec in OWNER_INTERFACES.items()}
+        if executables is None
+        else executables
     )
     out = []
     for name, executable in executables.items():
-        if not executable or name not in ("uv", "pnpm"):
+        if not executable or name not in OWNER_INTERFACES:
             continue
-        path_cmd = [executable, "cache", "dir"] if name == "uv" else [executable, "store", "path"]
-        help_cmd = (
-            [executable, "cache", "prune", "--help"] if name == "uv" else [executable, "store", "--help"]
-        )
+        interface = OWNER_INTERFACES[name]
+        path_cmd = [executable, *interface["path"]]
+        help_cmd = [executable, *interface["help"]]
         code, text, error = run(path_cmd)
         path = Path(text.strip())
         if (
@@ -71,8 +128,9 @@ def owner_observations(executables=None, *, run=readonly_run, active=active_owne
         ):
             continue
         code, helptext, _ = run(help_cmd)
-        phrase = "Prune all unreachable objects from the cache" if name == "uv" else "Removes unreferenced"
-        if code or phrase.lower() not in helptext.lower():
+        phrase = interface["phrase"]
+        normalized_help = " ".join(helptext.lower().split())
+        if code or " ".join(phrase.lower().split()) not in normalized_help:
             continue
         use = active(name)
         activity = (
@@ -83,12 +141,19 @@ def owner_observations(executables=None, *, run=readonly_run, active=active_owne
             else "Active owner-tool process use is unknown."
         )
         executable = str(Path(executable).resolve())
-        argv = [executable, "cache", "prune"] if name == "uv" else [executable, "store", "prune"]
-        state = (
-            f"Observed operation: {name} owner-native cache/store prune without force. This is the installed storage owner's supported command, NOT whole-directory deletion. "
-            "The tool's own path-discovery command identifies the exact current storage. The command selects only unused or unreferenced regenerable objects and coordinates with its owner storage locks; required projects and unique user work are not targeted. "
-            f"{activity} This proposed operation targets no-longer-needed generated entries, not the entire resource. Exact removed bytes are unknown in advance; allocation is only an upper bound."
-        )
+        argv = [executable, *interface["action"]]
+        if name in ("uv", "pnpm"):
+            state = (
+                f"Observed operation: {name} owner-native cache/store prune without force. This is the installed storage owner's supported command, NOT whole-directory deletion. "
+                "The tool's own path-discovery command identifies the exact current storage. The command selects only unused or unreferenced regenerable objects and coordinates with its owner storage locks; required projects and unique user work are not targeted. "
+                f"{activity} This proposed operation targets no-longer-needed generated entries, not the entire resource. Exact removed bytes are unknown in advance; allocation is only an upper bound."
+            )
+        else:
+            state = (
+                f"Observed operation: {name} documented owner-native cache cleanup without force. This is the installed storage owner's supported command, NOT arbitrary whole-directory deletion. "
+                f"The tool's own path-discovery command identifies the exact current storage. Published operation: {interface['effect']}. "
+                f"{activity} This proposed operation targets owner-managed generated cache data, not unique user work. Exact removed bytes are unknown in advance; allocation is only an upper bound."
+            )
         out.append(
             {
                 "owner": name,
@@ -97,9 +162,8 @@ def owner_observations(executables=None, *, run=readonly_run, active=active_owne
                 "operation": "owner_prune",
                 "state": state,
                 "active": use,
-                "contract_source": "https://docs.astral.sh/uv/concepts/cache/"
-                if name == "uv"
-                else "https://pnpm.io/cli/store",
+                "contract_source": interface["source"],
+                "display_action": " ".join(interface["action"]),
             }
         )
     return out

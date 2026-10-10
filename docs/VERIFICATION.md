@@ -1,5 +1,11 @@
 # Verification record
 
+### Final 0.4.0.dev3 owner-interface expansion (2026-10-10)
+
+- Five read-only-discovered native interfaces supported: uv/pnpm prune, npm verification/garbage collection, pip cache purge and Go build-cache-only cleanup. Exact operation labels and irreversible confirmation tested; no force/source/module cleanup commands. Model still judges each proposed operation; interfaces do not mark folders disposable.
+- Final **266 tests, 80.50% coverage**, lint/mypy/guards pass locally and fresh source archive/locked Python 3.12. Expanded actual source install verified trained artifact and all Python source parity. No remote CI/public release.
+- Actual installed read-only custom-scope check: **318 resources in 16.569s**, scope finished, 0 measurement gaps, 0 personal-folder proposals. Learned Laya approved uv/Go/pnpm, withheld npm; pip's reported cache does not exist and no target was fabricated. Stores sum **4.181 GB allocated upper bound**, not measured unused bytes or reclaimed space. Zero cleanup commands/moves during verification. Version remains local **0.4.0.dev3** with the SHA-pinned learned adapter.
+
 ## 0.4.0.dev3 — Actual learned Laya runtime (2026-10-10)
 
 - Primary-source research and real native MLX encoder/head training, not a path/tag disposal rule. Four final encoder layers plus Laya head/scorer adapted: **75,278,337 parameters**, balanced observation/action corpus, option shuffling, cost-sensitive training and development-only checkpoint selection. Raw failures and exposure history retained in [DEEPER-LAYA-RESEARCH.md](DEEPER-LAYA-RESEARCH.md).

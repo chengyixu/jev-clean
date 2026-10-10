@@ -11,7 +11,7 @@ from jev_clean.infrastructure.scanner import fingerprint, no_symlink_ancestors
 def prune_selected(item, *, runner=subprocess.run):
     if os.geteuid() == 0:
         raise ValueError("Never execute cleanup as root")
-    if item.operation != "owner_prune" or item.owner_tool not in ("uv", "pnpm"):
+    if item.operation != "owner_prune" or item.owner_tool not in owner_tools.OWNER_INTERFACES:
         raise ValueError("Unsupported owner operation")
     observation = next(
         (
