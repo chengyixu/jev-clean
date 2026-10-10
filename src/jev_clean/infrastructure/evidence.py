@@ -14,6 +14,47 @@ from pathlib import Path
 
 from jev_clean.infrastructure.paths import directory_fd
 
+CACHE_NAMESPACE_CONTRACT = "Apple documents the macOS Library/Caches namespace for app-specific support data that the app can re-create easily. Apps can misuse a namespace; this does not prove the contents are unwanted or contain no unique data."
+LOG_NAMESPACE_CONTRACT = "The macOS Library/Logs namespace stores application diagnostic logs. A current writer, support-case need and retention obligation require observation; log placement alone does not prove disposal."
+
+
+def observe_storage_role(path: Path, home: Path) -> dict[str, str]:
+    """Exact verified OS storage namespace; never a model choice or permission.
+
+    Canonical roots only, no substring/leaf-label guessing. The contract describes
+    what the namespace is for, not a guarantee that every file obeys that purpose.
+    """
+    role, contract = "unverified", "No source establishes this resource's storage purpose."
+    if any(p.is_symlink() for p in (path, *path.parents)):
+        return {"storage_namespace": role, "namespace_contract": contract}
+    cache_roots = [home / "Library/Caches", Path("/Library/Caches")]
+    try:
+        parts = path.relative_to(home).parts
+    except ValueError:
+        parts = ()
+    if (
+        len(parts) >= 6
+        and parts[:2] == ("Library", "Containers")
+        and parts[3:6] == ("Data", "Library", "Caches")
+    ):
+        cache_roots.append(home.joinpath(*parts[:6]))
+    if (
+        len(parts) >= 5
+        and parts[:2] == ("Library", "Group Containers")
+        and parts[3:5] == ("Library", "Caches")
+    ):
+        cache_roots.append(home.joinpath(*parts[:5]))
+    for root in cache_roots:
+        if path == root or path.is_relative_to(root):
+            role, contract = "macos-cache", CACHE_NAMESPACE_CONTRACT
+            break
+    if role == "unverified":
+        for root in (home / "Library/Logs", Path("/Library/Logs")):
+            if path == root or path.is_relative_to(root):
+                role, contract = "macos-diagnostic-log", LOG_NAMESPACE_CONTRACT
+                break
+    return {"storage_namespace": role, "namespace_contract": contract}
+
 
 def observe_children(path: Path, *, limit: int = 64) -> dict[str, str]:
     """Bounded immediate-entry structural observations, not a content classifier.
@@ -107,6 +148,7 @@ class EvidenceCollector:
         # only the tail makes deep caches and project work indistinguishable.
         shown = parts if len(parts) <= 4 else (*parts[:2], "…", *parts[-2:])
         facts = {
+            **observe_storage_role(path, self.home),
             "location": "/".join(p[:40] for p in shown) or "[home]",
             "extension": path.suffix[:20] or "[none]",
             "application": "unknown",

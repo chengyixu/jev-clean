@@ -18,9 +18,9 @@ import sys
 import tempfile
 from pathlib import Path
 
-VERSION = "0.4.0.dev3"
-ADAPTER_ID = "jev-cleanup-laya-encoder4-balanced-v1"
-ADAPTER_SHA256 = "7602f928e0926e0bde7cae2ed40fb83432a3cfd33834c6d150b46ca59a20d310"
+VERSION = "0.4.0.dev4"
+ADAPTER_ID = "jev-cleanup-laya-file-resources-v2"
+ADAPTER_SHA256 = "5200fad503588937a20cb78094c8c8731ef35dc8f2ce9c973b860c33c9719a38"
 REPO = "https://github.com/chengyixu/jev-clean"
 
 

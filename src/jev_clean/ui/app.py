@@ -16,7 +16,6 @@ from jev_clean.application.service import audit, execute_selection, prepare_sele
 from jev_clean.domain.models import AuditReport, Candidate, human_bytes, ordered_candidates
 from jev_clean.domain.usage import UsageRow, bar, usage_rows
 from jev_clean.infrastructure import native
-from jev_clean.infrastructure.owner_tools import action_label
 from jev_clean.infrastructure.trash import TrashStore
 from jev_clean.infrastructure.update import check_update
 from jev_clean.ui.screens import ConfirmScreen, DepthScreen, InfoScreen
@@ -234,19 +233,17 @@ class JevCleanApp(App):
             table.add_column("Pick", width=3)
             table.add_column("Files", width=max(15, self.size.width - 25))
             table.add_column("Size", width=10)
-            approved = [c for c in ordered_candidates(report.scan.candidates) if c.selectable]
+            approved = [
+                c
+                for c in ordered_candidates(report.scan.candidates)
+                if c.selectable and c.operation == "trash"
+            ]
             for c in approved:
                 if query not in c.path.casefold():
                     continue
                 table.add_row(
                     Text("[x]" if c.id in self.selected else "[ ]"),
-                    Text(
-                        (
-                            action_label(c.owner_tool)
-                            if c.operation == "owner_prune"
-                            else c.path.replace(str(self.home), "~", 1)
-                        )
-                    ),
+                    Text(c.path.replace(str(self.home), "~", 1)),
                     human_bytes(c.allocated_bytes),
                     key=c.id,
                 )
@@ -329,7 +326,9 @@ class JevCleanApp(App):
         if self.stage == "review" and not self.busy:
             query = self.query_one("#search", Input).value.casefold()
             self.selected.update(
-                c.id for c in self.candidate_by_id.values() if c.selectable and query in c.path.casefold()
+                c.id
+                for c in self.candidate_by_id.values()
+                if c.selectable and c.operation == "trash" and query in c.path.casefold()
             )
             self.render_report()
 

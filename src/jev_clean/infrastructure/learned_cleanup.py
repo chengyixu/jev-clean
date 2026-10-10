@@ -40,6 +40,63 @@ def _extension_counts(value):
     return ", ".join(result) or "unknown"
 
 
+def structural_formats(evidence):
+    """Human-readable format observations; not uniqueness or disposal conclusions."""
+    files = _extension_counts(evidence.get("file_extensions", evidence.get("extension", "") + ":1"))
+    directories = _extension_counts(evidence.get("directory_extensions", ""))
+    suffixes = {s.strip().split(":", 1)[0] for s in (files + "," + directories).split(",")}
+    formats = []
+    if suffixes & {
+        ".jpg",
+        ".jpeg",
+        ".heic",
+        ".png",
+        ".nef",
+        ".cr3",
+        ".mp4",
+        ".mov",
+        ".wav",
+        ".mp3",
+        ".photoslibrary",
+    }:
+        formats.append("media or photo-library formats; original-versus-preview status unknown")
+    if suffixes & {".key", ".pem", ".p12", ".pfx", ".kdbx", ".wallet", ".credentials"}:
+        formats.append("credential or recovery-related formats; real-versus-dummy status unknown")
+    if suffixes & {
+        ".py",
+        ".swift",
+        ".ts",
+        ".tsx",
+        ".js",
+        ".jsx",
+        ".rs",
+        ".go",
+        ".c",
+        ".cpp",
+        ".h",
+        ".hpp",
+        ".java",
+        ".kt",
+        ".kts",
+        ".rb",
+        ".php",
+        ".lua",
+        ".vue",
+        ".git",
+        ".ipynb",
+    }:
+        formats.append("source or repository formats; original-versus-generated status unknown")
+    if suffixes & {".db", ".sqlite", ".sqlite3", ".wal"}:
+        formats.append("database formats; persistent-versus-generated cache role unknown")
+    if suffixes & {".safetensors", ".gguf", ".raw", ".qcow2", ".dmg"}:
+        formats.append("model or disk-image formats; dependencies and replacement availability unknown")
+    return (
+        "; ".join(formats)
+        if formats
+        else "no recognized user-data format in the bounded sample; not proof of subtree purity"
+    )
+
+
 def observed_state(item):
     """Canonical observation record, same path-renaming invariant in train/runtime."""
     if item.operation == "owner_prune":
@@ -51,6 +108,17 @@ def observed_state(item):
         "all immediate entries; descendants uninspected",
         "partial immediate-entry sample; no subtree purity claim",
     }
+    namespace = evidence.get("storage_namespace")
+    if namespace == "macos-cache":
+        from jev_clean.infrastructure.evidence import CACHE_NAMESPACE_CONTRACT
+
+        purpose = f"Actual filesystem namespace: macOS Library/Caches. {CACHE_NAMESPACE_CONTRACT} "
+    elif namespace == "macos-diagnostic-log":
+        from jev_clean.infrastructure.evidence import LOG_NAMESPACE_CONTRACT
+
+        purpose = f"Actual filesystem namespace: macOS Library/Logs. {LOG_NAMESPACE_CONTRACT} "
+    else:
+        purpose = "Filesystem storage purpose is unverified. "
     declaration = (
         "A valid cache declaration from the owner indicates rebuildability; active references and current necessity remain unknown."
         if item.disposal is not None
@@ -70,8 +138,10 @@ def observed_state(item):
         f"File extension observations: {_extension_counts(evidence.get('file_extensions', evidence.get('extension', '') + ':1'))}. "
         f"Directory extension observations: {_extension_counts(evidence.get('directory_extensions', ''))}. "
         f"Observation scope: {scope if scope in known_scopes else 'unknown; descendants uninspected'}. "
-        f"{declaration} {activity} "
-        "Unique original data, recovery copies and whole-resource necessity are unknown unless separately observed. "
+        f"Structural formats: {structural_formats(evidence)}. "
+        f"{purpose}{declaration} {activity} "
+        "Actual contents, unique originals and owner retention wishes are not inferred from placement. "
+        "The user's requested cleanup concerns the selected resource, not arbitrary personal folders. "
         f"Size is measured separately for display, not evidence of disposability. Exact measurement {'complete' if item.scan_complete else 'incomplete'}."
     )
 

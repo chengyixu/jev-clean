@@ -15,9 +15,9 @@ from typing import Any
 from jev_clean.domain.models import Candidate, Decision, DiskNode
 from jev_clean.infrastructure.learned_cleanup import observed_state, predict_cleanup
 
-INPUT_CONTRACT = "learned-pathfree-size-independent-encoder4-ensemble-v6"
-CLEANUP_ADAPTER_ID = "jev-cleanup-laya-encoder4-balanced-v1"
-CLEANUP_ADAPTER_SHA256 = "7602f928e0926e0bde7cae2ed40fb83432a3cfd33834c6d150b46ca59a20d310"
+INPUT_CONTRACT = "learned-file-purpose-structural-observations-v8"
+CLEANUP_ADAPTER_ID = "jev-cleanup-laya-file-resources-v2"
+CLEANUP_ADAPTER_SHA256 = "5200fad503588937a20cb78094c8c8731ef35dc8f2ce9c973b860c33c9719a38"
 MODEL_ID = "aac6fef/laya-mlx"
 MODEL_REVISION = "20aed815fc6acde75733882e7ec0e3f28aeb9717"
 MODEL_FILES = ["*.json", "*.safetensors", "encoder/*.json", "tokenizer/*.json", "LICENSE", "NOTICE"]

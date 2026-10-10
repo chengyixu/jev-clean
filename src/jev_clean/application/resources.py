@@ -217,8 +217,20 @@ def investigate_resources(
             if c.operation != "trash"
             or not any(Path(c.path).is_relative_to(p) or p.is_relative_to(Path(c.path)) for p in owner_paths)
         ]
-        stats["approved"] = sum(c.selectable for c in result.candidates)
-        stats["approved_candidate_bytes"] = sum(c.allocated_bytes for c in result.candidates if c.selectable)
+        stats["approved"] = sum(c.selectable and c.operation == "trash" for c in result.candidates)
+        stats["owner_advisories"] = [
+            {
+                "owner": c.owner_tool,
+                "cache_allocation_upper_bound": c.allocated_bytes,
+                "decision": c.decision.choice if c.decision else None,
+            }
+            for c in result.candidates
+            if c.operation == "owner_prune"
+        ]
+        result.candidates = [c for c in result.candidates if c.operation == "trash"]
+        stats["approved_candidate_bytes"] = sum(
+            c.allocated_bytes for c in result.candidates if c.selectable and c.operation == "trash"
+        )
         stats["walk_finished"] = not cancelled() and stats["resources_measured"] + len(
             result.warnings
         ) == len(paths)

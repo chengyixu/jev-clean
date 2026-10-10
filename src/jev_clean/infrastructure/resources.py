@@ -36,6 +36,8 @@ def split_locations(home: Path) -> set[Path]:
         "Library/Caches",
         "Library/Logs",
         "Library/Application Support",
+        "Library/Containers",
+        "Library/Group Containers",
         "Library/Developer",
         "Library/Developer/Xcode",
         "Library/Developer/Xcode/DerivedData",
@@ -59,6 +61,51 @@ def split_locations(home: Path) -> set[Path]:
         Path("/opt"),
         Path("/usr"),
     }
+
+
+def sandbox_container(path: Path, home: Path) -> bool:
+    """Only organizational boundaries; all siblings stay in inventory."""
+    try:
+        parts = path.relative_to(home).parts
+    except ValueError:
+        return False
+    if parts[:2] == ("Library", "Containers"):
+        if len(parts) in (3, 4, 5):
+            base = home.joinpath(*parts[:3]) / "Data/Library"
+            cache = base / "Caches"
+            try:
+                if not cache.is_dir() or next(cache.iterdir(), None) is None:
+                    return False
+            except OSError:
+                return False
+        return (
+            len(parts) == 3
+            or len(parts) == 4
+            and parts[3] == "Data"
+            or len(parts) == 5
+            and parts[3:5] == ("Data", "Library")
+            or len(parts) == 6
+            and parts[3:5] == ("Data", "Library")
+            and parts[5] in ("Caches", "Logs")
+        )
+    if parts[:2] == ("Library", "Group Containers"):
+        if len(parts) in (3, 4):
+            base = home.joinpath(*parts[:3]) / "Library"
+            cache = base / "Caches"
+            try:
+                if not cache.is_dir() or next(cache.iterdir(), None) is None:
+                    return False
+            except OSError:
+                return False
+        return (
+            len(parts) == 3
+            or len(parts) == 4
+            and parts[3] == "Library"
+            or len(parts) == 5
+            and parts[3] == "Library"
+            and parts[4] in ("Caches", "Logs")
+        )
+    return False
 
 
 def discover_resources(home: Path, scope: DiskScope, cancelled=lambda: False) -> Frontier:
@@ -112,7 +159,7 @@ def discover_resources(home: Path, scope: DiskScope, cancelled=lambda: False) ->
                     structural = any(a != p and a.is_relative_to(p) for a in aliases)
                     structural |= own_state != logical and own_state.is_relative_to(logical)
                     structural |= any(r != p and r.is_relative_to(p) for r in roots)
-                    if force_split or logical in split or structural:
+                    if force_split or logical in split or structural or sandbox_container(logical, home):
                         with directory_fd(p) as fd:
                             held = os.fstat(fd)
                             if (held.st_dev, held.st_ino) != identity:

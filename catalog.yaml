@@ -66,6 +66,18 @@ regressions:
   - id: RAW-MODEL-QUALITY-NOT-PERMISSION
     symptom: Model evaluation counts suppressed errors as correct or picks a checkpoint from final-test scores.
     observable_signal: tests/test_learning_deployment_selection.py
+  - id: ACTUAL-FILES-NOT-COMMANDS
+    symptom: Owner commands or whole command-store allocations appear as file findings/proposed bytes.
+    observable_signal: tests/test_actual_file_checklist.py and tests/test_file_only_pipeline.py
+  - id: CANONICAL-PURPOSE-EVIDENCE
+    symptom: Cache purpose is lost or guessed from arbitrary substrings; sandbox state is conflated with cache resources.
+    observable_signal: tests/test_file_namespace_observation.py and tests/test_sandbox_cache_observations.py
+  - id: HELDOUT-NEGATIVES-NOT-DROPPED
+    symptom: Corpus deduplication silently removes mixed/personal/sensitive controls from evaluation splits.
+    observable_signal: tests/test_file_corpus_integrity.py
+  - id: FILE-REVIEW-EVIDENCE-PARITY
+    symptom: Selected review loses actual purpose facts or trusts forged namespace evidence.
+    observable_signal: tests/test_file_review_evidence_parity.py
   - id: CATEGORY-MIXING
     symptom: An exact System Data breakdown is invented by combining unrelated timestamps or paths.
     observable_signal: tests/test_contracts.py

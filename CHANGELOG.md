@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0.dev4 — Restore actual-file cleanup findings
+
+- Correct command-only regression: Clean lists actual file/directory paths only. Owner actions remain technical advisories and store totals cannot inflate proposed file bytes.
+- Restore verified canonical macOS cache/log namespace purpose and descriptive structural facts as learned-model evidence, not disposal permission. Explore nonempty sandbox cache subtrees without dropping opaque account-state siblings.
+- Retrain native Laya encoder/head on exact file-resource records; fix evaluation deduplication that had removed sensitive controls from heldouts. Failed runs retained, no perfect-safety claim.
+- Candidate read-only benchmark181resources50actualpaths914.9MBallocation31.473s, no personal proposals. Independent60/84control grids0unsupported removes. No files cleaned, no public release assumed.
+
 ## 0.4.0.dev3 — Locally trained Laya encoder/head preview
 
 - Actually adapt four native Laya encoder layers and decision head/scorer; pin learned FP16 artifact by checksum. No silent base-model fallback. Batched option-permutation ensemble reduces label-order bias.

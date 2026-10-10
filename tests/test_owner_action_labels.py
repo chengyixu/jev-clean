@@ -12,7 +12,7 @@ from jev_clean.ui.screens import ConfirmScreen
 
 
 @pytest.mark.asyncio
-async def test_native_cleanup_rows_name_the_actual_owner_action(tmp_path):
+async def test_native_actions_are_auditable_but_not_file_checkboxes(tmp_path):
     items = [
         apply_policy(replace(candidate(id=name), operation="owner_prune", owner_tool=name), answer("remove"))
         for name in ("go", "npm", "pip")
@@ -24,7 +24,9 @@ async def test_native_cleanup_rows_name_the_actual_owner_action(tmp_path):
         app.accept_report(report)
         table = app.query_one("#results", DataTable)
         labels = {table.get_row_at(i)[1].plain for i in range(table.row_count)}
-        assert labels == {"go clean -cache", "npm cache verify", "pip cache purge"}
+        assert labels == set()
+        assert len(report.to_dict()["scan"]["candidates"]) == 3
+        assert report.system_data["approved_candidate_bytes"] == 0
     screen = ConfirmScreen(items)
     assert "go clean -cache" in screen.detail and "npm cache verify" in screen.detail
     assert "cannot be undone" in screen.detail.lower()

@@ -17,7 +17,7 @@ def test_model_sees_resource_context_extension_and_unknown_dependencies(tmp_path
     text = state(path, tmp_path)
     assert "com.example.remote" not in text and "Logs" not in text and ".xlog" in text
     assert "private-session" not in text and "never disclose content" not in text
-    assert "unknown" in text and "necessity" in text
+    assert "unknown" in text and "not inferred" in text
     assert str(tmp_path) not in text
     assert "preserve it" not in text and "protected" not in text
 

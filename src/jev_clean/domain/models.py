@@ -150,7 +150,7 @@ class AuditReport:
     @property
     def system_data(self) -> dict[str, Any]:
         category = self.categories
-        approved = [c for c in self.scan.candidates if c.selectable]
+        approved = [c for c in self.scan.candidates if c.selectable and c.operation == "trash"]
         return {
             "state": ("reconciled" if category.discrepancy_bytes == 0 else "mismatch")
             if category

@@ -71,7 +71,7 @@ def action_label(owner):
 def readonly_run(argv):
     env = {**os.environ, "COREPACK_ENABLE_NETWORK": "0", "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"}
     try:
-        result = subprocess.run(argv, capture_output=True, text=True, timeout=5, env=env)
+        result = subprocess.run(argv, capture_output=True, text=True, errors="replace", timeout=5, env=env)
         return result.returncode, result.stdout, result.stderr
     except (OSError, subprocess.TimeoutExpired):
         return 1, "", "owner tool unavailable"

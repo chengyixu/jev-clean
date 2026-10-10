@@ -413,6 +413,8 @@ def main():
     parser.add_argument("--batch", type=int, default=4)
     parser.add_argument("--false-remove-cost", type=float, default=1.0)
     parser.add_argument("--learning-rate", type=float, default=1e-5)
+    parser.add_argument("--file-resources", action="store_true")
+    parser.add_argument("--file-resources-only", action="store_true")
     args = parser.parse_args()
     if not 1 <= args.steps <= 2400 or not 1 <= args.tail_layers <= 4 or not 1 <= args.batch <= 8:
         parser.error("Research bound: 1–2400 updates, 1–4 tail layers, microbatch 1–8")
@@ -440,6 +442,16 @@ def main():
             for row in rows:
                 if "Proposed operation:" not in row["state"]:
                     row["state"] = "Proposed operation: move the ENTIRE resource to Trash. " + row["state"]
+    if args.file_resources or args.file_resources_only:
+        from file_resource_corpus import build_file_corpus
+
+        file_cases = build_file_corpus()
+        if args.file_resources_only:
+            data = file_cases
+        else:
+            data["train"].extend(file_cases["train"])
+            data["dev"].extend(file_cases["dev"])
+            data["final"] = file_cases["final"]  # new untouched runtime-shaped set
     question_schema = ACTION_QUESTION if args.action_question else QUESTION
     validate_splits(data)
     out = args.output
@@ -625,6 +637,8 @@ def main():
                 best, best_step = rank, step
                 best_weights = {k: mx.array(v) for k, v in tree_flatten(model.trainable_parameters())}
                 mx.eval(best_weights)
+                mx.save_safetensors(str(out / "checkpoint-best.safetensors"), best_weights)
+                (out / "checkpoint-best.json").write_text(json.dumps({"step": step, "dev": score}, indent=2))
             print(
                 "STEP",
                 step,
@@ -645,6 +659,7 @@ def main():
         "all_option_orders": args.all_option_orders,
         "observation_training": args.observation_training,
         "action_records": args.action_records,
+        "file_resource_training": args.file_resources,
         "initial_adapter": str(args.initial_adapter) if args.initial_adapter else None,
         "robust_development_selection": args.robust_dev,
         "selected_step": best_step,

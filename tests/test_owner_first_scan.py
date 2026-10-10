@@ -31,4 +31,5 @@ def test_owner_actions_assessed_before_opaque_tree_measurements(tmp_path, monkey
     assert seen[0] == "owner_prune"
     assert result.stats["owner_actions_assessed"] == 1
     assert result.stats["resources_measured"] == 1
-    assert [c.operation for c in result.candidates] == ["owner_prune"]
+    assert not result.candidates
+    assert len(result.stats["owner_advisories"]) == 1

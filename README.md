@@ -2,7 +2,7 @@
 
 # jev-clean · Nexora
 
-**Local development: 0.4.0.dev3 — trained Laya cleanup model, path-free observations, resource scanning and checkbox-only review.** Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md). The published v0.3.0 installer below still installs the older engine. This local preview requires its SHA-verified trained adapter: `python3 install.py --source . --adapter /path/to/verified/model.safetensors`. There is no public dev3 model download or manual model-free fallback.
+**Local development: 0.4.0.dev4 — actual file-path cleanup findings.** Command actions are not file rows and command-store allocation is excluded from proposed file totals. Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md). The published v0.3.0 installer below still installs the older engine. This local preview requires its SHA-verified trained adapter: `python3 install.py --source . --adapter /path/to/verified/model.safetensors`. There is no public dev4 model download or manual model-free fallback.
 
 **Clean the mysterious “System Data” on your Mac—with a local model doing the investigation.**
 
@@ -24,7 +24,7 @@ macOS calls hundreds of gigabytes **System Data**. That label doesn't tell you w
 
 **Status:** whole startup-disk scan + model assessment → usage bars and percentages.
 
-**Learned Laya decisions, not folder blacklists.** Native Laya's final encoder layers and decision head were adapted on counterfactual observation cases; arbitrary filenames/paths do not enter cleanup inference. Batched reordered choices reduce option bias. Cache tags are observations, not permission gates. Owner-tool facts can support model-approved native prune operations rather than whole-cache deletion. [Research, raw failures and limits](docs/DEEPER-LAYA-RESEARCH.md). Known limitation: a 24-scenario diagnostic answered 16/24 with structured input and included two incorrect-remove answers, so **review every proposed file**. See [ADR 0005](docs/adr/0005-model-owned-judgment.md) and [model-authority-evaluation.json](docs/model-authority-evaluation.json).
+**Learned Laya decisions, not folder blacklists.** Native Laya's final encoder layers and decision head were adapted on counterfactual observation cases; arbitrary filenames/paths do not enter cleanup inference. Batched reordered choices reduce option bias. Cache tags are observations, not permission gates. Verified storage-purpose facts help Laya judge actual cache subtrees. Owner-tool operations stay separate technical advisories, not cleanup-path checkboxes. [Research, raw failures and limits](docs/DEEPER-LAYA-RESEARCH.md). Known limitation: a 24-scenario diagnostic answered 16/24 with structured input and included two incorrect-remove answers, so **review every proposed file**. See [ADR 0005](docs/adr/0005-model-owned-judgment.md) and [model-authority-evaluation.json](docs/model-authority-evaluation.json).
 
 **Resources, not millions of neural file judgments.** Both modes cover the declared mounted startup scope with disjoint directory/file resources. Four native workers measure subtrees; Laya decides per resource. Exact descendant metadata is collected only for selected review. Each native measurement has a 10-second deadline; failures remain explicit gaps, not zero-byte success. No total-resource sampling cap. [Current contract](docs/PRODUCT.md).
 
