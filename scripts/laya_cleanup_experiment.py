@@ -327,15 +327,14 @@ def main():
     import mlx.optimizers as optim
     import numpy as np
     from laya_mlx.agent import collate_items
+    from laya_research_base import load_research_base
     from mlx.utils import tree_flatten, tree_unflatten
 
-    from jev_clean.infrastructure.model import MODEL_ID, MODEL_REVISION, LayaAdvisor
+    from jev_clean.infrastructure.model import MODEL_ID, MODEL_REVISION
 
     data = corpus()
     validate_splits(data)
-    advisor = LayaAdvisor()
-    advisor.load()
-    backend = advisor._shared
+    backend = load_research_base()
     args.output.mkdir(parents=True, exist_ok=True, mode=0o700)
     (args.output / "synthetic-corpus.json").write_text(json.dumps(data, indent=2))
     started = time.perf_counter()

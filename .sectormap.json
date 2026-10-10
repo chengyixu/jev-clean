@@ -12,8 +12,10 @@
   ],
   "behavior": [
     ["O_NOFOLLOW", "Symlink-safe descriptor traversal"],
-    ["apply_policy", "Raw model output separate from evidence-backed authorization"],
-    ["require_current_disposal", "Untrusted plans must match live cache-owner declarations"],
+    ["apply_policy", "Learned Laya decision plus native execution readiness"],
+    ["observed_state", "Path/name-free typed observations prevent instruction injection"],
+    ["prune_selected", "Owner-native cleanup never executes arbitrary plan/model argv"],
+    ["CLEANUP_ADAPTER_SHA256", "Pinned actual learned Laya encoder/head provenance"],
     ["EvidenceCollector", "Local metadata observations without disposal labels"],
     ["investigate_resources", "Native resource totals and model-owned resource judgments"],
     ["tree_manifest", "Selected membership sealed before human confirmation"],

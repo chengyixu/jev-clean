@@ -28,7 +28,7 @@ def test_apple_data_alias_maps_to_same_guard_path():
     )
 
 
-def test_resume_reuses_only_identical_state_and_detects_file_change(tmp_path):
+def test_resume_reuses_semantic_state_but_refreshes_file_identity(tmp_path):
     from test_whole_disk_scope import Model
 
     from jev_clean.application.whole_disk import investigate_disk
@@ -47,7 +47,10 @@ def test_resume_reuses_only_identical_state_and_detects_file_change(tmp_path):
         home, model, "clean", roots=[root], state_dir=tmp_path / "state", open_paths=set()
     )
     assert first.stats["fresh_model_inferences"] == 1
-    assert second.stats["fresh_model_inferences"] == 1
+    assert second.stats["fresh_model_inferences"] == 0
+    assert second.stats["reused_model_decisions"] == 1
+    assert first.candidates[0].fingerprint != second.candidates[0].fingerprint
+    assert first.candidates[0].id != second.candidates[0].id
 
 
 def test_whole_disk_mode_is_the_service_default(monkeypatch, tmp_path, neural_boundary):

@@ -62,8 +62,14 @@ class ConfirmScreen(QuestionScreen):
     def __init__(self, items: list[Candidate]):
         count = len(items)
         size = human_bytes(sum(i.allocated_bytes for i in items))
-        directories = sum(i.unit == "directory" for i in items)
+        directories = sum(i.unit == "directory" and i.operation == "trash" for i in items)
+        native = [i for i in items if i.operation == "owner_prune"]
         detail = f"{count} {'item' if count == 1 else 'items'} · {size}\nMoves to Trash; recoverable."
+        if native:
+            tools = ", ".join(i.owner_tool for i in native)
+            detail = f"{count} selected items · {size} allocated upper bound\n{tools} owner prune removes unused entries; cannot be undone."
+            if len(native) < count:
+                detail += "\nOther selected items move to Trash; recoverable."
         if directories:
             detail += f"\n{directories} directory resources, including ALL descendants."
         super().__init__(

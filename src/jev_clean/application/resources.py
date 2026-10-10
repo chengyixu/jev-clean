@@ -18,6 +18,7 @@ from jev_clean.domain.models import (
     ordered_candidates,
 )
 from jev_clean.domain.policy import apply_policy
+from jev_clean.infrastructure import owner_tools
 from jev_clean.infrastructure.decision_cache import DecisionCache
 from jev_clean.infrastructure.evidence import EvidenceCollector
 from jev_clean.infrastructure.model import state_for
@@ -34,9 +35,12 @@ def investigate_resources(
     state_dir: Path | None = None,
     open_paths: set[str] | None = None,
     deep: bool = False,
+    measurement_timeout: float = 10,
     progress=lambda _: None,
     cancelled=lambda: False,
 ) -> ExplorationResult:
+    if not 1 <= measurement_timeout <= 60:
+        raise ValueError("Resource measurement deadline must be 1–60 seconds")
     if mode not in ("clean", "status"):
         raise ValueError("Unknown mode")
     started = time.monotonic()
@@ -71,6 +75,44 @@ def investigate_resources(
         return stop.is_set() or cancelled()
 
     with DecisionCache(state_dir, advisor, scope.roots, mode) as cache:
+        # Owner-native actions are separate model proposals. Their allocated
+        # stores remain Status rows; don't double-count their nested resource bytes.
+        stats["owner_actions_assessed"] = 0
+        if mode == "clean" and not cancelled():
+            owner = owner_tools.owner_observations()
+            for observation in owner:
+                p = Path(observation["path"])
+                if roots is not None and not any(p == root or p.is_relative_to(root) for root in scope.roots):
+                    continue
+                try:
+                    item = measure_resource(
+                        p, home, evidence, open_paths, cancelled=cancelled, timeout=measurement_timeout
+                    )
+                except (OSError, ValueError):
+                    continue
+                item = replace(
+                    item,
+                    id=item.id + "-" + observation["owner"],
+                    operation="owner_prune",
+                    owner_tool=observation["owner"],
+                    action_evidence=observation["state"],
+                )
+                decision = advisor.predict(item)
+                stats["owner_actions_assessed"] += 1
+                reviewed = apply_policy(item, decision)
+                if decision.choice in ("remove", "review"):
+                    result.candidates.append(reviewed)
+                if reviewed.selectable:
+                    stats["approved"] += 1
+                    stats["approved_candidate_bytes"] += item.allocated_bytes
+                # Never show an overlapping entire store/child Trash operation
+                # alongside a native prune whose target scope is the same tree.
+                result.candidates = [
+                    c
+                    for c in result.candidates
+                    if c.operation != "trash"
+                    or not (Path(c.path).is_relative_to(p) or p.is_relative_to(Path(c.path)))
+                ]
         pending_roots = [DiskNode(str(p), None, True, 0, False) for p in scope.roots]
         # Mandatory model prioritization; every root remains in the declared inventory.
         preferred = []
@@ -101,7 +143,14 @@ def investigate_resources(
                     if path is None:
                         break
                     future = workers.submit(
-                        measure_resource, path, home, evidence, open_paths, deep=deep, cancelled=stopped
+                        measure_resource,
+                        path,
+                        home,
+                        evidence,
+                        open_paths,
+                        deep=deep,
+                        cancelled=stopped,
+                        timeout=measurement_timeout,
                     )
                     active[future] = path
 
@@ -161,6 +210,15 @@ def investigate_resources(
                 stop.set()
                 for future in active:
                     future.cancel()
+        owner_paths = [Path(c.path) for c in result.candidates if c.operation == "owner_prune"]
+        result.candidates = [
+            c
+            for c in result.candidates
+            if c.operation != "trash"
+            or not any(Path(c.path).is_relative_to(p) or p.is_relative_to(Path(c.path)) for p in owner_paths)
+        ]
+        stats["approved"] = sum(c.selectable for c in result.candidates)
+        stats["approved_candidate_bytes"] = sum(c.allocated_bytes for c in result.candidates if c.selectable)
         stats["walk_finished"] = not cancelled() and stats["resources_measured"] + len(
             result.warnings
         ) == len(paths)
@@ -186,7 +244,7 @@ def investigate_resources(
             "exclusions": scope.exclusions,
             "model_reuse": "Exact resource evidence/question/model cache. No individual child-file inference claim.",
             "resource_membership": "Native subtree totals; exact metadata manifests prepared only for selected review.",
-            "measurement_deadline_seconds": 30,
+            "measurement_deadline_seconds": measurement_timeout,
             "measurement_workers": 4,
         }
         cache.save_progress(stats, bool(stats["walk_finished"]))

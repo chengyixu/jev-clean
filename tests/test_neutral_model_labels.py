@@ -1,18 +1,15 @@
 import pytest
 from test_contracts import candidate
+from test_model_owned_judgment import answer
 
-from jev_clean.domain.models import Decision
-from jev_clean.infrastructure.model import LayaAdvisor
+from jev_clean.infrastructure import model
 
 
-@pytest.mark.parametrize("raw,label", [("A", "remove"), ("B", "review"), ("C", "keep")])
-def test_neutral_label_is_translated_without_reclassification(monkeypatch, raw, label):
-    def decide(self, state, key, instructions, criteria):
-        return Decision(raw, {k: 1.0 if k == raw else 0.0 for k in ("A", "B", "C")}, "neural boundary", 7)
-
-    monkeypatch.setattr(LayaAdvisor, "decide", decide)
-    result = LayaAdvisor().predict(candidate())
+@pytest.mark.parametrize("label", ["remove", "review", "keep"])
+def test_model_adapter_answer_is_preserved_without_tag_reclassification(monkeypatch, label):
+    monkeypatch.setattr(model.LayaAdvisor, "_shared", object())
+    monkeypatch.setattr(model, "predict_cleanup", lambda backend, item: answer(label))
+    result = model.LayaAdvisor().predict(candidate(disposal=None))
     assert result.choice == label
     assert result.probabilities[label] == 1.0
     assert set(result.probabilities) == {"keep", "review", "remove"}
-    assert result.elapsed_ms == 7

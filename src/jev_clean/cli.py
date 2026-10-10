@@ -12,7 +12,7 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
-from jev_clean.application.service import audit, load_plan, reassess_selection, save_plan
+from jev_clean.application.service import audit, execute_selection, load_plan, save_plan
 from jev_clean.infrastructure import native
 from jev_clean.infrastructure.model import verify_model_ready
 from jev_clean.infrastructure.trash import TrashStore
@@ -48,7 +48,10 @@ def parser() -> argparse.ArgumentParser:
     cmd.add_argument(
         "--ids", required=True, help="Comma-separated IDs from the reviewed JSON plan; no wildcard/all"
     )
-    cmd.add_argument("--confirm", help="For agents after explicit human authorization: literal TRASH")
+    cmd.add_argument(
+        "--confirm",
+        help="After human authorization: TRASH for staged files, CLEAN for any irreversible owner prune",
+    )
     sub.add_parser("history", help="JSON transaction history")
     cmd = sub.add_parser("restore", help="Restore a batch without overwriting source files")
     cmd.add_argument("batch")
@@ -131,22 +134,22 @@ def main(argv: list[str] | None = None) -> int:
                     "Selection lacks model-remove judgment or execution readiness; rescan/review"
                 )
             print(
-                f"Stage {len(selected)} selected files in Trash. This does not free space.", file=sys.stderr
+                f"Apply {len(selected)} selected cleanup operations. Owner-native pruning is not reversible; Trash staging does not free space.",
+                file=sys.stderr,
             )
             for item in selected:
                 print(item.path, file=sys.stderr)
-            confirm("TRASH", args.confirm)
-            assessed = reassess_selection(selected, home=home)
-            result = TrashStore(home).move(assessed, open_paths=native.open_files())
+            confirm("CLEAN" if any(i.operation == "owner_prune" for i in selected) else "TRASH", args.confirm)
+            result = execute_selection(selected, home=home)
             emit(asdict(result))
             return 1 if result.failed else 0
         elif args.command == "history":
             emit(TrashStore(home).history())
         elif args.command == "restore":
             confirm("RESTORE", args.confirm)
-            result = TrashStore(home).restore(args.batch)
-            emit(asdict(result))
-            return 1 if result.failed else 0
+            restored = TrashStore(home).restore(args.batch)
+            emit(asdict(restored))
+            return 1 if restored.failed else 0
         elif args.command == "doctor":
             model_proof = (
                 verify_model_ready()

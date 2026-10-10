@@ -17,7 +17,8 @@ def test_unrelated_scope_claim_does_not_authorize_personal_directory(tmp_path):
     item = measure_resource(path, tmp_path, EvidenceCollector(tmp_path), set())
     item = replace(item, disposal=DisposalEvidence("cachedir-tag-v1", str(tmp_path / "cache"), "a" * 64))
     result = apply_policy(item, answer("remove"))
-    assert not result.selectable and result.decision.choice == "remove"
+    assert result.selectable and result.decision.choice == "remove"
+    # Unrelated marker claims cannot dictate the model's actual fresh input.
 
 
 def test_hardlinked_tag_cannot_authorize_cleanup(tmp_path):

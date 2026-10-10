@@ -46,17 +46,16 @@ def main():
     import numpy as np
     from laya_mlx.agent import collate_items
     from laya_mlx.model import DecisionHead
+    from laya_research_base import load_research_base
     from mlx.utils import tree_flatten, tree_unflatten
 
-    from jev_clean.infrastructure.model import MODEL_ID, MODEL_REVISION, LayaAdvisor
+    from jev_clean.infrastructure.model import MODEL_ID, MODEL_REVISION
 
     data = head_corpus()
     out = args.output
     out.mkdir(mode=0o700, parents=True, exist_ok=True)
     (out / "corpus.json").write_text(json.dumps(data, indent=2))
-    advisor = LayaAdvisor()
-    advisor.load()
-    backend = advisor._shared
+    backend = load_research_base()
     started = time.perf_counter()
     features, masks, positions, gold, baseline = {}, {}, {}, {}, {}
     for split, rows in data.items():

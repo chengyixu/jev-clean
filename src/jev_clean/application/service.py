@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import time
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
@@ -14,6 +15,7 @@ from jev_clean.domain.models import (
     AuditReport,
     Candidate,
     CategoryReport,
+    CleanupResult,
     DiskNode,
     DisposalEvidence,
     Fingerprint,
@@ -21,10 +23,10 @@ from jev_clean.domain.models import (
     ScanReport,
 )
 from jev_clean.domain.policy import apply_policy
-from jev_clean.infrastructure import native
-from jev_clean.infrastructure.disposal import require_current_disposal
+from jev_clean.infrastructure import native, owner_tools
 from jev_clean.infrastructure.evidence import EvidenceCollector
 from jev_clean.infrastructure.model import LayaAdvisor
+from jev_clean.infrastructure.owner_execution import prune_selected
 from jev_clean.infrastructure.resource_tree import tree_manifest
 from jev_clean.infrastructure.scanner import candidate_from_stat, no_symlink_ancestors
 from jev_clean.infrastructure.trash import read_private, save_private
@@ -240,8 +242,30 @@ def _refresh_selection(
         fresh = candidate_from_stat(path, path.lstat(), home, handles, evidence)
         if fresh.fingerprint != item.fingerprint:
             raise ValueError("Target identity changed since review")
-        require_current_disposal(path, home, item.disposal, directory=item.unit == "directory")
-        if item.unit == "directory":
+        if item.operation == "owner_prune":
+            observation = next(
+                (
+                    r
+                    for r in owner_tools.owner_observations()
+                    if r["owner"] == item.owner_tool and r["path"] == item.path
+                ),
+                None,
+            )
+            if observation is None:
+                raise ValueError("Owner operation contract changed or missing")
+            fresh = replace(
+                fresh,
+                id=item.id,
+                unit="directory",
+                operation="owner_prune",
+                owner_tool=item.owner_tool,
+                action_evidence=observation["state"],
+                allocated_bytes=item.allocated_bytes,
+                execution_issue="" if fresh.fingerprint.uid == os.getuid() else fresh.execution_issue,
+            )
+        elif item.operation != "trash":
+            raise ValueError("Unknown cleanup operation")
+        elif item.unit == "directory":
             if require_manifest and not item.manifest_digest:
                 raise ValueError("Directory needs a pre-confirmation manifest; review/export it first")
             digest, size, count = tree_manifest(path)
@@ -249,6 +273,9 @@ def _refresh_selection(
                 raise ValueError("Resource contents changed since review")
             facts = evidence.collect(path / "[resource]")
             facts["disposal_basis"] = fresh.evidence["disposal_basis"]
+            from jev_clean.infrastructure.evidence import observe_children
+
+            facts.update(observe_children(path))
             facts["membership"] = f"exact metadata manifest of {count} descendants; contents not read"
             fresh = replace(
                 fresh,
@@ -267,6 +294,40 @@ def _refresh_selection(
     if not all(c.selectable for c in assessed):
         raise ValueError("Model no longer recommends removal or target cannot be staged; rescan and review")
     return assessed
+
+
+def execute_selection(items: list[Candidate], *, home: Path | None = None) -> CleanupResult:
+    """Caller must already have obtained explicit human confirmation."""
+    from jev_clean.infrastructure.trash import TrashStore
+
+    result = CleanupResult()
+    home = home or Path.home()
+    try:
+        assessed = reassess_selection(items, home=home)
+    except (ValueError, OSError) as error:
+        result.failed.append(str(error))
+        return result
+    staged = [i for i in assessed if i.operation == "trash"]
+    if staged:
+        moved = TrashStore(home).move(staged, open_paths=native.open_files())
+        result.moved = moved.moved
+        result.staged_bytes = moved.staged_bytes
+        result.batch_id = moved.batch_id
+        result.failed.extend(moved.failed)
+    for item in assessed:
+        if item.operation != "owner_prune":
+            continue
+        try:
+            record = prune_selected(item)
+            result.operations.append(record)
+            if record["complete"]:
+                result.pruned += 1
+            else:
+                result.failed.append(f"{item.owner_tool}: owner cleanup failed")
+        except (ValueError, OSError, TimeoutError, subprocess.TimeoutExpired) as error:
+            result.failed.append(f"{item.owner_tool}: {error}")
+    result.completed = result.moved + result.pruned
+    return result
 
 
 def save_plan(path: Path, report: AuditReport) -> None:

@@ -9,13 +9,15 @@ import platform
 import sys
 import threading
 import time
-from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 from jev_clean.domain.models import Candidate, Decision, DiskNode
+from jev_clean.infrastructure.learned_cleanup import observed_state, predict_cleanup
 
-INPUT_CONTRACT = "observed-disposal-evidence-v4"
+INPUT_CONTRACT = "learned-pathfree-size-independent-encoder4-ensemble-v6"
+CLEANUP_ADAPTER_ID = "jev-cleanup-laya-encoder4-balanced-v1"
+CLEANUP_ADAPTER_SHA256 = "7602f928e0926e0bde7cae2ed40fb83432a3cfd33834c6d150b46ca59a20d310"
 MODEL_ID = "aac6fef/laya-mlx"
 MODEL_REVISION = "20aed815fc6acde75733882e7ec0e3f28aeb9717"
 MODEL_FILES = ["*.json", "*.safetensors", "encoder/*.json", "tokenizer/*.json", "LICENSE", "NOTICE"]
@@ -82,7 +84,7 @@ def parse_prediction(raw: dict[str, Any], elapsed_ms: float, backend: str) -> De
     return parse_choice(raw, "disposition", {"remove", "review", "keep"}, elapsed_ms, backend)
 
 
-def state_for(item: Candidate) -> str:
+def legacy_state_for(item: Candidate) -> str:
     # Metadata only. No contents, basename, absolute home, inferred disposability,
     # or imperative such as 'preserve hardlinks' is smuggled into the state.
     facts = item.evidence or {
@@ -105,6 +107,67 @@ def state_for(item: Candidate) -> str:
         f"link count={item.fingerprint.nlink}; unit={item.unit}; exact measurement={item.scan_complete}. "
         "Age and absence of an open handle do not establish that data is unneeded."
     )
+
+
+def state_for(item: Candidate) -> str:
+    return observed_state(item)
+
+
+def verify_cleanup_adapter(path: Path) -> None:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(4 * 1024 * 1024), b""):
+            digest.update(chunk)
+    if digest.hexdigest() != CLEANUP_ADAPTER_SHA256:
+        raise ValueError("Learned cleanup adapter checksum mismatch")
+
+
+def cleanup_adapter_path() -> Path:
+    path = Path.home() / ".local/share/jev-clean/models" / CLEANUP_ADAPTER_ID / "model.safetensors"
+    from jev_clean.infrastructure.scanner import no_symlink_ancestors
+
+    if not path.is_file() or not no_symlink_ancestors(path):
+        raise RuntimeError(
+            "Pinned learned cleanup model missing; install the verified local preview with its adapter"
+        )
+    import os
+
+    info = path.stat()
+    if info.st_uid != os.getuid() or info.st_nlink != 1 or info.st_mode & 0o022:
+        raise ValueError("Unsafe learned adapter ownership/links/permissions")
+    verify_cleanup_adapter(path)
+    return path
+
+
+def load_cleanup_adapter(backend) -> None:
+    import mlx.core as mx
+    from mlx.utils import tree_unflatten
+
+    weights = mx.load(str(cleanup_adapter_path()))
+    if not isinstance(weights, dict):
+        raise ValueError("Cleanup adapter must contain named weight tensors")
+    from mlx.utils import tree_flatten
+
+    allowed = {"type_emb.weight", "encoder.final_norm.weight", "encoder.final_norm.bias"}
+    parameters: Any = tree_flatten(backend.model.parameters())
+    allowed.update(
+        k
+        for k, _ in parameters
+        if k.startswith(
+            (
+                "head.",
+                "scorer.",
+                "encoder.layers.24.",
+                "encoder.layers.25.",
+                "encoder.layers.26.",
+                "encoder.layers.27.",
+            )
+        )
+    )
+    if set(weights) - allowed:
+        raise ValueError("Unexpected learned adapter tensor keys")
+    backend.model.update(tree_unflatten(list(weights.items())))
+    mx.eval(backend.model.parameters())
 
 
 def local_snapshot(download: bool = False) -> Path:
@@ -179,6 +242,9 @@ def verify_model_ready() -> dict[str, Any]:
         "model": MODEL_ID,
         "revision": MODEL_REVISION,
         "weights_verified": True,
+        "cleanup_adapter": CLEANUP_ADAPTER_ID,
+        "cleanup_adapter_sha256": CLEANUP_ADAPTER_SHA256,
+        "cleanup_probabilities": "uncalibrated for deletion safety",
         "load_ms": advisor.load_ms,
         "smoke_inference_ms": smoke.elapsed_ms,
     }
@@ -201,7 +267,9 @@ class LayaAdvisor:
                     import laya_mlx
                 except ImportError as error:
                     raise RuntimeError("Mandatory laya-mlx runtime missing; reinstall jev-clean") from error
-                type(self)._shared = laya_mlx.load(str(prepare_checkpoint()))
+                backend = laya_mlx.load(str(prepare_checkpoint()))
+                load_cleanup_adapter(backend)
+                type(self)._shared = backend
         self.load_ms = (time.perf_counter() - started) * 1000
 
     def decide(self, state: str, key: str, instructions: str, criteria: dict[str, str]) -> Decision:
@@ -222,15 +290,10 @@ class LayaAdvisor:
             return parse_choice(raw, key, set(criteria), (time.perf_counter() - started) * 1000, MODEL_ID)
 
     def predict(self, item: Candidate) -> Decision:
-        question = QUESTIONS["resource" if item.unit == "directory" else "disposition"]
-        result = self.decide(state_for(item), "disposition", question["instructions"], question["criteria"])
-        # Neutral keys reduce observed label bias; this is a bijective wire translation,
-        # never a threshold, veto, or second classifier.
-        return replace(
-            result,
-            choice=DISPOSITION_LABELS[result.choice],
-            probabilities={DISPOSITION_LABELS[k]: v for k, v in result.probabilities.items()},
-        )
+        with self._lock:
+            if type(self)._shared is None:
+                self.load()
+            return predict_cleanup(type(self)._shared, item)
 
     def choose_directory(self, nodes: list[DiskNode], mode: str) -> Decision:
         if not nodes or len(nodes) > 6:

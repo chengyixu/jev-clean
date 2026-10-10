@@ -73,17 +73,13 @@ class Candidate:
     manifest_digest: str = ""
     member_count: int = 0
     disposal: DisposalEvidence | None = None
+    operation: str = "trash"
+    owner_tool: str = ""
+    action_evidence: str = ""
 
     @property
     def selectable(self) -> bool:
-        return bool(
-            self.eligible
-            and self.recommended
-            and self.decision
-            and self.decision.choice == "remove"
-            and self.disposal
-            and self.disposal.covers(self.path)
-        )
+        return bool(self.eligible and self.recommended and self.decision and self.decision.choice == "remove")
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Candidate:
@@ -216,6 +212,17 @@ class MoveResult:
     moved: int = 0
     staged_bytes: int = 0
     failed: list[str] = field(default_factory=list)
+
+
+@dataclass
+class CleanupResult:
+    completed: int = 0
+    moved: int = 0
+    pruned: int = 0
+    staged_bytes: int = 0
+    batch_id: str = ""
+    failed: list[str] = field(default_factory=list)
+    operations: list[dict[str, Any]] = field(default_factory=list)
 
 
 def human_bytes(value: int | None) -> str:

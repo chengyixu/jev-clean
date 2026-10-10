@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0.dev3 — Locally trained Laya encoder/head preview
+
+- Actually adapt four native Laya encoder layers and decision head/scorer; pin learned FP16 artifact by checksum. No silent base-model fallback. Batched option-permutation ensemble reduces label-order bias.
+- Replace arbitrary path-label cleanup inputs with bounded typed structural/activity facts. Renaming or injected names cannot change classifier state. Unknown facts remain unknown.
+- Remove cache-tag disposal admission: tags are observations only, model decides keep/review/remove. Human selection, exact identities/manifests and technical execution checks remain.
+- Assess verified installed uv/pnpm native prune opportunities first; native pruning is distinct from reversible Trash. Explicit irreversible dialog or CLI CLEAN confirmation, fresh tool/path/activity/model checks, no force flags/arbitrary commands.
+- Measured candidate: fresh label-free authored24set22/24correct,0false removals,6/8cleanup positives. Live6roots161resources15.390s,0personal proposals,two native owner opportunities(~3.06GBallocation upper bound). No cleanup/safety guarantee or public release.
+- Deep sources, failed runs and limitations are preserved in DEEPER-LAYA-RESEARCH.md; diagnostics never hide raw classifier errors.
+
 ## 0.4.0.dev2 — Repair unsupported personal-folder removal proposals
 
 - Require independently observed valid CACHEDIR.TAG cache declarations in addition to model approval; raw remove alone no longer authorizes personal/mixed/unknown data. No folder-name blacklist.

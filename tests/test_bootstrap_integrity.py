@@ -55,9 +55,14 @@ def test_model_load_uses_verified_automatic_checkpoint(monkeypatch, tmp_path):
         "laya_mlx",
         types.SimpleNamespace(load=lambda path: calls.append(path) or backend),
     )
+    monkeypatch.setattr(
+        model,
+        "load_cleanup_adapter",
+        lambda instance: calls.append("adapter") if instance is backend else None,
+    )
     advisor = model.LayaAdvisor()
     advisor.load()
-    assert calls == ["prepare", str(tmp_path)]
+    assert calls == ["prepare", str(tmp_path), "adapter"]
     assert model.LayaAdvisor._shared is backend
 
 

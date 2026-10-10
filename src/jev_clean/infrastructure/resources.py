@@ -9,7 +9,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from jev_clean.domain.models import Candidate
-from jev_clean.infrastructure.evidence import EvidenceCollector
+from jev_clean.infrastructure.evidence import EvidenceCollector, observe_children
 from jev_clean.infrastructure.native import _stream_du
 from jev_clean.infrastructure.paths import aliases_covered_elsewhere, firmlinks, logical_path
 from jev_clean.infrastructure.resource_tree import directory_fd
@@ -170,6 +170,7 @@ def measure_resource(
     facts["location"] = evidence.collect(path / "[resource]")["location"]
     facts["measurement"] = "native allocated subtree total; descendants not individually model-assessed"
     facts["membership"] = "exact descendant manifest captured only for selected review"
+    facts.update(observe_children(path))
     active = None if opened is None else any(p == str(path) or p.startswith(str(path) + "/") for p in opened)
     return replace(
         item,

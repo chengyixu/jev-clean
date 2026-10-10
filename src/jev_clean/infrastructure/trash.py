@@ -14,7 +14,6 @@ from pathlib import Path
 
 from jev_clean.domain.models import Candidate, Fingerprint, MoveResult
 from jev_clean.domain.policy import apply_policy
-from jev_clean.infrastructure.disposal import require_current_disposal
 from jev_clean.infrastructure.resource_tree import directory_fd, rename_exclusive, tree_manifest
 from jev_clean.infrastructure.scanner import fingerprint, no_symlink_ancestors
 
@@ -94,9 +93,8 @@ class TrashStore:
                             raise ValueError("Duplicate selection")
                         seen.add(item.path)
                         self.validate_source(source)
-                        require_current_disposal(
-                            source, self.home, item.disposal, directory=item.unit == "directory"
-                        )
+                        if item.operation != "trash":
+                            raise ValueError("Owner-native operations cannot be moved to Trash")
                         if not item.scan_complete:
                             raise ValueError("Original scan incomplete")
                         with directory_fd(source.parent) as parent:
@@ -143,7 +141,6 @@ class TrashStore:
                                 != item.fingerprint
                             ):
                                 raise ValueError("File changed at execution")
-                            require_current_disposal(source, self.home, item.disposal, directory=directory)
                             rename_exclusive(source.name, token, parent, target)
                             after = os.stat(token, dir_fd=target, follow_symlinks=False)
                             entry["fingerprint"] = asdict(fingerprint(after))

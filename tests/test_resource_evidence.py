@@ -15,9 +15,9 @@ def test_model_sees_resource_context_extension_and_unknown_dependencies(tmp_path
     path.parent.mkdir(parents=True)
     path.write_bytes(b"never disclose content")
     text = state(path, tmp_path)
-    assert "com.example.remote" in text and "Logs" in text and ".xlog" in text
+    assert "com.example.remote" not in text and "Logs" not in text and ".xlog" in text
     assert "private-session" not in text and "never disclose content" not in text
-    assert "regenerability=unknown" in text and "references=unknown" in text
+    assert "unknown" in text and "necessity" in text
     assert str(tmp_path) not in text
     assert "preserve it" not in text and "protected" not in text
 
@@ -42,9 +42,11 @@ def test_installed_app_metadata_is_evidence_not_deletion_permission(tmp_path):
     path.parent.mkdir(parents=True)
     path.write_bytes(b"not inspected")
     text = state(path, tmp_path)
-    assert "com.example.demo" in text and "2.3" in text
-    assert "identifier match" in text
-    assert "references=unknown" in text
+    item = candidate_from_stat(path, path.stat(), tmp_path, set())
+    assert item.evidence["application"] == "com.example.demo"
+    assert item.evidence["application_version"] == "2.3"
+    assert "com.example.demo" not in text  # arbitrary app identifiers are not classifier instructions
+    assert "unknown" in text
 
 
 def test_absent_app_match_is_unknown_not_uninstalled(tmp_path):
@@ -52,5 +54,5 @@ def test_absent_app_match_is_unknown_not_uninstalled(tmp_path):
     path.parent.mkdir(parents=True)
     path.write_bytes(b"x")
     text = state(path, tmp_path)
-    assert "application=unknown" in text
+    assert "No generating-owner data-role declaration" in text
     assert "uninstalled" not in text

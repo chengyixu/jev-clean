@@ -69,7 +69,8 @@ def test_pipeline_report_orders_candidates_and_reports_proposed_bytes(tmp_path, 
     )
     assert [c.path for c in report.candidates] == [str(large), str(small)]
     assert (
-        report.stats["approved_candidate_bytes"] == 0
-        # Model remove answers without disposal evidence are not cleanup permission.
+        report.stats["approved_candidate_bytes"]
+        == large.stat().st_blocks * 512 + small.stat().st_blocks * 512
+        # Model decisions are not overwritten by a path/tag classifier.
     )
     assert report.stats["review_candidate_bytes"] == 0

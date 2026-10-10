@@ -15,7 +15,9 @@ from dataclasses import asdict
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
+from jev_clean.infrastructure.learned_cleanup import QUESTION as CLEANUP_QUESTION
 from jev_clean.infrastructure.model import (
+    CLEANUP_ADAPTER_SHA256,
     DISPOSITION_LABELS,
     INPUT_CONTRACT,
     MODEL_ID,
@@ -83,11 +85,14 @@ class DecisionCache(AbstractContextManager):
                 MODEL_ID,
                 MODEL_REVISION,
                 INPUT_CONTRACT,
+                CLEANUP_ADAPTER_SHA256,
                 DISPOSITION_LABELS,
                 runtime,
                 type(advisor).__module__,
                 type(advisor).__qualname__,
                 QUESTIONS,
+                CLEANUP_QUESTION,
+                "six-option-permutation-mean-v1",
             ],
             sort_keys=True,
         )

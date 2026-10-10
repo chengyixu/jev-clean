@@ -9,7 +9,54 @@ from __future__ import annotations
 import os
 import plistlib
 import stat
+from collections import Counter
 from pathlib import Path
+
+from jev_clean.infrastructure.paths import directory_fd
+
+
+def observe_children(path: Path, *, limit: int = 64) -> dict[str, str]:
+    """Bounded immediate-entry structural observations, not a content classifier.
+
+    No basenames/content enter inference; suffix counts are untrusted observations.
+    A sample is never interpreted as proof of subtree purity or regenerability.
+    """
+    if not 1 <= limit <= 256:
+        raise ValueError("Immediate-entry observation limit must be 1–256")
+    files: Counter[str] = Counter()
+    directories: Counter[str] = Counter()
+    types: Counter[str] = Counter()
+    count, complete = 0, True
+    with directory_fd(path) as fd:
+        with os.scandir(fd) as entries:
+            for entry in entries:
+                if count >= limit:
+                    complete = False
+                    break
+                info = entry.stat(follow_symlinks=False)
+                suffix = Path(entry.name).suffix.lower()[:24] or "[none]"
+                if stat.S_ISREG(info.st_mode):
+                    files[suffix] += 1
+                    types["regular"] += 1
+                elif stat.S_ISDIR(info.st_mode):
+                    directories[suffix] += 1
+                    types["directory"] += 1
+                elif stat.S_ISLNK(info.st_mode):
+                    types["symlink"] += 1
+                else:
+                    types["special"] += 1
+                count += 1
+    return {
+        "sampled_entries": str(count),
+        "entry_types": ", ".join(f"{k}:{v}" for k, v in sorted(types.items())),
+        "file_extensions": ", ".join(f"{k}:{v}" for k, v in files.most_common(8)),
+        "directory_extensions": ", ".join(f"{k}:{v}" for k, v in directories.most_common(8)),
+        "observation_scope": "all immediate entries; descendants uninspected"
+        if complete
+        else "partial immediate-entry sample; no subtree purity claim",
+        "unique_data_status": "not established by metadata",
+        "runtime_references": "not established by entry inspection",
+    }
 
 
 class EvidenceCollector:

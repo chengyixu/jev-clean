@@ -5,7 +5,7 @@ description: Use jev-clean's mandatory local model to investigate macOS System D
 
 # jev-clean · Nexora
 
-0.4.0.dev2 correction: a model remove is not permission. Require independently observed valid CACHEDIR.TAG disposal declarations with live scope/header/identity rechecks. No untagged personal/unknown whole-folder proposals; never create tags to force a cleanup. Raw model errors remain in JSON. Current clean coverage is narrower and not guaranteed safe; see ADR 0007. Historical model-only language below is not the dev2 permission contract.
+Current local 0.4.0.dev3: trained encoder/head Laya with path-free typed observations and reordered probability ensemble. No tag-required admission or filename blacklist. Tags are input facts only; unknown uniqueness/dependencies remain unknown. Model-approved owner uv/pnpm pruning is irreversible and distinct from Trash: explicit human Yes/No or CLI `--confirm CLEAN`, fresh owner/path/activity checks, no arbitrary commands/force flags. Review [DEEPER-LAYA-RESEARCH.md] for raw failures, narrower useful coverage and uncertainty; do not promise universal deletion safety. Historical paragraphs below are not the current dev3 permission contract.
 
 0.4.0.dev0 uses resource-level judgments and native concurrent measurement. Confirm the installed version. `model_assessed_resources` does not count descendant files. Directory proposals include the ENTIRE subtree; exact metadata manifests are sealed before human confirmation/export, then verified at apply. Native timeouts are coverage gaps. Do not mistake proposed allocated bytes for safe/exclusive reclaim. See ADR 0006; the per-file language below describes published 0.3.0 only.
 

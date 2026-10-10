@@ -1,7 +1,7 @@
-"""Model judgment is not permission: independent disposal evidence is required.
+"""Learned Laya judgment plus execution-readiness checks.
 
-Preserve raw model answers; unverified personal/mixed resources cannot become
-selectable from remove alone. No folder-name blacklist or confidence threshold.
+No folder/tag classification admission gates. Model approval never bypasses human
+confirmation, native operation contracts, identity or descendant manifest checks.
 """
 
 from dataclasses import replace
@@ -10,14 +10,12 @@ from jev_clean.domain.models import Candidate, Decision
 
 
 def apply_policy(item: Candidate, decision: Decision | None = None) -> Candidate:
-    """Preserve raw judgment separately from evidence-backed cleanup authorization."""
+    """Preserve learned judgment separately from execution readiness."""
     execution_issue = item.execution_issue
     if item.symlink or (not item.regular and item.unit != "directory"):
         execution_issue = "Executor supports regular files and non-symlink directory resources only"
     elif not item.scan_complete:
         execution_issue = "Exact target metadata unavailable"
-    if not execution_issue and not (item.disposal and item.disposal.covers(item.path)):
-        execution_issue = "No independently observed disposal evidence"
     eligible = not execution_issue
     # This validates the typed answer, not a confidence threshold or classification rule.
     recommended = bool(

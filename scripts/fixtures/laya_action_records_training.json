@@ -1,0 +1,773 @@
+{
+  "provenance": "Authored training operation records. Positive owner-contract facts exist only in synthetic cases; no user data. Prior observation holdout exposed and now diagnostic only.",
+  "cases": [
+    {
+      "family": "train-obs-unknown-secrets",
+      "label": 1,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .key, .pem and .kdbx files. Whether these are required credentials or generated dummy files is unknown. Replacement availability and actual application references have not been checked. Metadata alone does not establish disposal. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-secrets",
+      "label": 1,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .key, .pem and .kdbx files. Whether these are required credentials or generated dummy files is unknown. Replacement availability and actual application references have not been checked. Metadata alone does not establish disposal. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-secrets",
+      "label": 1,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .key, .pem and .kdbx files. Whether these are required credentials or generated dummy files is unknown. Replacement availability and actual application references have not been checked. Metadata alone does not establish disposal. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-secrets",
+      "label": 1,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .key, .pem and .kdbx files. Whether these are required credentials or generated dummy files is unknown. Replacement availability and actual application references have not been checked. Metadata alone does not establish disposal. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-secrets",
+      "label": 2,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .key, .pem and .kdbx files. Owner information establishes these are the only account credentials and recovery keys, needed and not replaceable. The whole resource is required. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-secrets",
+      "label": 2,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .key, .pem and .kdbx files. Owner information establishes these are the only account credentials and recovery keys, needed and not replaceable. The whole resource is required. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-secrets",
+      "label": 2,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .key, .pem and .kdbx files. Owner information establishes these are the only account credentials and recovery keys, needed and not replaceable. The whole resource is required. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-secrets",
+      "label": 2,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .key, .pem and .kdbx files. Owner information establishes these are the only account credentials and recovery keys, needed and not replaceable. The whole resource is required. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unneeded-secrets",
+      "label": 0,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .key, .pem and .kdbx files. Test metadata establishes these are unused generated dummy credentials from a discarded local test, not real accounts. There is no unique information or reference and the owner wants them removed. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unneeded-secrets",
+      "label": 0,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .key, .pem and .kdbx files. Test metadata establishes these are unused generated dummy credentials from a discarded local test, not real accounts. There is no unique information or reference and the owner wants them removed. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unneeded-secrets",
+      "label": 0,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .key, .pem and .kdbx files. Test metadata establishes these are unused generated dummy credentials from a discarded local test, not real accounts. There is no unique information or reference and the owner wants them removed. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unneeded-secrets",
+      "label": 0,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .key, .pem and .kdbx files. Test metadata establishes these are unused generated dummy credentials from a discarded local test, not real accounts. There is no unique information or reference and the owner wants them removed. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-media",
+      "label": 1,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .jpg, .heic and .photoslibrary entries. The sample does not establish whether files are original photos or reproducible previews. Neededness, uniqueness, deeper contents and replacement sources are unknown. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-media",
+      "label": 1,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .jpg, .heic and .photoslibrary entries. The sample does not establish whether files are original photos or reproducible previews. Neededness, uniqueness, deeper contents and replacement sources are unknown. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-media",
+      "label": 1,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .jpg, .heic and .photoslibrary entries. The sample does not establish whether files are original photos or reproducible previews. Neededness, uniqueness, deeper contents and replacement sources are unknown. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-media",
+      "label": 1,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .jpg, .heic and .photoslibrary entries. The sample does not establish whether files are original photos or reproducible previews. Neededness, uniqueness, deeper contents and replacement sources are unknown. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-media",
+      "label": 2,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .jpg, .heic and .photoslibrary entries. Owner information identifies these as the only original photos needed by the user. No verified copy exists elsewhere; they cannot be replaced. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-media",
+      "label": 2,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .jpg, .heic and .photoslibrary entries. Owner information identifies these as the only original photos needed by the user. No verified copy exists elsewhere; they cannot be replaced. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-media",
+      "label": 2,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .jpg, .heic and .photoslibrary entries. Owner information identifies these as the only original photos needed by the user. No verified copy exists elsewhere; they cannot be replaced. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-media",
+      "label": 2,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .jpg, .heic and .photoslibrary entries. Owner information identifies these as the only original photos needed by the user. No verified copy exists elsewhere; they cannot be replaced. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-disposable-media",
+      "label": 0,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .jpg, .heic and .photoslibrary entries. Application metadata confirms the entire selected tree is unused reproducible thumbnail cache; originals are verified elsewhere. No unique work is inside and the owner no longer needs it. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-disposable-media",
+      "label": 0,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .jpg, .heic and .photoslibrary entries. Application metadata confirms the entire selected tree is unused reproducible thumbnail cache; originals are verified elsewhere. No unique work is inside and the owner no longer needs it. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-disposable-media",
+      "label": 0,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .jpg, .heic and .photoslibrary entries. Application metadata confirms the entire selected tree is unused reproducible thumbnail cache; originals are verified elsewhere. No unique work is inside and the owner no longer needs it. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-disposable-media",
+      "label": 0,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .jpg, .heic and .photoslibrary entries. Application metadata confirms the entire selected tree is unused reproducible thumbnail cache; originals are verified elsewhere. No unique work is inside and the owner no longer needs it. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-source",
+      "label": 1,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .py, .swift, .git and .toml entries. Original source versus generated files, active project dependencies and unique edits are unverified. No evidence establishes that the whole directory is unnecessary. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-source",
+      "label": 1,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .py, .swift, .git and .toml entries. Original source versus generated files, active project dependencies and unique edits are unverified. No evidence establishes that the whole directory is unnecessary. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-source",
+      "label": 1,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .py, .swift, .git and .toml entries. Original source versus generated files, active project dependencies and unique edits are unverified. No evidence establishes that the whole directory is unnecessary. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-source",
+      "label": 1,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .py, .swift, .git and .toml entries. Original source versus generated files, active project dependencies and unique edits are unverified. No evidence establishes that the whole directory is unnecessary. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-source",
+      "label": 2,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .py, .swift, .git and .toml entries. The owner confirms unpublished original project code with unique edits, required for active work. This is not disposable generated data. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-source",
+      "label": 2,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .py, .swift, .git and .toml entries. The owner confirms unpublished original project code with unique edits, required for active work. This is not disposable generated data. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-source",
+      "label": 2,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .py, .swift, .git and .toml entries. The owner confirms unpublished original project code with unique edits, required for active work. This is not disposable generated data. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-source",
+      "label": 2,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .py, .swift, .git and .toml entries. The owner confirms unpublished original project code with unique edits, required for active work. This is not disposable generated data. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unneeded-source",
+      "label": 0,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .py, .swift, .git and .toml entries. Test-generator metadata confirms an entirely generated unused fixture workspace, with retained real source elsewhere. No unique edits or needed references exist and the owner discarded it. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unneeded-source",
+      "label": 0,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .py, .swift, .git and .toml entries. Test-generator metadata confirms an entirely generated unused fixture workspace, with retained real source elsewhere. No unique edits or needed references exist and the owner discarded it. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unneeded-source",
+      "label": 0,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .py, .swift, .git and .toml entries. Test-generator metadata confirms an entirely generated unused fixture workspace, with retained real source elsewhere. No unique edits or needed references exist and the owner discarded it. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unneeded-source",
+      "label": 0,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .py, .swift, .git and .toml entries. Test-generator metadata confirms an entirely generated unused fixture workspace, with retained real source elsewhere. No unique edits or needed references exist and the owner discarded it. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-db",
+      "label": 1,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .sqlite, .db and .wal files. Needed application state versus temporary test data, data uniqueness and backups are unknown. It was not established that this directory is unneeded. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-db",
+      "label": 1,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .sqlite, .db and .wal files. Needed application state versus temporary test data, data uniqueness and backups are unknown. It was not established that this directory is unneeded. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-db",
+      "label": 1,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .sqlite, .db and .wal files. Needed application state versus temporary test data, data uniqueness and backups are unknown. It was not established that this directory is unneeded. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-db",
+      "label": 1,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .sqlite, .db and .wal files. Needed application state versus temporary test data, data uniqueness and backups are unknown. It was not established that this directory is unneeded. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-db",
+      "label": 2,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .sqlite, .db and .wal files. The application confirms its required unique transaction database. Records have no recovery copy and are needed by the user. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-db",
+      "label": 2,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .sqlite, .db and .wal files. The application confirms its required unique transaction database. Records have no recovery copy and are needed by the user. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-db",
+      "label": 2,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .sqlite, .db and .wal files. The application confirms its required unique transaction database. Records have no recovery copy and are needed by the user. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-needed-db",
+      "label": 2,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .sqlite, .db and .wal files. The application confirms its required unique transaction database. Records have no recovery copy and are needed by the user. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unneeded-db",
+      "label": 0,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .sqlite, .db and .wal files. The test framework confirms an unused generated database for a discarded test. All data can be recreated, no real records or needed references are present. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unneeded-db",
+      "label": 0,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .sqlite, .db and .wal files. The test framework confirms an unused generated database for a discarded test. All data can be recreated, no real records or needed references are present. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unneeded-db",
+      "label": 0,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .sqlite, .db and .wal files. The test framework confirms an unused generated database for a discarded test. All data can be recreated, no real records or needed references are present. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unneeded-db",
+      "label": 0,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .sqlite, .db and .wal files. The test framework confirms an unused generated database for a discarded test. All data can be recreated, no real records or needed references are present. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-binary",
+      "label": 1,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .bin, .raw and extensionless files. The directory has not been inspected beyond metadata; uniqueness, role and regeneration sources remain unknown. Its size and old age establish no disposal fact. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-binary",
+      "label": 1,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .bin, .raw and extensionless files. The directory has not been inspected beyond metadata; uniqueness, role and regeneration sources remain unknown. Its size and old age establish no disposal fact. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-binary",
+      "label": 1,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .bin, .raw and extensionless files. The directory has not been inspected beyond metadata; uniqueness, role and regeneration sources remain unknown. Its size and old age establish no disposal fact. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-binary",
+      "label": 1,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .bin, .raw and extensionless files. The directory has not been inspected beyond metadata; uniqueness, role and regeneration sources remain unknown. Its size and old age establish no disposal fact. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-required-binary",
+      "label": 2,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .bin, .raw and extensionless files. Application references identify these as unique state and required input for the owner's current VM. They are not replaceable cache outputs. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-required-binary",
+      "label": 2,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .bin, .raw and extensionless files. Application references identify these as unique state and required input for the owner's current VM. They are not replaceable cache outputs. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-required-binary",
+      "label": 2,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .bin, .raw and extensionless files. Application references identify these as unique state and required input for the owner's current VM. They are not replaceable cache outputs. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-required-binary",
+      "label": 2,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .bin, .raw and extensionless files. Application references identify these as unique state and required input for the owner's current VM. They are not replaceable cache outputs. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-disposable-binary",
+      "label": 0,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Immediate-entry observations: .bin, .raw and extensionless files. The generating tool confirms only discarded test scratch data, with no unique state and no references. Every file is reproducible and no longer wanted. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-disposable-binary",
+      "label": 0,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Immediate-entry observations: .bin, .raw and extensionless files. The generating tool confirms only discarded test scratch data, with no unique state and no references. Every file is reproducible and no longer wanted. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-disposable-binary",
+      "label": 0,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Immediate-entry observations: .bin, .raw and extensionless files. The generating tool confirms only discarded test scratch data, with no unique state and no references. Every file is reproducible and no longer wanted. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-disposable-binary",
+      "label": 0,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Immediate-entry observations: .bin, .raw and extensionless files. The generating tool confirms only discarded test scratch data, with no unique state and no references. Every file is reproducible and no longer wanted. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-prune-cache-operation",
+      "label": 0,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Proposed operation: the installed cache owner's documented prune command, NOT moving or deleting the cache directory. The command coordinates with owner locks and targets unused regenerable entries, retaining required data. The owner supports this operation and no active task conflicts. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-prune-cache-operation",
+      "label": 0,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Proposed operation: the installed cache owner's documented prune command, NOT moving or deleting the cache directory. The command coordinates with owner locks and targets unused regenerable entries, retaining required data. The owner supports this operation and no active task conflicts. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-prune-cache-operation",
+      "label": 0,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Proposed operation: the installed cache owner's documented prune command, NOT moving or deleting the cache directory. The command coordinates with owner locks and targets unused regenerable entries, retaining required data. The owner supports this operation and no active task conflicts. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-prune-cache-operation",
+      "label": 0,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Proposed operation: the installed cache owner's documented prune command, NOT moving or deleting the cache directory. The command coordinates with owner locks and targets unused regenerable entries, retaining required data. The owner supports this operation and no active task conflicts. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-direct-cache-operation",
+      "label": 2,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Proposed operation: move the ENTIRE tool cache directory to Trash. The tool's cache safety contract prohibits modifying its cache directly and requires owner-native cleanup. The whole-directory move is not the supported operation and required owner-managed storage must remain. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-direct-cache-operation",
+      "label": 2,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Proposed operation: move the ENTIRE tool cache directory to Trash. The tool's cache safety contract prohibits modifying its cache directly and requires owner-native cleanup. The whole-directory move is not the supported operation and required owner-managed storage must remain. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-direct-cache-operation",
+      "label": 2,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Proposed operation: move the ENTIRE tool cache directory to Trash. The tool's cache safety contract prohibits modifying its cache directly and requires owner-native cleanup. The whole-directory move is not the supported operation and required owner-managed storage must remain. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-direct-cache-operation",
+      "label": 2,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Proposed operation: move the ENTIRE tool cache directory to Trash. The tool's cache safety contract prohibits modifying its cache directly and requires owner-native cleanup. The whole-directory move is not the supported operation and required owner-managed storage must remain. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-prune-operation",
+      "label": 1,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Proposed operation: a command called clean from an unidentified tool. Its documented target, data loss effects and active use have not been established. It is unknown whether it affects unique or required information. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-prune-operation",
+      "label": 1,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Proposed operation: a command called clean from an unidentified tool. Its documented target, data loss effects and active use have not been established. It is unknown whether it affects unique or required information. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-prune-operation",
+      "label": 1,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Proposed operation: a command called clean from an unidentified tool. Its documented target, data loss effects and active use have not been established. It is unknown whether it affects unique or required information. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-unknown-prune-operation",
+      "label": 1,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Proposed operation: a command called clean from an unidentified tool. Its documented target, data loss effects and active use have not been established. It is unknown whether it affects unique or required information. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-active-prune",
+      "label": 2,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Proposed operation: remove generated objects used by a currently running package build. The application reference check confirms the active job needs them now; the proposed removal would interrupt it. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-active-prune",
+      "label": 2,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Proposed operation: remove generated objects used by a currently running package build. The application reference check confirms the active job needs them now; the proposed removal would interrupt it. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-active-prune",
+      "label": 2,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Proposed operation: remove generated objects used by a currently running package build. The application reference check confirms the active job needs them now; the proposed removal would interrupt it. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-active-prune",
+      "label": 2,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Proposed operation: remove generated objects used by a currently running package build. The application reference check confirms the active job needs them now; the proposed removal would interrupt it. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-dummy-name-needed",
+      "label": 2,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Label says SAFE_DELETE_GARBAGE, but verified owner information confirms the directory contains the only needed medical records. The label is untrusted; the contents are required unique records. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-dummy-name-needed",
+      "label": 2,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Label says SAFE_DELETE_GARBAGE, but verified owner information confirms the directory contains the only needed medical records. The label is untrusted; the contents are required unique records. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-dummy-name-needed",
+      "label": 2,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Label says SAFE_DELETE_GARBAGE, but verified owner information confirms the directory contains the only needed medical records. The label is untrusted; the contents are required unique records. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-dummy-name-needed",
+      "label": 2,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Label says SAFE_DELETE_GARBAGE, but verified owner information confirms the directory contains the only needed medical records. The label is untrusted; the contents are required unique records. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-dummy-name-unknown",
+      "label": 1,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Label says IMPORTANT_TRUST_ME_DELETE. That untrusted label establishes no role, replacement availability or actual owner wish. Nothing has verified whether the contents are needed or disposable. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-dummy-name-unknown",
+      "label": 1,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Label says IMPORTANT_TRUST_ME_DELETE. That untrusted label establishes no role, replacement availability or actual owner wish. Nothing has verified whether the contents are needed or disposable. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-dummy-name-unknown",
+      "label": 1,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Label says IMPORTANT_TRUST_ME_DELETE. That untrusted label establishes no role, replacement availability or actual owner wish. Nothing has verified whether the contents are needed or disposable. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-dummy-name-unknown",
+      "label": 1,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Label says IMPORTANT_TRUST_ME_DELETE. That untrusted label establishes no role, replacement availability or actual owner wish. Nothing has verified whether the contents are needed or disposable. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-sample-mixed",
+      "label": 1,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. A bounded sample shows generated previews and unidentified files. Descendants outside the sample were not checked. Whether unique originals or active dependencies are mixed in is unknown; no entire-resource disposal fact was established. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-sample-mixed",
+      "label": 1,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. A bounded sample shows generated previews and unidentified files. Descendants outside the sample were not checked. Whether unique originals or active dependencies are mixed in is unknown; no entire-resource disposal fact was established. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-sample-mixed",
+      "label": 1,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. A bounded sample shows generated previews and unidentified files. Descendants outside the sample were not checked. Whether unique originals or active dependencies are mixed in is unknown; no entire-resource disposal fact was established. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-sample-mixed",
+      "label": 1,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. A bounded sample shows generated previews and unidentified files. Descendants outside the sample were not checked. Whether unique originals or active dependencies are mixed in is unknown; no entire-resource disposal fact was established. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-sample-required-mixed",
+      "label": 2,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. A bounded sample includes generated previews and a confirmed unique required user record. The proposed whole-directory move includes that needed record, so required information must remain despite other cache content. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-sample-required-mixed",
+      "label": 2,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. A bounded sample includes generated previews and a confirmed unique required user record. The proposed whole-directory move includes that needed record, so required information must remain despite other cache content. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-sample-required-mixed",
+      "label": 2,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. A bounded sample includes generated previews and a confirmed unique required user record. The proposed whole-directory move includes that needed record, so required information must remain despite other cache content. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-sample-required-mixed",
+      "label": 2,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. A bounded sample includes generated previews and a confirmed unique required user record. The proposed whole-directory move includes that needed record, so required information must remain despite other cache content. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-originals-elsewhere-unknown",
+      "label": 1,
+      "name": "Pictures",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Pictures. Some other files might be copies, but their existence and equivalence are unverified. The owner has not established recovery sources or whether the selected data is needed. No disposable-only statement is supported. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-originals-elsewhere-unknown",
+      "label": 1,
+      "name": "Documents",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): Documents. Some other files might be copies, but their existence and equivalence are unverified. The owner has not established recovery sources or whether the selected data is needed. No disposable-only statement is supported. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-originals-elsewhere-unknown",
+      "label": 1,
+      "name": "cache",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): cache. Some other files might be copies, but their existence and equivalence are unverified. The owner has not established recovery sources or whether the selected data is needed. No disposable-only statement is supported. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-obs-originals-elsewhere-unknown",
+      "label": 1,
+      "name": "unknown",
+      "state": "Observed resource. Proposed operation: move the ENTIRE directory to Trash. Location (untrusted): unknown. Some other files might be copies, but their existence and equivalence are unverified. The owner has not established recovery sources or whether the selected data is needed. No disposable-only statement is supported. Allocation 2000 MB. Metadata sample is not proof of unique-data status."
+    },
+    {
+      "family": "train-record-native-unnecessary",
+      "label": 0,
+      "name": "Pictures",
+      "state": "Observed resource. Location (untrusted): Pictures. Proposed operation: installed uv cache prune command, NOT deleting or moving the directory. Installed uv reports its current cache location. Published tool contract: never directly modify the cache, use this native prune operation to remove unused entries with owner locks. Required referenced objects and source projects remain. This operation targets unnecessary generated data only."
+    },
+    {
+      "family": "train-record-native-unnecessary",
+      "label": 0,
+      "name": "Documents",
+      "state": "Observed resource. Location (untrusted): Documents. Proposed operation: installed uv cache prune command, NOT deleting or moving the directory. Installed uv reports its current cache location. Published tool contract: never directly modify the cache, use this native prune operation to remove unused entries with owner locks. Required referenced objects and source projects remain. This operation targets unnecessary generated data only."
+    },
+    {
+      "family": "train-record-native-unnecessary",
+      "label": 0,
+      "name": "cache",
+      "state": "Observed resource. Location (untrusted): cache. Proposed operation: installed uv cache prune command, NOT deleting or moving the directory. Installed uv reports its current cache location. Published tool contract: never directly modify the cache, use this native prune operation to remove unused entries with owner locks. Required referenced objects and source projects remain. This operation targets unnecessary generated data only."
+    },
+    {
+      "family": "train-record-native-unnecessary",
+      "label": 0,
+      "name": "unknown",
+      "state": "Observed resource. Location (untrusted): unknown. Proposed operation: installed uv cache prune command, NOT deleting or moving the directory. Installed uv reports its current cache location. Published tool contract: never directly modify the cache, use this native prune operation to remove unused entries with owner locks. Required referenced objects and source projects remain. This operation targets unnecessary generated data only."
+    },
+    {
+      "family": "train-record-native-required",
+      "label": 2,
+      "name": "Pictures",
+      "state": "Observed resource. Location (untrusted): Pictures. Proposed operation: move the ENTIRE uv cache directory to Trash. Installed uv reports its current cache location. Published tool contract: never directly modify the cache; use native prune instead. The whole-directory move is not that native operation. Retain the owner-managed storage under this proposed move."
+    },
+    {
+      "family": "train-record-native-required",
+      "label": 2,
+      "name": "Documents",
+      "state": "Observed resource. Location (untrusted): Documents. Proposed operation: move the ENTIRE uv cache directory to Trash. Installed uv reports its current cache location. Published tool contract: never directly modify the cache; use native prune instead. The whole-directory move is not that native operation. Retain the owner-managed storage under this proposed move."
+    },
+    {
+      "family": "train-record-native-required",
+      "label": 2,
+      "name": "cache",
+      "state": "Observed resource. Location (untrusted): cache. Proposed operation: move the ENTIRE uv cache directory to Trash. Installed uv reports its current cache location. Published tool contract: never directly modify the cache; use native prune instead. The whole-directory move is not that native operation. Retain the owner-managed storage under this proposed move."
+    },
+    {
+      "family": "train-record-native-required",
+      "label": 2,
+      "name": "unknown",
+      "state": "Observed resource. Location (untrusted): unknown. Proposed operation: move the ENTIRE uv cache directory to Trash. Installed uv reports its current cache location. Published tool contract: never directly modify the cache; use native prune instead. The whole-directory move is not that native operation. Retain the owner-managed storage under this proposed move."
+    },
+    {
+      "family": "train-record-pnpm-prune",
+      "label": 0,
+      "name": "Pictures",
+      "state": "Observed resource. Location (untrusted): Pictures. Proposed operation: installed pnpm store prune without --force. Tool discovery confirms the current store location. Documented behavior: remove unreferenced generated package objects; leave source projects and modifications alone. No active package job is observed. The proposed operation targets only unnecessary regenerable entries."
+    },
+    {
+      "family": "train-record-pnpm-prune",
+      "label": 0,
+      "name": "Documents",
+      "state": "Observed resource. Location (untrusted): Documents. Proposed operation: installed pnpm store prune without --force. Tool discovery confirms the current store location. Documented behavior: remove unreferenced generated package objects; leave source projects and modifications alone. No active package job is observed. The proposed operation targets only unnecessary regenerable entries."
+    },
+    {
+      "family": "train-record-pnpm-prune",
+      "label": 0,
+      "name": "cache",
+      "state": "Observed resource. Location (untrusted): cache. Proposed operation: installed pnpm store prune without --force. Tool discovery confirms the current store location. Documented behavior: remove unreferenced generated package objects; leave source projects and modifications alone. No active package job is observed. The proposed operation targets only unnecessary regenerable entries."
+    },
+    {
+      "family": "train-record-pnpm-prune",
+      "label": 0,
+      "name": "unknown",
+      "state": "Observed resource. Location (untrusted): unknown. Proposed operation: installed pnpm store prune without --force. Tool discovery confirms the current store location. Documented behavior: remove unreferenced generated package objects; leave source projects and modifications alone. No active package job is observed. The proposed operation targets only unnecessary regenerable entries."
+    },
+    {
+      "family": "train-record-unknown-prune",
+      "label": 1,
+      "name": "Pictures",
+      "state": "Observed resource. Location (untrusted): Pictures. Proposed operation: unknown application command named prune. Which files it affects, whether unique work is included, locking and recovery behavior are unverified. No documented safe target semantics are established."
+    },
+    {
+      "family": "train-record-unknown-prune",
+      "label": 1,
+      "name": "Documents",
+      "state": "Observed resource. Location (untrusted): Documents. Proposed operation: unknown application command named prune. Which files it affects, whether unique work is included, locking and recovery behavior are unverified. No documented safe target semantics are established."
+    },
+    {
+      "family": "train-record-unknown-prune",
+      "label": 1,
+      "name": "cache",
+      "state": "Observed resource. Location (untrusted): cache. Proposed operation: unknown application command named prune. Which files it affects, whether unique work is included, locking and recovery behavior are unverified. No documented safe target semantics are established."
+    },
+    {
+      "family": "train-record-unknown-prune",
+      "label": 1,
+      "name": "unknown",
+      "state": "Observed resource. Location (untrusted): unknown. Proposed operation: unknown application command named prune. Which files it affects, whether unique work is included, locking and recovery behavior are unverified. No documented safe target semantics are established."
+    },
+    {
+      "family": "train-record-mixed-sensitive",
+      "label": 2,
+      "name": "Pictures",
+      "state": "Observed resource. Location (untrusted): Pictures. Proposed operation: move the ENTIRE directory to Trash. Immediate sample sees generated previews and a confirmed needed unique private key. The key is required for recovery and no replacement exists. The proposed action includes it. The resource cannot be removed as a whole."
+    },
+    {
+      "family": "train-record-mixed-sensitive",
+      "label": 2,
+      "name": "Documents",
+      "state": "Observed resource. Location (untrusted): Documents. Proposed operation: move the ENTIRE directory to Trash. Immediate sample sees generated previews and a confirmed needed unique private key. The key is required for recovery and no replacement exists. The proposed action includes it. The resource cannot be removed as a whole."
+    },
+    {
+      "family": "train-record-mixed-sensitive",
+      "label": 2,
+      "name": "cache",
+      "state": "Observed resource. Location (untrusted): cache. Proposed operation: move the ENTIRE directory to Trash. Immediate sample sees generated previews and a confirmed needed unique private key. The key is required for recovery and no replacement exists. The proposed action includes it. The resource cannot be removed as a whole."
+    },
+    {
+      "family": "train-record-mixed-sensitive",
+      "label": 2,
+      "name": "unknown",
+      "state": "Observed resource. Location (untrusted): unknown. Proposed operation: move the ENTIRE directory to Trash. Immediate sample sees generated previews and a confirmed needed unique private key. The key is required for recovery and no replacement exists. The proposed action includes it. The resource cannot be removed as a whole."
+    },
+    {
+      "family": "train-record-vault-unknown",
+      "label": 1,
+      "name": "Pictures",
+      "state": "Observed resource. Location (untrusted): Pictures. Proposed operation: move the ENTIRE directory to Trash. Immediate entries: .key .pem .kdbx. It is unknown whether these are real credentials or dummy test files. References, uniqueness and replacement availability were not checked. Nothing says the entire directory is unnecessary."
+    },
+    {
+      "family": "train-record-vault-unknown",
+      "label": 1,
+      "name": "Documents",
+      "state": "Observed resource. Location (untrusted): Documents. Proposed operation: move the ENTIRE directory to Trash. Immediate entries: .key .pem .kdbx. It is unknown whether these are real credentials or dummy test files. References, uniqueness and replacement availability were not checked. Nothing says the entire directory is unnecessary."
+    },
+    {
+      "family": "train-record-vault-unknown",
+      "label": 1,
+      "name": "cache",
+      "state": "Observed resource. Location (untrusted): cache. Proposed operation: move the ENTIRE directory to Trash. Immediate entries: .key .pem .kdbx. It is unknown whether these are real credentials or dummy test files. References, uniqueness and replacement availability were not checked. Nothing says the entire directory is unnecessary."
+    },
+    {
+      "family": "train-record-vault-unknown",
+      "label": 1,
+      "name": "unknown",
+      "state": "Observed resource. Location (untrusted): unknown. Proposed operation: move the ENTIRE directory to Trash. Immediate entries: .key .pem .kdbx. It is unknown whether these are real credentials or dummy test files. References, uniqueness and replacement availability were not checked. Nothing says the entire directory is unnecessary."
+    },
+    {
+      "family": "train-record-vault-required",
+      "label": 2,
+      "name": "Pictures",
+      "state": "Observed resource. Location (untrusted): Pictures. Proposed operation: move the ENTIRE directory to Trash. Immediate entries: .key .pem .kdbx. Owner confirmation establishes unique required keys and passwords used for recovery. No verified other copies exist. These are not unneeded dummy files."
+    },
+    {
+      "family": "train-record-vault-required",
+      "label": 2,
+      "name": "Documents",
+      "state": "Observed resource. Location (untrusted): Documents. Proposed operation: move the ENTIRE directory to Trash. Immediate entries: .key .pem .kdbx. Owner confirmation establishes unique required keys and passwords used for recovery. No verified other copies exist. These are not unneeded dummy files."
+    },
+    {
+      "family": "train-record-vault-required",
+      "label": 2,
+      "name": "cache",
+      "state": "Observed resource. Location (untrusted): cache. Proposed operation: move the ENTIRE directory to Trash. Immediate entries: .key .pem .kdbx. Owner confirmation establishes unique required keys and passwords used for recovery. No verified other copies exist. These are not unneeded dummy files."
+    },
+    {
+      "family": "train-record-vault-required",
+      "label": 2,
+      "name": "unknown",
+      "state": "Observed resource. Location (untrusted): unknown. Proposed operation: move the ENTIRE directory to Trash. Immediate entries: .key .pem .kdbx. Owner confirmation establishes unique required keys and passwords used for recovery. No verified other copies exist. These are not unneeded dummy files."
+    },
+    {
+      "family": "train-record-vault-disposable",
+      "label": 0,
+      "name": "Pictures",
+      "state": "Observed resource. Location (untrusted): Pictures. Proposed operation: move the ENTIRE directory to Trash. Immediate entries: .key .pem .kdbx. Test manifest confirms unused generated dummy keys for a discarded fixture, not real credentials. The owner confirms no unique work, no real account dependencies and all target data can be recreated."
+    },
+    {
+      "family": "train-record-vault-disposable",
+      "label": 0,
+      "name": "Documents",
+      "state": "Observed resource. Location (untrusted): Documents. Proposed operation: move the ENTIRE directory to Trash. Immediate entries: .key .pem .kdbx. Test manifest confirms unused generated dummy keys for a discarded fixture, not real credentials. The owner confirms no unique work, no real account dependencies and all target data can be recreated."
+    },
+    {
+      "family": "train-record-vault-disposable",
+      "label": 0,
+      "name": "cache",
+      "state": "Observed resource. Location (untrusted): cache. Proposed operation: move the ENTIRE directory to Trash. Immediate entries: .key .pem .kdbx. Test manifest confirms unused generated dummy keys for a discarded fixture, not real credentials. The owner confirms no unique work, no real account dependencies and all target data can be recreated."
+    },
+    {
+      "family": "train-record-vault-disposable",
+      "label": 0,
+      "name": "unknown",
+      "state": "Observed resource. Location (untrusted): unknown. Proposed operation: move the ENTIRE directory to Trash. Immediate entries: .key .pem .kdbx. Test manifest confirms unused generated dummy keys for a discarded fixture, not real credentials. The owner confirms no unique work, no real account dependencies and all target data can be recreated."
+    }
+  ]
+}

@@ -33,9 +33,9 @@ def test_all_regular_files_receive_unfiltered_model_judgments(tmp_path):
     )
     assert report.stats["observed_regular_files"] == 4
     assert report.stats["model_assessed_files"] == 4
-    assert report.stats["execution_unavailable"] == 4
+    assert report.stats["execution_unavailable"] == 0
     assert len(report.candidates) == 4
-    assert all(not c.selectable and c.decision.choice == "remove" for c in report.candidates)
+    assert all(c.selectable and c.decision.choice == "remove" for c in report.candidates)
     assert report.stats["walk_finished"]
 
 

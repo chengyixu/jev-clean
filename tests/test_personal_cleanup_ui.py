@@ -10,14 +10,14 @@ from jev_clean.ui.app import JevCleanApp
 
 
 @pytest.mark.asyncio
-async def test_pictures_and_renamed_data_never_become_checkboxes_from_remove_alone(tmp_path):
+async def test_learned_review_answers_for_personal_data_never_become_checkboxes(tmp_path):
     items = []
     for name in ("Pictures", "renamed-user-data", "cache-looking-name"):
         path = tmp_path / name
         path.mkdir()
         (path / "unique.bin").write_bytes(b"unique work")
         item = measure_resource(path, tmp_path, EvidenceCollector(tmp_path), set())
-        items.append(apply_policy(item, answer("remove")))
+        items.append(apply_policy(item, answer("review")))
     report = AuditReport(1, "2026-01-01T00:00:00+00:00", str(tmp_path), "clean", ScanReport(items))
     app = JevCleanApp(home=tmp_path)
     async with app.run_test() as pilot:
@@ -28,5 +28,5 @@ async def test_pictures_and_renamed_data_never_become_checkboxes_from_remove_alo
         assert not app.selected
         assert app.screen.id != "confirm-cleanup"
         exported = report.to_dict()["scan"]["candidates"]
-        assert all(c["decision"]["choice"] == "remove" and not c["selectable"] for c in exported)
+        assert all(c["decision"]["choice"] == "review" and not c["selectable"] for c in exported)
         assert not (tmp_path / ".Trash").exists()

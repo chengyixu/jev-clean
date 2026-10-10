@@ -42,7 +42,7 @@ def test_changed_target_is_not_silently_reauthorized(tmp_path, monkeypatch):
     assert path.read_bytes() == b"new owner work"
 
 
-def test_evidence_difference_invalidates_cache(tmp_path):
+def test_actual_activity_observation_invalidates_cache(tmp_path):
     from test_whole_disk_scope import Model
 
     from jev_clean.infrastructure.decision_cache import DecisionCache
@@ -53,8 +53,6 @@ def test_evidence_difference_invalidates_cache(tmp_path):
     item = candidate_from_stat(path, path.stat(), tmp_path, set())
     with DecisionCache(tmp_path / "cache", Model(), [tmp_path], "clean") as cache:
         cache.put(state_for(item), answer("remove"))
-        changed = replace(
-            item, evidence={**item.evidence, "references": "application now references this file"}
-        )
+        changed = replace(item, open_file=True)
         assert cache.get(state_for(changed)) is None
         assert cache.get(state_for(item)).choice == "remove"

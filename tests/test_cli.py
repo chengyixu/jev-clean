@@ -24,9 +24,9 @@ def test_cli_demo_uses_neural_boundary_and_labels_metadata(neural_boundary, caps
     report = json.loads(capsys.readouterr().out)
     assert report["demo"] and report["exploration"]["steps"]
     assert report["scan"]["candidates"][0]["decision"]["backend"] == "test neural boundary"
-    # The double always chooses remove, but only the synthetic declared cache has disposal evidence.
+    # The double always chooses remove, but the application must not override it with tag/classification gates.
     assert all(c["decision"]["choice"] == "remove" for c in report["scan"]["candidates"])
-    assert sum(c["selectable"] for c in report["scan"]["candidates"]) == 1
+    assert sum(c["selectable"] for c in report["scan"]["candidates"]) == 5
 
 
 def test_cli_no_model_off_or_removed_modes():
@@ -36,7 +36,7 @@ def test_cli_no_model_off_or_removed_modes():
 
 def test_cli_help_and_completion():
     assert cli("--help").returncode == 0
-    assert cli("--version").stdout.strip() == "0.4.0.dev2"
+    assert cli("--version").stdout.strip() == "0.4.0.dev3"
     for shell in ["bash", "zsh", "fish"]:
         result = cli("completion", shell)
         assert result.returncode == 0 and "jev-clean" in result.stdout

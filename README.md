@@ -2,7 +2,7 @@
 
 # jev-clean · Nexora
 
-**Local development: 0.4.0.dev2 — evidence-backed cleanup, resource scanning and checkbox-only review.** Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md). The published v0.3.0 installer below still installs the older engine; local preview installation is `python3 install.py --source .`.
+**Local development: 0.4.0.dev3 — trained Laya cleanup model, path-free observations, resource scanning and checkbox-only review.** Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md). The published v0.3.0 installer below still installs the older engine. This local preview requires its SHA-verified trained adapter: `python3 install.py --source . --adapter /path/to/verified/model.safetensors`. There is no public dev3 model download or manual model-free fallback.
 
 **Clean the mysterious “System Data” on your Mac—with a local model doing the investigation.**
 
@@ -24,13 +24,13 @@ macOS calls hundreds of gigabytes **System Data**. That label doesn't tell you w
 
 **Status:** whole startup-disk scan + model assessment → usage bars and percentages.
 
-**Model output is not deletion permission.** Laya supplies keep/review/remove, but a removal proposal must also have independently observed cache-owner evidence. Untagged personal/mixed folders cannot become checkboxes from a raw remove answer. Current evidence source is a valid `CACHEDIR.TAG` declaration, revalidated before moving; see [ADR 0007](docs/adr/0007-evidence-backed-cleanup.md). Known limitation: a 24-scenario diagnostic answered 16/24 with structured input and included two incorrect-remove answers, so **review every proposed file**. See [ADR 0005](docs/adr/0005-model-owned-judgment.md) and [model-authority-evaluation.json](docs/model-authority-evaluation.json).
+**Learned Laya decisions, not folder blacklists.** Native Laya's final encoder layers and decision head were adapted on counterfactual observation cases; arbitrary filenames/paths do not enter cleanup inference. Batched reordered choices reduce option bias. Cache tags are observations, not permission gates. Owner-tool facts can support model-approved native prune operations rather than whole-cache deletion. [Research, raw failures and limits](docs/DEEPER-LAYA-RESEARCH.md). Known limitation: a 24-scenario diagnostic answered 16/24 with structured input and included two incorrect-remove answers, so **review every proposed file**. See [ADR 0005](docs/adr/0005-model-owned-judgment.md) and [model-authority-evaluation.json](docs/model-authority-evaluation.json).
 
-**Resources, not millions of neural file judgments.** Both modes cover the declared mounted startup scope with disjoint directory/file resources. Four native workers measure subtrees; Laya decides per resource. Exact descendant metadata is collected only for selected review. Each native measurement has a 30-second deadline; failures remain explicit gaps, not zero-byte success. No total-resource sampling cap. [Current contract](docs/PRODUCT.md).
+**Resources, not millions of neural file judgments.** Both modes cover the declared mounted startup scope with disjoint directory/file resources. Four native workers measure subtrees; Laya decides per resource. Exact descendant metadata is collected only for selected review. Each native measurement has a 10-second deadline; failures remain explicit gaps, not zero-byte success. No total-resource sampling cap. [Current contract](docs/PRODUCT.md).
 
 No dashboard, banners, permanent captions or competing panels. The accounting and full model evidence remain in the shared engine and JSON report, not plastered over the screen.
 
-Laya prioritizes volume inspection, classifies the evidence, and proposes what to keep or remove. You see the actual choices and scores as they happen. You approve the files. Raw model choices stay in the audit; code requires a current disposal declaration as well as model approval, target verification and your confirmation. A cache-like name alone is not evidence.
+Laya prioritizes volume inspection, classifies the evidence, and proposes what to keep or remove. You see the actual choices and scores as they happen. You approve the files. Raw model choices stay in the audit; execution requires model approval, exact target/operation verification and your confirmation. A cache-like name alone is not evidence.
 
 > **Alpha software.** No model = no Clean or Status operation. There is no rules-only fallback. Model scores are **not deletion-safety guarantees**. Begin with the real-inference demo and review [SECURITY.md](SECURITY.md). The project name does not imply affiliation with TypeSafe AI; the shipped engine is Laya-MLX.
 
@@ -140,7 +140,7 @@ jev-clean completion zsh   # also bash and fish; prints, doesn't modify shell co
 
 The deletion question defaults to **No**. Only an explicit Yes proceeds with the selected paths and the existing model/safety rechecks.
 
-**Trash is not free space.** Staging is reversible; it does not immediately reclaim bytes. jev-clean never automatically empties Trash. Restore refuses to overwrite an existing file.
+**Trash is not free space.** Staging is reversible; it does not immediately reclaim bytes. jev-clean never automatically empties Trash. Restore refuses to overwrite an existing file. Owner-native pruning, when explicitly selected, is different: the final dialog states it cannot be undone, and CLI plans require `--confirm CLEAN` rather than `TRASH`.
 
 ## Why Laya-MLX?
 
@@ -160,7 +160,7 @@ We do not claim superior cleanup accuracy to Mole or that local inference unders
 
 - No root deletion, recursive permanent deletion, uninstall scripts or automatic Trash emptying. Directory staging includes all descendants and requires a reviewed manifest.
 - Databases, VM disks, model weights, source work, credentials and backups are not blanket cleanup targets.
-- Read/model scope is the whole mounted startup disk. Cleanup requires independent, current disposal evidence; raw model remove does not authorize personal/unknown data.
+- Read/model scope is the mounted startup disk. Trained Laya decides from structural/activity/tool observations, not path names or tag-based authorization.
 - Current-user file/resource staging checks canonical paths, owner, device/inode/size/mtime/ctime/link count, refreshed activity and directory membership.
 - Unknown activity is model evidence; unavailable exact target metadata is an execution limitation, not a keep judgment.
 - Model decisions are mandatory. Only valid remove answers with technical staging readiness can be selected.

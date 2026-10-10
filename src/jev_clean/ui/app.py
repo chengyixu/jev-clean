@@ -12,7 +12,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import DataTable, Input, OptionList, RichLog, Static
 
-from jev_clean.application.service import audit, prepare_selection, reassess_selection, save_plan
+from jev_clean.application.service import audit, execute_selection, prepare_selection, save_plan
 from jev_clean.domain.models import AuditReport, Candidate, human_bytes, ordered_candidates
 from jev_clean.domain.usage import UsageRow, bar, usage_rows
 from jev_clean.infrastructure import native
@@ -239,7 +239,13 @@ class JevCleanApp(App):
                     continue
                 table.add_row(
                     Text("[x]" if c.id in self.selected else "[ ]"),
-                    Text(c.path.replace(str(self.home), "~", 1)),
+                    Text(
+                        (
+                            f"{c.owner_tool} cache prune"
+                            if c.operation == "owner_prune"
+                            else c.path.replace(str(self.home), "~", 1)
+                        )
+                    ),
                     human_bytes(c.allocated_bytes),
                     key=c.id,
                 )
@@ -392,12 +398,12 @@ class JevCleanApp(App):
     @work(thread=True)
     def move_worker(self, items: list[Candidate]) -> None:
         try:
-            assessed = reassess_selection(items, home=self.home)
-            result = TrashStore(self.home).move(assessed, open_paths=native.open_files())
-            text = f"{result.moved} items moved to Trash."
+            result = execute_selection(items, home=self.home)
+            text = f"{result.completed} items cleaned."
             if result.failed:
                 text += f" {len(result.failed)} skipped."
-            self.call_from_thread(self.trace, f"Undo: jev-clean restore {result.batch_id}")
+            if result.batch_id:
+                self.call_from_thread(self.trace, f"Undo Trash items: jev-clean restore {result.batch_id}")
             for error in result.failed:
                 self.call_from_thread(self.trace, error)
             self.call_from_thread(self.finish_move, text)
