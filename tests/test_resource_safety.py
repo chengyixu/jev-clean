@@ -96,3 +96,37 @@ def test_plan_export_seals_resource_before_later_cli_confirmation(tmp_path, monk
     (tmp_path / "cache/nested/blob").write_bytes(b"changed")
     with pytest.raises(ValueError, match="changed"):
         service.reassess_selection(loaded, home=tmp_path)
+
+
+def test_plan_export_survives_a_resource_changing_after_the_scan(tmp_path, monkeypatch, neural_boundary):
+    import os
+    from datetime import datetime, timezone
+
+    from cache_fixtures import declare_cache
+    from test_model_owned_judgment import answer
+
+    from jev_clean.domain.models import AuditReport, ScanReport
+    from jev_clean.domain.policy import apply_policy
+
+    stable = proposal(tmp_path)
+    busy_path = tmp_path / "busy-cache"
+    (busy_path / "nested").mkdir(parents=True)
+    (busy_path / "nested/blob").write_bytes(b"live cache data")
+    declare_cache(busy_path)
+    busy = apply_policy(measure_resource(busy_path, tmp_path, EvidenceCollector(tmp_path), set()), answer("remove"))
+    monkeypatch.setattr(service.native, "open_files", lambda: set())
+    report = AuditReport(
+        1, datetime.now(timezone.utc).isoformat(), str(tmp_path), "clean", ScanReport([stable, busy])
+    )
+    # An application keeps writing its cache after the scan measured it.
+    (busy_path / "written-after-scan").write_bytes(b"new entry")
+    os.utime(busy_path, (1_000_000, 1_000_000))
+
+    plan = tmp_path / "plan.json"
+    service.save_plan(plan, report)
+
+    loaded = {Path(c.path).name: c for c in service.load_plan(plan, tmp_path)}
+    assert loaded["cache"].selectable and loaded["cache"].manifest_digest
+    assert not loaded["busy-cache"].selectable
+    assert "rescan" in loaded["busy-cache"].execution_issue
+    assert loaded["busy-cache"].decision.choice == "remove"

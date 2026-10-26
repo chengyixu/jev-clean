@@ -223,8 +223,9 @@ def reassess_selection(items: list[Candidate], *, home: Path | None = None) -> l
 
 
 def _refresh_selection(
-    items: list[Candidate], *, home: Path | None, require_manifest: bool
+    items: list[Candidate], *, home: Path | None, require_manifest: bool, tolerate_changes: bool = False
 ) -> list[Candidate]:
+    """Revalidate every item; with tolerate_changes, a changed item becomes unselectable instead of failing all."""
     paths = [Path(i.path) for i in items]
     for index, path in enumerate(paths):
         if any(path.is_relative_to(other) or other.is_relative_to(path) for other in paths[:index]):
@@ -234,8 +235,8 @@ def _refresh_selection(
     home = home or Path.home()
     evidence = EvidenceCollector(home)
     handles = native.open_files()
-    assessed = []
-    for item in items:
+
+    def refresh(item: Candidate) -> Candidate:
         path = Path(item.path)
         if not path.is_absolute() or ".." in path.parts or not no_symlink_ancestors(path):
             raise ValueError("Target path changed or is not canonical; rescan and review")
@@ -290,8 +291,21 @@ def _refresh_selection(
                 if handles is None
                 else any(p == str(path) or p.startswith(str(path) + "/") for p in handles),
             )
+        return fresh
+
+    assessed = []
+    for item in items:
+        try:
+            fresh = refresh(item)
+        except (ValueError, OSError) as error:
+            if not tolerate_changes:
+                raise
+            issue = f"Changed after the scan; rescan before cleanup ({error})"
+            assessed.append(apply_policy(replace(item, execution_issue=issue), item.decision))
+            continue
+        # Model output is never tolerated: invalid or missing judgments stop the operation.
         assessed.append(apply_policy(fresh, advisor.predict(fresh)))
-    if not all(c.selectable for c in assessed):
+    if not tolerate_changes and not all(c.selectable for c in assessed):
         raise ValueError("Model no longer recommends removal or target cannot be staged; rescan and review")
     return assessed
 
@@ -335,7 +349,11 @@ def save_plan(path: Path, report: AuditReport) -> None:
     # a later CLI --confirm TRASH; never silently seal after that confirmation.
     resources = [c for c in report.scan.candidates if c.unit == "directory" and c.selectable]
     if resources and not report.demo:
-        sealed = {c.id: c for c in prepare_selection(resources, home=Path(report.home))}
+        # Live caches keep changing during a scan; one changed resource must not discard the report.
+        refreshed = _refresh_selection(
+            resources, home=Path(report.home), require_manifest=False, tolerate_changes=True
+        )
+        sealed = {c.id: c for c in refreshed}
         report = replace(
             report,
             scan=replace(report.scan, candidates=[sealed.get(c.id, c) for c in report.scan.candidates]),
