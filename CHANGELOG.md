@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0.dev5 — Interactive Status treemap (local preview)
+
+### Post-training update — v3 learned adapter
+
+- Locally post-trained the existing Laya encoder-tail/head on observation-shaped counterfactuals from the unchanged v8 production formatter. No scanner, evidence, prompt, ensemble, selection or execution implementation changed; only the learned adapter ID/SHA pins changed.
+- Accepted adapter `jev-cleanup-laya-runtime-observations-v3`, SHA256 `5b65d16deeb20ac8c9e6ab43cb3c9fe4478896df8e2326e5744559797546bd33`. The starting adapter is retained and was selectable during development.
+- Frozen 38-observation native control: starting34/38, candidate38/38, both zero false removals. Authored120-case native regression: starting114/120, candidate120/120, zero false removals. Six-order final diagnostic718/720 with one false removal; raw error retained.
+- Same949 live resource frames: starting0 selectable, candidate32/disjoint declared-cache paths/38.435GB allocated. Full startup94 paths/6.254GB allocated with44 explicit measurement gaps; independent declaration inventory174 roots,0new in the last round. These are model/coverage comparisons, not exclusive reclaim or deletion-safety guarantees.
+- **319 tests/82.56% coverage**, Ruff/format/mypy/guards, clean wheel/sdist, native readiness, installed source parity and ``doctor --verify-model`` passed. No files moved/pruned, no remote CI or public release. Methods/sources: [POSTTRAINING-PARITY.md](docs/POSTTRAINING-PARITY.md).
+
+- Apple screenshot's exact ten category labels, nested proportional maps, mouse/keyboard drilldown and one-level back navigation; keyboard list keeps unknown/tiny items reachable.
+- Retain actual-path Laya recommendations in Status. Green recommendations, amber selected paths; A selects known approved Trash paths only, Space toggles, D reviews with unchanged manifests and No-default final consent.
+- Separate recorded native category totals from estimated path allocations. No invented per-file Apple membership, stale-parent double counting or all-System-Data fallback; typed hierarchy shared with JSON.
+- Keep the dev4 actual-path Clean workflow. The post-training update above changes only learned-model provenance; no user cleanup or public release is implied. Research/license/limitations in docs/STATUS-TREEMAP.md.
+
 ## 0.4.0.dev4 — Restore actual-file cleanup findings
 
 - Correct command-only regression: Clean lists actual file/directory paths only. Owner actions remain technical advisories and store totals cannot inflate proposed file bytes.

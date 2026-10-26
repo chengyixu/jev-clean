@@ -20,9 +20,14 @@ def test_forged_cross_home_and_expired_plans_rejected(tmp_path, neural_boundary)
     home = tmp_path / "home"
     home.mkdir()
     report = audit(home, "status", demo=True)
-    report.demo = False
     plan = tmp_path / "plan.json"
     save_plan(plan, report)
+    # Deliberately forge the serialized flag to reach the HOME/age gates; don't
+    # disguise nonexistent synthetic directories as live resources to seal.
+    value = json.loads(plan.read_text())
+    value["demo"] = False
+    plan.write_text(json.dumps(value))
+    report.demo = False
     with pytest.raises(ValueError, match="[Hh]ome"):
         load_plan(plan, tmp_path / "different")
     value = report.to_dict()

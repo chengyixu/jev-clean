@@ -2,7 +2,9 @@
 
 # jev-clean · Nexora
 
-**Local development: 0.4.0.dev4 — actual file-path cleanup findings.** Command actions are not file rows and command-store allocation is excluded from proposed file totals. Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md). The published v0.3.0 installer below still installs the older engine. This local preview requires its SHA-verified trained adapter: `python3 install.py --source . --adapter /path/to/verified/model.safetensors`. There is no public dev4 model download or manual model-free fallback.
+**Local development: 0.4.0.dev5 — interactive Status treemap and actual-path Clean.** Command actions are not file rows and command-store allocation is excluded from proposed file totals. Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md). The published v0.3.0 installer below still installs the older engine. This local preview requires its SHA-verified trained adapter: `python3 install.py --source . --adapter /path/to/verified/model.safetensors`. There is no public preview model download or manual model-free fallback.
+
+**Local post-training update:** the source preview uses the v3 learned Laya adapter on the existing observation interface. Scanner, prompts, probability ensemble, selection, and execution code are unchanged; only weight-provenance pins change. Authored native controls and remaining single-order errors are recorded in [Post-training research](docs/POSTTRAINING-PARITY.md). Existing custom roots and Status drill-down remain the way to expose a smaller resource inside a mixed parent.
 
 **Clean the mysterious “System Data” on your Mac—with a local model doing the investigation.**
 
@@ -22,13 +24,15 @@ macOS calls hundreds of gigabytes **System Data**. That label doesn't tell you w
 
 **Clean:** sudo or not → native resource inventory + model assessment → select resources → seal exact contents → confirm or cancel.
 
-**Status:** whole startup-disk scan + model assessment → usage bars and percentages.
+**Status:** whole startup-disk scan + model assessment → Apple-named treemap → click/Enter nested maps → `A` select recommended actual paths → `D` review. Recorded macOS category totals and estimated path groups are separate. [Research and limits](docs/STATUS-TREEMAP.md).
+
+<p align="center"><img src="docs/assets/status.svg" alt="Status treemap with exact Apple category labels; synthetic metadata and real local inference" width="960"></p>
 
 **Learned Laya decisions, not folder blacklists.** Native Laya's final encoder layers and decision head were adapted on counterfactual observation cases; arbitrary filenames/paths do not enter cleanup inference. Batched reordered choices reduce option bias. Cache tags are observations, not permission gates. Verified storage-purpose facts help Laya judge actual cache subtrees. Owner-tool operations stay separate technical advisories, not cleanup-path checkboxes. [Research, raw failures and limits](docs/DEEPER-LAYA-RESEARCH.md). Known limitation: a 24-scenario diagnostic answered 16/24 with structured input and included two incorrect-remove answers, so **review every proposed file**. See [ADR 0005](docs/adr/0005-model-owned-judgment.md) and [model-authority-evaluation.json](docs/model-authority-evaluation.json).
 
 **Resources, not millions of neural file judgments.** Both modes cover the declared mounted startup scope with disjoint directory/file resources. Four native workers measure subtrees; Laya decides per resource. Exact descendant metadata is collected only for selected review. Each native measurement has a 10-second deadline; failures remain explicit gaps, not zero-byte success. No total-resource sampling cap. [Current contract](docs/PRODUCT.md).
 
-No dashboard, banners, permanent captions or competing panels. The accounting and full model evidence remain in the shared engine and JSON report, not plastered over the screen.
+Clean stays a compact checkbox checklist. Status has a nested proportional map and keyboard-equivalent list; detailed source/evidence is available on demand and in private JSON.
 
 Laya prioritizes volume inspection, classifies the evidence, and proposes what to keep or remove. You see the actual choices and scores as they happen. You approve the files. Raw model choices stay in the audit; execution requires model approval, exact target/operation verification and your confirmation. A cache-like name alone is not evidence.
 
@@ -45,7 +49,7 @@ Laya prioritizes volume inspection, classifies the evidence, and proposes what t
 | Question | “What can I remove to tackle mysterious System Data?” | “Where is the space actually going?” |
 | Model’s job | Prioritize scope → assess measured resources → propose remove / review / keep | Assess the full filesystem scope → classify storage → expose unresolved areas |
 | Tools’ job | Stream filesystem metadata, not recommendations | Inventory full scope; collect native/APFS evidence |
-| Your control | Select all approved items or some; review and confirm | Read-only investigation; narrow the next scope |
+| Your control | Select approved paths; review and confirm | Drill down; select recommendations; D reviews with explicit confirmation |
 | Result | System Data context + model findings + selected cleanup + receipt/undo | Private JSON report and model decision trace |
 
 **The loop:** model prioritizes → tools walk every declared root → model assesses factual evidence → you review. Clean shows only selectable items with `[ ]` / `[x]`. Other model decisions and measurement diagnostics stay in the JSON report, not the checklist. Esc pauses; restarting re-enumerates with exact prior decisions reused. The default no longer waits for millions of per-file inferences. The mover supports current-user files and reviewed directory resources, with unchanged identity, no-follow metadata manifests and no-overwrite undo. It never classifies trash. App-native dependency investigation and permanent pruning are not implemented.
@@ -118,16 +122,17 @@ jev-clean apply "$HOME/.local/state/jev-clean/review.json" \
 | `← →`, then `Enter` | Choose Yes/No in the sudo and deletion questions |
 | `S` | Show exact native System Data bytes, source and recorded timestamp |
 | `Space` | Toggle a model-approved, safety-checked file |
-| `A` / `N` | Select all visible approved / select none |
+| `A` / `N` | Clean: all visible approved; Status: all known approved actual paths / none |
 | `/` | Filter paths |
-| `Enter` | Clean: confirm selected files with Yes/No; Status: open a directory |
+| `Enter` | Clean: confirm selected paths; Status: open the focused category/directory |
+| `D` | Status: review selected paths; No is the final dialog default |
 | `R` | New model investigation |
 | `E` | Export private report |
 | `H` | History and undo instructions |
 | `U` | Check release updates |
 | `?` / `Esc` / `Q` | Help / back or cancel / quit |
 
-Status percentages are shares of **observed allocated bytes in non-overlapping groups**—not percentages of Apple's System Data category or exact APFS-exclusive physical space. `~`/`+` marks partial coverage; missing values stay unknown. Permission gaps and unmounted volumes remain explicit. Enter opens an already measured child breakdown or asks the model to investigate that directory. Details and utility shortcuts are available on demand, not in a permanent footer.
+Status uses proportional rectangles. Top-level native category areas are recorded totals; clicking a category switches to **observed allocations in estimated category paths**, not an exact Apple breakdown or APFS-exclusive space. Unattributed paths stay separate. Green `◆` means Laya recommends a resource; `◇` means a container contains recommendations; `[x]`/amber means selected. Zero/unknown/tiny blocks remain reachable by keyboard. Esc returns one level. Selection and resize preserve IDs; no click or selection key deletes files.
 
 ```bash
 jev-clean doctor

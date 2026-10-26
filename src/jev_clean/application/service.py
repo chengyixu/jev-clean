@@ -66,33 +66,45 @@ def demo_report(home: Path, mode: str, advisor: LayaAdvisor, progress: Callable[
         progress(
             f"Laya explorer → {Path(path).parent.name} → {node.decision.choice} · {node.decision.elapsed_ms:.1f} ms"
         )
-        if mode == "clean":
-            item = Candidate(
-                str(i),
-                str(home / path),
-                kind,
-                size,
-                age * 86400,
-                Fingerprint(1, i + 1, size, 0, 0, os.getuid(), 1),
-                True,
-                False,
-                True,
-                active,
-                disposal=DisposalEvidence("cachedir-tag-v1", str(home / Path(path).parent), "0" * 64)
-                if i == 0
-                else None,
-                evidence={
-                    "location": str(Path(path).parent),
-                    "disposal_basis": "synthetic owner cache declaration" if i == 0 else "none observed",
-                    "references": "unknown",
-                    "regenerability": "unknown",
-                },
-            )
-            proposed = advisor.predict(item)
-            candidates.append(apply_policy(item, proposed))
-            progress(
-                f"Laya → {proposed.choice.upper()} {max(proposed.probabilities.values()):.0%} · {proposed.elapsed_ms:.1f} ms"
-            )
+        item = Candidate(
+            str(i),
+            str(home / path),
+            kind,
+            size,
+            age * 86400,
+            Fingerprint(1, i + 1, size, 0, 0, os.getuid(), 1),
+            True,
+            False,
+            True,
+            active,
+            disposal=DisposalEvidence("cachedir-tag-v1", str(home / Path(path).parent), "0" * 64)
+            if i == 0
+            else None,
+            evidence={
+                "location": str(Path(path).parent),
+                "disposal_basis": "synthetic owner cache declaration" if i == 0 else "none observed",
+                "references": "unknown",
+                "regenerability": "unknown",
+            },
+        )
+        if mode == "status":
+            from jev_clean.infrastructure.evidence import observe_storage_role
+
+            facts = {
+                **item.evidence,
+                **observe_storage_role(Path(item.path), home),
+                "sampled_entries": "8",
+                "file_extensions": ".sqlite:1" if i == 3 else ".bin:8",
+                "directory_extensions": "unknown",
+                "observation_scope": "all immediate entries; descendants uninspected",
+            }
+            item = replace(item, evidence=facts, disposal=None, unit="directory", regular=False)
+        proposed = advisor.predict(item)
+        candidates.append(apply_policy(item, proposed))
+        nodes[-1] = asdict(DiskNode(item.path, size, item.unit == "directory", 1, decision=proposed))
+        progress(
+            f"Laya → {proposed.choice.upper()} {max(proposed.probabilities.values()):.0%} · {proposed.elapsed_ms:.1f} ms"
+        )
     return AuditReport(
         1,
         datetime.now(timezone.utc).isoformat(),
@@ -104,8 +116,19 @@ def demo_report(home: Path, mode: str, advisor: LayaAdvisor, progress: Callable[
             "2026-01-01 00:00:00.000 (DEMO)",
             500 * 10**9,
             20 * 10**9,
-            {"com.apple.STMExtension.Documents": 200 * 10**9},
-            280 * 10**9,
+            {"com.apple.STMExtension.Documents": 200 * 10**9}
+            if mode == "clean"
+            else {
+                "com.apple.STMExtension.Applications": 60 * 10**9,
+                "com.apple.STMExtension.Developer": 40 * 10**9,
+                "com.apple.STMExtension.Documents": 100 * 10**9,
+                "com.apple.CloudDocsDaemon.StorageManagement": 20 * 10**9,
+                "com.apple.STMExtension.Mail": 4 * 10**9,
+                "com.apple.Music.MusicStorageExtension": 8 * 10**9,
+                "com.apple.Photos.StorageManagementExtension": 24 * 10**9,
+                "com.apple.STMExtension.OtherUsers": 4 * 10**9,
+            },
+            (280 if mode == "clean" else 220) * 10**9,
             source="Synthetic category arithmetic; not your Mac",
         ),
         diagnostics={
@@ -119,6 +142,45 @@ def demo_report(home: Path, mode: str, advisor: LayaAdvisor, progress: Callable[
         model_status=f"REAL Laya-MLX · load {advisor.load_ms:.0f} ms · synthetic file metadata",
         demo=True,
         exploration={"nodes": nodes, "steps": steps, "complete": True, "warnings": []},
+    )
+
+
+def merge_status(previous: AuditReport, expansion: AuditReport, parent: str) -> AuditReport:
+    """Merge a read-only drilldown without refreshing old actionable metadata age."""
+
+    def inside(path: str) -> bool:
+        return Path(path).is_relative_to(parent)
+
+    prior_parent = next((n for n in previous.exploration.get("nodes", []) if n["path"] == parent), None)
+    nodes = {n["path"]: n for n in previous.exploration.get("nodes", []) if not inside(n["path"])}
+    children = expansion.exploration.get("nodes", [])
+    if prior_parent:
+        # Retain navigation anchor, not its stale size/disposition. New child
+        # inventory is not normalized to an older parent allocation.
+        nodes[parent] = {
+            **prior_parent,
+            "allocated_bytes": None,
+            "decision": None,
+            "complete": bool(expansion.exploration.get("complete", False)),
+        }
+    nodes.update({n["path"]: n for n in children})
+    candidates = [c for c in previous.scan.candidates if not inside(c.path)] + expansion.scan.candidates
+    return replace(
+        previous,
+        scan=replace(previous.scan, candidates=candidates),
+        exploration={
+            **previous.exploration,
+            "nodes": list(nodes.values()),
+            "drilldowns": [
+                *previous.exploration.get("drilldowns", []),
+                {
+                    "path": parent,
+                    "created_at": expansion.created_at,
+                    "coverage": expansion.coverage,
+                    "prior_parent": prior_parent,
+                },
+            ],
+        },
     )
 
 

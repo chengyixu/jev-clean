@@ -7,7 +7,7 @@ Standalone public repository. Do not modify the parent Nexora workspace or publi
 - `domain`: typed reports, learned Laya dispositions and execution readiness. No process/filesystem/UI/model imports. No path/cache-tag disposal admission; model chooses cleanup, execution checks identities/manifests and owner-native contracts. See DEEPER-LAYA-RESEARCH.md.
 - `infrastructure`: native read-only diagnostics, exhaustive no-follow metadata stream, pinned local model/cache, user-only Trash journal.
 - `application`: resource-first startup-disk engine for Clean and Status, shared by TUI/CLI. Four native measurement workers; one mandatory model judgment per resource, not each descendant. No total-resource sampling cap; per-resource deadlines are explicit gaps. Exact-input neural reuse is explicit. Legacy whole_disk.py is diagnostic-only, never a production fallback. Contract: docs/PRODUCT.md and ADR 0006.
-- `ui`: Textual client; cannot bypass the policy or directly delete files.
+- `ui`: Textual client; cannot bypass the policy or directly delete files. Local dev5 Status uses the shared domain/storage_map hierarchy (ADR 0008). Native top-level totals and estimated child allocations are separate; grouping is presentation-only and never disposal approval. A selects disjoint approved actual paths; D uses the existing manifest/reassessment and final consent. Clean stays the dev4 checkbox list.
 
 ## Invariants
 

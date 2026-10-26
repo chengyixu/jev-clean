@@ -397,8 +397,40 @@ def training_budget(*, cases: int, orders: int, steps: int, batch: int):
     }
 
 
+def load_external_corpus(path: Path):
+    """Research-only frozen observations; never a production classification hook."""
+    from laya_cleanup_experiment import validate_splits
+
+    data = json.loads(path.read_text())
+    if set(data) != {"train", "dev", "final"} or not all(data.values()):
+        raise ValueError("External corpus needs nonempty train/dev/final splits")
+    labels = {}
+    for rows in data.values():
+        for row in rows:
+            if labels.setdefault(row["state"], row["label"]) != row["label"]:
+                raise ValueError("Identical observations have contradictory training labels")
+    validate_splits(data)
+    return data
+
+
+def native_metrics(backend, rows):
+    """Score the same canonical six-order probability ensemble used in production."""
+    from laya_cleanup_experiment import metrics
+
+    from jev_clean.infrastructure.learned_cleanup import LABELS, ensemble_predict
+
+    predictions = [LABELS.index(ensemble_predict(backend, row["state"])["choice"]) for row in rows]
+    return metrics([row["label"] for row in rows], predictions)
+
+
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--native-development",
+        action="store_true",
+        help="Select checkpoints using the unchanged deployed ensemble",
+    )
+    parser.add_argument("--corpus", type=Path, help="Frozen synthetic observation corpus; research only")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--steps", type=int, default=300)
     parser.add_argument("--tail-layers", type=int, default=2)
@@ -452,6 +484,12 @@ def main():
             data["train"].extend(file_cases["train"])
             data["dev"].extend(file_cases["dev"])
             data["final"] = file_cases["final"]  # new untouched runtime-shaped set
+    if args.corpus:
+        if args.file_resources or args.file_resources_only or args.action_records:
+            parser.error("External corpus cannot be combined with another corpus selection")
+        data = load_external_corpus(args.corpus)
+    if args.native_development and args.action_question:
+        parser.error("Native ensemble selection requires the unchanged production question")
     question_schema = ACTION_QUESTION if args.action_question else QUESTION
     validate_splits(data)
     out = args.output
@@ -612,7 +650,21 @@ def main():
     print("TAIL ADAPTER BASE", before, flush=True)
     if not args.robust_dev and not args.initial_adapter and before != baseline["dev"]:
         raise ValueError("Frozen-prefix/tail adapter differs from native baseline")
-    best, best_weights, best_step = None, None, 0
+    selection_before = native_metrics(backend, data["dev"]) if args.native_development else before
+    native_baseline_final = native_metrics(backend, data["final"]) if args.native_development else None
+    if args.native_development:
+        print("INITIAL ADAPTER NATIVE DEV", selection_before, flush=True)
+        print("INITIAL ADAPTER NATIVE FINAL", native_baseline_final, flush=True)
+    # The starting adapter is an eligible checkpoint too. Never force a
+    # regression merely because the optimizer ran; select on dev only.
+    best = (selection_before["false_remove"], -selection_before["correct"])
+    best_weights = {k: mx.array(v) for k, v in tree_flatten(model.trainable_parameters())}
+    mx.eval(best_weights)
+    best_step = 0
+    mx.save_safetensors(str(out / "checkpoint-best.safetensors"), best_weights)
+    (out / "checkpoint-best.json").write_text(
+        json.dumps({"step": 0, "dev": selection_before, "raw_layout_dev": before}, indent=2)
+    )
     t = time.perf_counter()
     last_loss = None
     for step in range(1, args.steps + 1):
@@ -632,13 +684,16 @@ def main():
             raise ValueError("Nonfinite training loss")
         if step % 60 == 0 or step == args.steps:
             score, _ = evaluate("dev")
-            rank = (score["false_remove"], -score["correct"])
-            if best is None or rank < best:
+            selection_score = native_metrics(backend, data["dev"]) if args.native_development else score
+            rank = (selection_score["false_remove"], -selection_score["correct"])
+            if rank < best:
                 best, best_step = rank, step
                 best_weights = {k: mx.array(v) for k, v in tree_flatten(model.trainable_parameters())}
                 mx.eval(best_weights)
                 mx.save_safetensors(str(out / "checkpoint-best.safetensors"), best_weights)
-                (out / "checkpoint-best.json").write_text(json.dumps({"step": step, "dev": score}, indent=2))
+                (out / "checkpoint-best.json").write_text(
+                    json.dumps({"step": step, "dev": selection_score, "raw_layout_dev": score}, indent=2)
+                )
             print(
                 "STEP",
                 step,
@@ -648,8 +703,14 @@ def main():
                 round(float(norm), 4),
                 "DEV",
                 score,
+                "NATIVE DEV" if args.native_development else "SELECTION",
+                selection_score,
                 flush=True,
             )
+    mx.save_safetensors(
+        str(out / "checkpoint-last.safetensors"),
+        dict(tree_flatten(model.trainable_parameters())),
+    )
     model.update(tree_unflatten(best_weights.items()))
     report = {
         "base_model": MODEL_ID,
@@ -661,7 +722,11 @@ def main():
         "action_records": args.action_records,
         "file_resource_training": args.file_resources,
         "initial_adapter": str(args.initial_adapter) if args.initial_adapter else None,
+        "external_corpus": str(args.corpus) if args.corpus else None,
         "robust_development_selection": args.robust_dev,
+        "native_development_selection": args.native_development,
+        "initial_adapter_native_dev": selection_before if args.native_development else None,
+        "initial_adapter_native_final": native_baseline_final,
         "selected_step": best_step,
         "training_budget": training_budget(
             cases=len(data["train"]),
@@ -689,7 +754,11 @@ def main():
                 for r in [data[split][c["source"]]]
             ],
         }
-    report["assessment"] = deployment_assessment(baseline["final"], report["sets"]["final"]["metrics"])
+    if args.native_development:
+        report["native_sets"] = {split: native_metrics(backend, data[split]) for split in ("dev", "final")}
+        report["assessment"] = deployment_assessment(native_baseline_final, report["native_sets"]["final"])
+    else:
+        report["assessment"] = deployment_assessment(baseline["final"], report["sets"]["final"]["metrics"])
     report["tensors_changed"] = sum(
         not np.array_equal(
             np.asarray(v).astype(np.float32), np.asarray(original_trainable[k]).astype(np.float32)

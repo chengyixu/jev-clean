@@ -78,6 +78,12 @@ regressions:
   - id: FILE-REVIEW-EVIDENCE-PARITY
     symptom: Selected review loses actual purpose facts or trusts forged namespace evidence.
     observable_signal: tests/test_file_review_evidence_parity.py
+  - id: STATUS-TREEMAP-ACCOUNTING
+    symptom: Estimated paths fill recorded category areas, nested sizes double count, or stale parent allocations persist after drilldown.
+    observable_signal: tests/test_status_map_contract.py and tests/test_status_stale_expansion.py and tests/test_status_nested_canvas.py
+  - id: STATUS-RECOMMENDATION-SELECTION
+    symptom: Status loses Laya recommendations, selects command/container/review targets, or selection deletes without final consent.
+    observable_signal: tests/test_status_recommendations.py and tests/test_status_treemap_ui.py and tests/test_status_selection_refresh.py
   - id: CATEGORY-MIXING
     symptom: An exact System Data breakdown is invented by combining unrelated timestamps or paths.
     observable_signal: tests/test_contracts.py

@@ -78,7 +78,9 @@ def test_status_model_directed_and_private_raw_logs_discarded(monkeypatch, tmp_p
 
     monkeypatch.setattr(native, "run", run)
     report = service.audit(tmp_path, "status", roots=[tmp_path], deep=True)
-    assert report.exploration["steps"] and not report.scan.candidates
+    assert report.exploration["steps"] and report.scan.candidates
+    assert all(c.decision for c in report.scan.candidates)
+    assert all(c.operation == "trash" for c in report.scan.candidates)
     assert report.categories is None
     assert "stdout" not in report.diagnostics["category_probe"]
     assert any(c[0] == "/usr/bin/sudo" for c in calls)

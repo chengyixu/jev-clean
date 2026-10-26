@@ -1,7 +1,7 @@
 import threading
 
 import pytest
-from textual.widgets import DataTable, Static
+from textual.widgets import Static
 
 from jev_clean.ui.app import JevCleanApp
 
@@ -57,14 +57,16 @@ async def test_cancel_running_model_cannot_leave_actionable_review(tmp_path, neu
 
 
 @pytest.mark.asyncio
-async def test_small_terminal_results_and_hint_fit_without_dashboard(tmp_path, neural_boundary):
+async def test_small_terminal_map_and_hint_fit(tmp_path, neural_boundary):
     app = JevCleanApp(home=tmp_path, demo=True)
     async with app.run_test(size=(80, 24)) as pilot:
         await pilot.press("2")
         await pilot.pause(0.4)
-        assert app.query_one("#results", DataTable).region.bottom <= 24
+        from jev_clean.ui.storage_map import StorageMap
+
+        assert app.query_one(StorageMap).region.bottom <= 24
         assert app.query_one("#hint", Static).region.bottom <= 24
         await pilot.resize_terminal(60, 20)
         await pilot.pause(0.1)
-        assert app.query_one("#results", DataTable).region.height >= 5
+        assert app.query_one(StorageMap).region.height >= 5
         assert app.query_one("#hint", Static).region.bottom <= 20

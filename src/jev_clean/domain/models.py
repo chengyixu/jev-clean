@@ -171,6 +171,10 @@ class AuditReport:
     def to_dict(self) -> dict[str, Any]:
         value = asdict(self)
         value["system_data"] = self.system_data
+        if self.mode == "status":
+            from jev_clean.domain.storage_map import storage_map
+
+            value["storage_map"] = asdict(storage_map(self))
         value["scan"]["candidates"] = [
             {**asdict(c), "selectable": c.selectable} for c in self.scan.candidates
         ]

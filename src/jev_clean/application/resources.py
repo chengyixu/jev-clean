@@ -183,7 +183,7 @@ def investigate_resources(
                         stats["model_" + ("kept" if decision.choice == "keep" else decision.choice)] += 1
                         reviewed = apply_policy(item, decision)
                         stats["execution_unavailable"] += int(not reviewed.eligible)
-                        if mode == "clean" and decision.choice in ("remove", "review"):
+                        if decision.choice in ("remove", "review"):
                             result.candidates.append(reviewed)
                             if reviewed.selectable:
                                 stats["approved"] += 1
@@ -197,6 +197,7 @@ def investigate_resources(
                                 item.unit == "directory",
                                 0,
                                 item.scan_complete,
+                                decision=decision,
                             )
                         )
                         # Progress is a cleanup-facing observation, not a license

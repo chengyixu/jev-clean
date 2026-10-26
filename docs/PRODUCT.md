@@ -1,6 +1,6 @@
 # Product contract — resource-first jev-clean
 
-Current local development version: **0.4.0.dev4**, not a published release.
+Current local development version: **0.4.0.dev5**, not a published release.
 [ADR 0006](adr/0006-resource-first-cleanup.md) supersedes per-file neural assessment
 as the default. Whole-startup-disk scope does not mean one AI call for every file.
 
@@ -9,12 +9,17 @@ as the default. Whole-startup-disk scope does not mean one AI call for every fil
 - **Clean:** sudo Yes/No → native resource measurements and mandatory model decisions
   → largest-first resources → select → seal selected membership and reassess → final
   Yes/No explicitly including directory descendants → revalidate and stage in Trash.
-- **Status:** same resource inventory → disjoint allocated-byte shares → Enter on a
-  directory to inventory its children. No deletion.
+- **Status:** same resource inventory and retained Laya judgments → Apple-named
+  category treemap → click/Enter nested maps, Esc one level back. A selects known
+  approved actual paths; Space toggles a candidate; D reviews with the same
+  manifest/reassessment and No-default final confirmation as Clean. No automatic
+  deletion. Recorded category totals and estimated child paths stay separate;
+  unknown/unattributed paths never become invented System Data membership.
+  [Status research/contract](STATUS-TREEMAP.md) is authoritative for this view.
 
 Clean results are actual-path-only: `[ ]` and `[x]`, file/directory path, one size, selection totals. Owner-command actions are private technical advisories; never include command-store allocation in proposed file bytes. Only learned-model-approved, execution-ready operations appear. No `?`/`!` status rows, blocked-item counts or scan-gap banners. Diagnostics and unselectable decisions remain in the private JSON report; hiding them never authorizes removal. Empty results say "No items to select", not "disk is clean".
 
-No new mode or dashboard. The default enumerates disjoint boundaries across the
+No new mode. Clean remains minimal; Status now has the explicitly requested map. The default enumerates disjoint boundaries across the
 mounted startup APFS scope; explicit `--root` is custom scope. Known filesystem/home
 containers are expanded only to choose useful measurement units, not to classify
 trash. Every accessible sibling remains represented. Native subtree totals cover

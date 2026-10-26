@@ -12,17 +12,19 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import DataTable, Input, OptionList, RichLog, Static
 
-from jev_clean.application.service import audit, execute_selection, prepare_selection, save_plan
+from jev_clean.application.service import audit, execute_selection, merge_status, prepare_selection, save_plan
 from jev_clean.domain.models import AuditReport, Candidate, human_bytes, ordered_candidates
-from jev_clean.domain.usage import UsageRow, bar, usage_rows
+from jev_clean.domain.storage_map import recommended_ids, storage_map, toggle_selection
 from jev_clean.infrastructure import native
 from jev_clean.infrastructure.trash import TrashStore
 from jev_clean.infrastructure.update import check_update
 from jev_clean.ui.screens import ConfirmScreen, DepthScreen, InfoScreen
+from jev_clean.ui.storage_map import StorageMap
 
 HELP = """1 Clean    2 Status
 ↑↓ / j k   Move    Space select    A all    N none
 Enter      Delete / open directory    Esc back
+Status     Click/Enter drill down · A recommendations · D review selection
 / filter   I file details   S number source   R rescan
 E export   H history   U update
 Q quit
@@ -58,9 +60,10 @@ class JevCleanApp(App):
             ("1", "clean", "Clean"),
             ("2", "status", "Status"),
             ("space", "toggle_item", "Select"),
-            ("a", "all", "All"),
+            ("a,A", "all", "All"),
             ("n", "none", "None"),
             ("enter", "review", "Review"),
+            ("d", "delete_selection", "Review selection"),
             ("/", "search", "Filter"),
             ("?", "help", "Help"),
             ("r", "rescan", "Rescan"),
@@ -86,8 +89,7 @@ class JevCleanApp(App):
         self.report: AuditReport | None = None
         self.selected: set[str] = set()
         self.candidate_by_id: dict[str, Candidate] = {}
-        self.usage_by_id: dict[str, UsageRow] = {}
-        self.usage_parent: str | None = None
+        self.expanding: str | None = None
         self.busy = False
         self.cancel_event = threading.Event()
         self.scope: list[Path] | None = None
@@ -100,6 +102,7 @@ class JevCleanApp(App):
         yield RichLog(id="trace", markup=False, wrap=True, auto_scroll=True, max_lines=500)
         yield Input(placeholder="Filter", id="search")
         yield DataTable(id="results", show_header=False, cursor_type="row")
+        yield StorageMap()
         yield Static("↑↓ Enter · q quit", id="hint", markup=False)
 
     def on_mount(self) -> None:
@@ -111,7 +114,8 @@ class JevCleanApp(App):
         self.stage = stage
         self.query_one("#menu").display = stage == "menu"
         self.query_one("#trace").display = stage in ("running", "preparing", "deleting", "error")
-        self.query_one("#results").display = stage in ("review", "status")
+        self.query_one("#results").display = stage == "review"
+        self.query_one(StorageMap).display = stage == "status"
         self.query_one("#search").display = False
         self.query_one("#summary").display = stage not in ("menu", "running", "preparing", "deleting")
         self.query_one("#title", Static).update(
@@ -123,14 +127,16 @@ class JevCleanApp(App):
             "preparing": "Checking selected resource contents…",
             "deleting": "Finishing…",
             "review": "Space select · a all · Enter delete · Esc back",
-            "status": "Enter open · Esc back",
+            "status": "Click/Enter open · Space select · a recommended · d review · Esc back",
             "error": "Esc back",
             "done": "Esc back",
         }
         self.query_one("#hint", Static).update(hints.get(stage, "Esc back"))
         if stage == "menu":
             self.query_one("#menu", OptionList).focus()
-        elif stage in ("review", "status"):
+        elif stage == "status":
+            self.query_one("#map-list", OptionList).focus()
+        elif stage == "review":
             self.query_one("#results", DataTable).focus()
         else:
             self.query_one("#trace", RichLog).focus()
@@ -144,7 +150,7 @@ class JevCleanApp(App):
             return
         self.mode = mode
         self.scope = None
-        self.usage_parent = None
+        self.expanding = None
         self.report = None
         self.selected.clear()
         self.candidate_by_id.clear()
@@ -217,9 +223,22 @@ class JevCleanApp(App):
             self.selected.clear()
             self.show_stage("menu")
             return
+        expanded = self.expanding
+        if expanded and self.report:
+            report = merge_status(self.report, report, expanded)
+            self.expanding = None
+        else:
+            self.query_one(StorageMap).stack = []
+            self.query_one(StorageMap).current = self.query_one(StorageMap).root
         self.report = report
         self.candidate_by_id = {c.id: c for c in report.scan.candidates}
+        self.selected.intersection_update(
+            c.id for c in report.scan.candidates if c.selectable and c.operation == "trash"
+        )
         self.render_report()
+        if expanded:
+            view = self.query_one(StorageMap)
+            view.open_path(expanded)
         self.show_stage("review" if self.mode == "clean" else "status")
 
     def render_report(self) -> None:
@@ -260,42 +279,53 @@ class JevCleanApp(App):
                 summary += f" | System Data {human_bytes(report.categories.other_bytes)} ({label})"
 
         else:
-            table.add_column("Location", width=max(12, self.size.width - 44))
-            table.add_column("Usage", width=14)
-            table.add_column("Share", width=5)
-            table.add_column("Size", width=10)
-            rows = usage_rows(
-                report.exploration.get("nodes", []), self.usage_parent, observed_basis=bool(report.coverage)
-            )
-            self.usage_by_id = {str(i): row for i, row in enumerate(rows)}
-            for key, row in self.usage_by_id.items():
-                if query not in row.path.casefold():
-                    continue
-                label = row.path.replace(str(self.home), "~", 1)
-                table.add_row(
-                    Text(label),
-                    bar(row.percent),
-                    (("~" if not row.complete else "") + f"{row.percent:.0f}%")
-                    if row.percent is not None
-                    else "?",
-                    human_bytes(row.allocated_bytes)
-                    + ("+" if row.allocated_bytes is not None and not row.complete else ""),
-                    key=key,
-                )
-            summary = "% of observed bytes" if report.coverage else "% of measured rows"
-            if report.coverage:
-                stats = report.exploration.get("stats", {})
-                if stats.get("granularity") == "resource":
-                    summary += f" · {stats.get('resources_measured', 0):,} resources · {stats.get('model_assessed_resources', 0):,} model-assessed"
-                else:
-                    summary += f" · {stats.get('observed_regular_files', 0):,} files · {stats.get('model_assessed_files', 0):,} model-assessed"
-            if self.usage_parent:
-                summary = self.usage_parent.replace(str(self.home), "~", 1) + " · " + summary
-            if any(r.percent is None for r in rows) or not report.exploration.get("complete", True):
-                summary += " · partial"
-            if not rows:
-                summary = "No usage measured."
+            view = self.query_one(StorageMap)
+            view.set_root(storage_map(report), self.selected, query)
+            summary = self.status_summary()
         self.query_one("#summary", Static).update(summary)
+
+    def status_summary(self) -> str:
+        view = self.query_one(StorageMap)
+        size = sum(
+            self.candidate_by_id[i].allocated_bytes for i in self.selected if i in self.candidate_by_id
+        )
+        basis = (
+            "Observed allocations · estimated category paths"
+            if view.current.id != "disk"
+            else (
+                "Synthetic category totals · not your Mac"
+                if self.report and self.report.demo
+                else f"macOS log {self.report.categories.timestamp.split('.')[0]} · paths are estimates"
+                if self.report and self.report.categories
+                else "Observed allocations · estimated categories"
+            )
+        )
+        return f"{view.breadcrumb}\n{basis} · {len(self.selected)} selected · {human_bytes(size)}"
+
+    @on(StorageMap.Navigated)
+    def map_navigated(self) -> None:
+        if self.report and self.is_running and self.query("#summary"):
+            self.query_one("#summary", Static).update(self.status_summary())
+
+    @on(StorageMap.InspectPath)
+    def map_inspect(self, event: StorageMap.InspectPath) -> None:
+        entry = event.entry
+        if self.busy or not self.report:
+            return
+        item = self.candidate_by_id.get(entry.candidate_id)
+        if not entry.is_dir and item and item.selectable and item.operation == "trash":
+            self.selected = toggle_selection(self.selected, item, list(self.candidate_by_id.values()))
+            self.render_report()
+        elif entry.is_dir and not self.demo:
+            self.expanding = entry.path
+            self.scope = [Path(entry.path)]
+            self.start_scan(False)
+        else:
+            item = self.candidate_by_id.get(entry.candidate_id)
+            text = f"{entry.path}\n{human_bytes(entry.allocated_bytes)}\n{entry.basis}"
+            if item:
+                text += f"\nLaya: {item.decision.choice if item.decision else 'unknown'} · {item.reason}"
+            self.push_screen(InfoScreen(text))
 
     def on_resize(self) -> None:
         if self.report and self.stage in ("review", "status"):
@@ -310,7 +340,16 @@ class JevCleanApp(App):
         self.render_report()
 
     def action_toggle_item(self) -> None:
-        if self.stage != "review" or self.busy:
+        if self.busy:
+            return
+        if self.stage == "status":
+            entry = self.query_one(StorageMap).focused_entry
+            item = self.candidate_by_id.get(entry.candidate_id) if entry else None
+            if item:
+                self.selected = toggle_selection(self.selected, item, list(self.candidate_by_id.values()))
+                self.render_report()
+            return
+        if self.stage != "review":
             return
         table = self.query_one("#results", DataTable)
         if table.row_count:
@@ -323,7 +362,10 @@ class JevCleanApp(App):
                 table.move_cursor(row=row)
 
     def action_all(self) -> None:
-        if self.stage == "review" and not self.busy:
+        if self.stage == "status" and not self.busy:
+            self.selected = recommended_ids(list(self.candidate_by_id.values()))
+            self.render_report()
+        elif self.stage == "review" and not self.busy:
             query = self.query_one("#search", Input).value.casefold()
             self.selected.update(
                 c.id
@@ -349,23 +391,20 @@ class JevCleanApp(App):
             else:
                 self.present_confirmation(items)
         elif self.stage == "status" and self.report:
-            table = self.query_one("#results", DataTable)
-            if not table.row_count:
-                return
-            key = str(table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value)
-            row = self.usage_by_id[key]
-            if not row.is_dir:
-                return
-            children = usage_rows(
-                self.report.exploration.get("nodes", []), row.path, observed_basis=bool(self.report.coverage)
-            )
-            if children:
-                self.usage_parent = row.path
-                self.render_report()
-            elif not self.demo:
-                self.scope = [Path(row.path)]
-                self.usage_parent = None
-                self.start_scan(False)
+            view = self.query_one(StorageMap)
+            if view.focused_entry:
+                view.open_entry(view.focused_entry)
+
+    def action_delete_selection(self) -> None:
+        if self.stage != "status" or self.busy or not self.selected:
+            return
+        items = [self.candidate_by_id[i] for i in self.selected]
+        if not self.demo and any(i.unit == "directory" for i in items):
+            self.busy = True
+            self.show_stage("preparing")
+            self.prepare_worker(items)
+        else:
+            self.present_confirmation(items)
 
     @work(thread=True)
     def prepare_worker(self, items: list[Candidate]) -> None:
@@ -383,7 +422,7 @@ class JevCleanApp(App):
             return
         for item in items:
             self.candidate_by_id[item.id] = item
-        self.show_stage("review")
+        self.show_stage("review" if self.mode == "clean" else "status")
         self.push_screen(ConfirmScreen(items), lambda yes: self.move_selected(items) if yes else None)
 
     def move_selected(self, items: list[Candidate]) -> None:
@@ -429,10 +468,11 @@ class JevCleanApp(App):
         search = self.query_one("#search", Input)
         if search.display:
             search.display = False
-            self.query_one("#results", DataTable).focus()
-        elif self.stage == "status" and self.usage_parent:
-            self.usage_parent = None
-            self.render_report()
+            self.query_one("#map-list", OptionList).focus() if self.stage == "status" else self.query_one(
+                "#results", DataTable
+            ).focus()
+        elif self.stage == "status" and self.query_one(StorageMap).back():
+            self.query_one("#search", Input).value = ""
         else:
             self.report = None
             self.selected.clear()
@@ -444,17 +484,21 @@ class JevCleanApp(App):
             self.query_one("#search", Input).focus()
 
     def action_details(self) -> None:
+        if self.stage == "status":
+            entry = self.query_one(StorageMap).focused_entry
+            if entry:
+                text = f"{entry.path or entry.label}\n{human_bytes(entry.allocated_bytes)}\n{entry.basis}\nEstimated namespace group, not proven Apple per-file membership."
+                item = self.candidate_by_id.get(entry.candidate_id)
+                if item:
+                    text += f"\nLaya: {item.decision.choice if item.decision else 'unknown'} · {item.reason}"
+                self.push_screen(InfoScreen(text))
+            return
         table = self.query_one("#results", DataTable)
-        if self.stage not in ("review", "status") or not table.row_count:
+        if self.stage != "review" or not table.row_count:
             return
         key = str(table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value)
-        if self.stage == "review":
-            item = self.candidate_by_id[key]
-            text = f"{item.path}\n{human_bytes(item.allocated_bytes)}\n{item.reason}"
-        else:
-            row = self.usage_by_id[key]
-            text = f"{row.path}\n{human_bytes(row.allocated_bytes)}"
-        self.push_screen(InfoScreen(text))
+        item = self.candidate_by_id[key]
+        self.push_screen(InfoScreen(f"{item.path}\n{human_bytes(item.allocated_bytes)}\n{item.reason}"))
 
     def action_source(self) -> None:
         if not self.report:
@@ -480,13 +524,17 @@ class JevCleanApp(App):
     def action_down(self) -> None:
         if self.stage == "menu":
             self.query_one("#menu", OptionList).action_cursor_down()
-        elif self.stage in ("review", "status"):
+        elif self.stage == "status":
+            self.query_one("#map-list", OptionList).action_cursor_down()
+        elif self.stage == "review":
             self.query_one("#results", DataTable).action_cursor_down()
 
     def action_up(self) -> None:
         if self.stage == "menu":
             self.query_one("#menu", OptionList).action_cursor_up()
-        elif self.stage in ("review", "status"):
+        elif self.stage == "status":
+            self.query_one("#map-list", OptionList).action_cursor_up()
+        elif self.stage == "review":
             self.query_one("#results", DataTable).action_cursor_up()
 
     def action_rescan(self) -> None:

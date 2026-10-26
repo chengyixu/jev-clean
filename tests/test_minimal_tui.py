@@ -61,17 +61,19 @@ async def test_clean_permission_then_logs_then_review(tmp_path, monkeypatch, neu
 
 
 @pytest.mark.asyncio
-async def test_status_has_percent_rows_without_dashboard(tmp_path, neural_boundary):
+async def test_status_has_category_treemap_without_changing_clean(tmp_path, neural_boundary):
     app = JevCleanApp(home=tmp_path, demo=True)
     async with app.run_test(size=(80, 24)) as pilot:
         await pilot.press("2")
         await pilot.pause(0.5)
         assert app.stage == "status"
-        table = app.query_one("#results", DataTable)
-        assert table.row_count > 0
-        rendered = " ".join(str(cell) for key in table.rows for cell in table.get_row(key))
-        assert "%" in rendered and "█" in rendered
-        assert "measured" in str(app.query_one("#summary", Static).render()).lower()
+        from jev_clean.ui.storage_map import StorageMap, TreemapCanvas
+
+        assert not app.query_one("#results", DataTable).display
+        view = app.query_one(StorageMap)
+        assert view.display and view.current.label == "Storage"
+        assert app.query_one(TreemapCanvas).tiles
+        assert "Synthetic category totals" in str(app.query_one("#summary", Static).render())
         assert not app.query_one("#trace", RichLog).display
         await pilot.press("escape")
         assert app.stage == "menu"
