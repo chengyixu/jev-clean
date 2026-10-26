@@ -8,11 +8,12 @@ from test_contracts import candidate
 from jev_clean.infrastructure import learned_cleanup, model
 
 
-def test_missing_learned_adapter_stops_inference_without_base_fallback(tmp_path, monkeypatch):
+def test_missing_learned_adapter_without_network_stops_inference_without_base_fallback(tmp_path, monkeypatch):
     from pathlib import Path
 
     monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
-    with pytest.raises(RuntimeError, match="missing"):
+    # The autouse conftest boundary makes every adapter download fail in hermetic tests.
+    with pytest.raises(RuntimeError, match="download failed"):
         model.cleanup_adapter_path()
 
 

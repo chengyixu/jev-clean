@@ -10,7 +10,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
 from jev_clean.domain.models import Candidate, Decision, DiskNode
 from jev_clean.infrastructure.learned_cleanup import observed_state, predict_cleanup
@@ -18,6 +18,8 @@ from jev_clean.infrastructure.learned_cleanup import observed_state, predict_cle
 INPUT_CONTRACT = "learned-file-purpose-structural-observations-v8"
 CLEANUP_ADAPTER_ID = "jev-cleanup-laya-runtime-observations-v3"
 CLEANUP_ADAPTER_SHA256 = "5b65d16deeb20ac8c9e6ab43cb3c9fe4478896df8e2326e5744559797546bd33"
+CLEANUP_ADAPTER_REPO = "ChengyiX/jev-clean-cleanup-adapter"
+CLEANUP_ADAPTER_REVISION = "4000ecc1423ba5b17694b14a631abe424a64b002"
 MODEL_ID = "aac6fef/laya-mlx"
 MODEL_REVISION = "20aed815fc6acde75733882e7ec0e3f28aeb9717"
 MODEL_FILES = ["*.json", "*.safetensors", "encoder/*.json", "tokenizer/*.json", "LICENSE", "NOTICE"]
@@ -122,16 +124,59 @@ def verify_cleanup_adapter(path: Path) -> None:
         raise ValueError("Learned cleanup adapter checksum mismatch")
 
 
-def cleanup_adapter_path() -> Path:
-    path = Path.home() / ".local/share/jev-clean/models" / CLEANUP_ADAPTER_ID / "model.safetensors"
+def download_cleanup_adapter(output: BinaryIO) -> None:
+    from huggingface_hub import hf_hub_url
+    from huggingface_hub.utils import get_session
+
+    url = hf_hub_url(CLEANUP_ADAPTER_REPO, "model.safetensors", revision=CLEANUP_ADAPTER_REVISION)
+    with get_session().stream("GET", url, follow_redirects=True, timeout=60) as response:
+        response.raise_for_status()
+        for chunk in response.iter_bytes(4 * 1024 * 1024):
+            output.write(chunk)
+
+
+def provision_cleanup_adapter() -> Path:
+    """Download the pinned adapter once; only checksum-verified bytes ever reach the model path."""
+    import os
+    import tempfile
+
     from jev_clean.infrastructure.scanner import no_symlink_ancestors
 
-    if not path.is_file() or not no_symlink_ancestors(path):
-        raise RuntimeError(
-            "Pinned learned cleanup model missing; install the verified local preview with its adapter"
-        )
+    target = Path.home() / ".local/share/jev-clean/models" / CLEANUP_ADAPTER_ID / "model.safetensors"
+    if target.exists() or target.is_symlink():
+        return target
+    if not no_symlink_ancestors(target.parent):
+        raise ValueError("Refusing symlink learned adapter path")
+    target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    print("Provisioning learned cleanup adapter (~0.3 GB) before first use.", file=sys.stderr)
+    # mkstemp creates a new 0600 file (O_EXCL); a failed download leaves one file to unlink, never a tree.
+    fd, name = tempfile.mkstemp(prefix=".download-", suffix=".safetensors", dir=target.parent)
+    temporary = Path(name)
+    try:
+        with os.fdopen(fd, "wb") as output:
+            try:
+                download_cleanup_adapter(output)
+            except Exception as error:
+                raise RuntimeError(
+                    "Learned adapter download failed; no fallback. Retry when connected."
+                ) from error
+            output.flush()
+            os.fsync(output.fileno())
+        verify_cleanup_adapter(temporary)
+        os.replace(temporary, target)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return target
+
+
+def cleanup_adapter_path() -> Path:
     import os
 
+    from jev_clean.infrastructure.scanner import no_symlink_ancestors
+
+    path = provision_cleanup_adapter()
+    if not path.is_file() or not no_symlink_ancestors(path):
+        raise ValueError("Unsafe learned adapter path; refusing symlink or non-file")
     info = path.stat()
     if info.st_uid != os.getuid() or info.st_nlink != 1 or info.st_mode & 0o022:
         raise ValueError("Unsafe learned adapter ownership/links/permissions")

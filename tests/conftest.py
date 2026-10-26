@@ -5,7 +5,18 @@ from pathlib import Path
 import pytest
 
 from jev_clean.domain.models import Decision
+from jev_clean.infrastructure import model
 from jev_clean.infrastructure.model import LayaAdvisor
+
+
+@pytest.fixture(autouse=True)
+def no_learned_adapter_network(monkeypatch):
+    """Hermetic tests never download the learned adapter; tests that need one substitute this boundary."""
+
+    def offline(output):
+        raise OSError("network disabled in hermetic tests")
+
+    monkeypatch.setattr(model, "download_cleanup_adapter", offline)
 
 
 @pytest.fixture(autouse=True)

@@ -113,7 +113,9 @@ def test_plan_export_survives_a_resource_changing_after_the_scan(tmp_path, monke
     (busy_path / "nested").mkdir(parents=True)
     (busy_path / "nested/blob").write_bytes(b"live cache data")
     declare_cache(busy_path)
-    busy = apply_policy(measure_resource(busy_path, tmp_path, EvidenceCollector(tmp_path), set()), answer("remove"))
+    busy = apply_policy(
+        measure_resource(busy_path, tmp_path, EvidenceCollector(tmp_path), set()), answer("remove")
+    )
     monkeypatch.setattr(service.native, "open_files", lambda: set())
     report = AuditReport(
         1, datetime.now(timezone.utc).isoformat(), str(tmp_path), "clean", ScanReport([stable, busy])
