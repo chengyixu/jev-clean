@@ -1,5 +1,13 @@
 # Verification record
 
+## 0.4.0 release (2026-10-26)
+
+- `scripts/verify.sh`: **321 tests, 82.59% coverage**, Ruff lint/format, mypy (33 source files) and architecture guards pass; exit status checked directly. The guards rejected a first adapter-provisioning draft that cleaned its staging directory with `shutil.rmtree`; provisioning now streams into one `mkstemp` file and only ever unlinks that file.
+- RED-first adapter provisioning tests: missing adapter downloaded, verified and installed 0600 with no leftovers; checksum mismatch installs nothing; tampered installed adapter refused without re-download; symlinked model directory refused without writing through it; offline download stops with no base fallback.
+- Real provisioning against Hugging Face in an empty HOME: anonymous download of `ChengyiX/jev-clean-cleanup-adapter` at revision `4000ecc1…`, 301,119,051 bytes, SHA-256 matches the pin, installed 0600 as the only file in its directory (23.4 s); a second call reuses it.
+- Plan-export regression (`d345dfb`) reproduced the live `Target identity changed since review` failure before the fix.
+- Published-adapter privacy review: training inputs are synthetic path-free observations; the committed diff contains no machine paths, user names or credentials beyond synthetic fixtures.
+
 ## Post-training update — v3 learned adapter (2026-10-21)
 
 - Frozen-infrastructure intervention only: research corpus/selection helpers, tests and methods docs are new; the application's33production Python files match their prior behavior except model ID/SHA provenance literals in `infrastructure/model.py`, plus the installer pin. Scanner, evidence, prompt, ensemble, safety, UI and execution code are unchanged.

@@ -2,13 +2,12 @@
 
 # jev-clean · Nexora
 
-**Local development: 0.4.0.dev5 — interactive Status treemap and actual-path Clean.** Command actions are not file rows and command-store allocation is excluded from proposed file totals. Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md). The published v0.3.0 installer below still installs the older engine. This local preview requires its SHA-verified trained adapter: `python3 install.py --source . --adapter /path/to/verified/model.safetensors`. There is no public preview model download or manual model-free fallback.
+**Release 0.4.0 — interactive Status treemap, actual-path Clean and a learned cleanup adapter.** Command actions are not file rows and command-store allocation is excluded from proposed file totals. Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md).
 
-**Local post-training update:** the source preview uses the v3 learned Laya adapter on the existing observation interface. Scanner, prompts, probability ensemble, selection, and execution code are unchanged; only weight-provenance pins change. Authored native controls and remaining single-order errors are recorded in [Post-training research](docs/POSTTRAINING-PARITY.md). Existing custom roots and Status drill-down remain the way to expose a smaller resource inside a mixed parent.
+**Learned adapter:** cleanup judgments use the v3 learned Laya adapter, published at [ChengyiX/jev-clean-cleanup-adapter](https://huggingface.co/ChengyiX/jev-clean-cleanup-adapter) and pinned by revision and SHA-256. jev-clean downloads and verifies it automatically; there is no manual model setup and no model-free fallback. Authored native controls and remaining single-order errors are recorded in [Post-training research](docs/POSTTRAINING-PARITY.md). Custom roots and Status drill-down remain the way to expose a smaller resource inside a mixed parent.
 
 **Clean the mysterious “System Data” on your Mac—with a local model doing the investigation.**
 
-[![CI](https://github.com/chengyixu/jev-clean/actions/workflows/ci.yml/badge.svg)](https://github.com/chengyixu/jev-clean/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-6ce5ca)](LICENSE)
 ![Apple Silicon](https://img.shields.io/badge/platform-Apple%20Silicon-172832)
 ![Local inference required](https://img.shields.io/badge/inference-required%20%26%20local-6ce5ca)
@@ -28,7 +27,7 @@ macOS calls hundreds of gigabytes **System Data**. That label doesn't tell you w
 
 <p align="center"><img src="docs/assets/status.svg" alt="Status treemap with exact Apple category labels; synthetic metadata and real local inference" width="960"></p>
 
-**Learned Laya decisions, not folder blacklists.** Native Laya's final encoder layers and decision head were adapted on counterfactual observation cases; arbitrary filenames/paths do not enter cleanup inference. Batched reordered choices reduce option bias. Cache tags are observations, not permission gates. Verified storage-purpose facts help Laya judge actual cache subtrees. Owner-tool operations stay separate technical advisories, not cleanup-path checkboxes. [Research, raw failures and limits](docs/DEEPER-LAYA-RESEARCH.md). Known limitation: a 24-scenario diagnostic answered 16/24 with structured input and included two incorrect-remove answers, so **review every proposed file**. See [ADR 0005](docs/adr/0005-model-owned-judgment.md) and [model-authority-evaluation.json](docs/model-authority-evaluation.json).
+**Learned Laya decisions, not folder blacklists.** Native Laya's final encoder layers and decision head were adapted on counterfactual observation cases; arbitrary filenames/paths do not enter cleanup inference. Batched reordered choices reduce option bias. Cache tags are observations, not permission gates. Verified storage-purpose facts help Laya judge actual cache subtrees. Owner-tool operations stay separate technical advisories, not cleanup-path checkboxes. [Research, raw failures and limits](docs/DEEPER-LAYA-RESEARCH.md). Known limitation: the 0.4.0 adapter still made one false-remove answer in a 720-question six-order diagnostic, and the earlier 0.3.0 model made two in 24 scenarios, so **review every proposed file**. See [What the measurements actually say](#what-the-measurements-actually-say) and [ADR 0005](docs/adr/0005-model-owned-judgment.md).
 
 **Resources, not millions of neural file judgments.** Both modes cover the declared mounted startup scope with disjoint directory/file resources. Four native workers measure subtrees; Laya decides per resource. Exact descendant metadata is collected only for selected review. Each native measurement has a 10-second deadline; failures remain explicit gaps, not zero-byte success. No total-resource sampling cap. [Current contract](docs/PRODUCT.md).
 
@@ -40,7 +39,7 @@ Laya prioritizes volume inspection, classifies the evidence, and proposes what t
 
 <p align="center"><img src="docs/assets/walkthrough.gif" alt="Real jev-clean TUI: model decisions, selection and disk breakdown" width="960"></p>
 
-*Historical v0.2.0 TUI walkthrough with real local inference and synthetic filesystem metadata. It illustrates navigation, not v0.3.0 model answers. This is a screen sequence, not real-time playback. No private files or canned neural scores.*
+*Historical v0.2.0 TUI walkthrough with real local inference and synthetic filesystem metadata. It illustrates navigation, not current model answers. This is a screen sequence, not real-time playback. No private files or canned neural scores.*
 
 ## Two modes. The model drives both.
 
@@ -71,11 +70,11 @@ It keeps that accounting separate from filesystem allocation. Nested directories
 Requires **Apple Silicon macOS** and `python3` to run the installer. It provisions uv if needed, an isolated Python 3.12 app environment, and the required model automatically. The underlying MLX runtime declares macOS 14+ support; live inference is tested here on macOS 27.0. Intel Macs and Linux cannot run the application model.
 
 ```bash
-d="$(mktemp -d)" && curl -fL https://github.com/chengyixu/jev-clean/releases/download/v0.3.0/install.py -o "$d/install.py" && python3 "$d/install.py"
+d="$(mktemp -d)" && curl -fL https://github.com/chengyixu/jev-clean/releases/download/v0.4.0/install.py -o "$d/install.py" && python3 "$d/install.py"
 jev-clean
 ```
 
-**One install flow: app → pinned model (~0.85 GB) → checksum verification → real inference test → Ready.** No separate model-setup command. The installer exits with failure if the model cannot be provisioned or run; it never calls an app-only installation complete. Review the [installer source](install.py) and release checksums if desired. It prints the exact launch path if your uv executable directory is not on PATH.
+**One install flow: app → pinned model (~0.85 GB) and learned adapter (~0.3 GB) → checksum verification → real inference test → Ready.** No separate model-setup command. The installer exits with failure if the model cannot be provisioned or run; it never calls an app-only installation complete. Review the [installer source](install.py) and release checksums if desired. It prints the exact launch path if your uv executable directory is not on PATH.
 
 No API key, cloud inference, account, daemon, password capture or sudoers change. Run the installer and app **without sudo**. After installation, inference is local. Advanced direct-package installs also automatically provision missing weights on the first Clean/Status operation; network/download failure stops the operation, never produces a fallback.
 
@@ -149,7 +148,7 @@ The deletion question defaults to **No**. Only an explicit Yes proceeds with the
 
 ## Why Laya-MLX?
 
-Laya is a typed-decision encoder: one bounded question goes in, a choice distribution comes out. No token-by-token prose or model-generated shell code. The pinned [aac6fef/laya-mlx](https://huggingface.co/aac6fef/laya-mlx) checkpoint runs natively with MLX on Apple Silicon.
+Laya is a typed-decision encoder: one bounded question goes in, a choice distribution comes out. No token-by-token prose or model-generated shell code. The pinned [aac6fef/laya-mlx](https://huggingface.co/aac6fef/laya-mlx) checkpoint runs natively with MLX on Apple Silicon. jev-clean replaces its final four encoder layers, decision head and scorer with the [learned cleanup adapter](https://huggingface.co/ChengyiX/jev-clean-cleanup-adapter), fine-tuned on synthetic, path-free observations; no real user paths or file contents were training inputs.
 
 We researched the English, multilingual and typed-decision Laya families plus open Jev reproductions. “Jev” search results are not a single interchangeable model. See [the source-linked research](docs/RESEARCH.md), [architecture decision](docs/adr/0001-local-decisions.md) and [product contract](docs/PRODUCT.md).
 
@@ -158,6 +157,8 @@ We researched the English, multilingual and typed-decision Laya families plus op
 Historical v0.1/v0.2 evidence: a local 12-case synthetic-metadata diagnostic produced **7/12 exact expected choices**. None of the nine protected/uncertain fixtures became selectable; **that is the combined model-plus-veto result, not proof that the model is safe**. Model proposals can be wrong. The diagnostic is small, hand-authored and related to prompt-development examples—not an independent accuracy benchmark. Raw outputs, timings, mismatches and limitations are published in [model-evaluation.json](docs/model-evaluation.json).
 
 Version 0.3.0 evidence: the 24-scenario structured-input diagnostic answered **16/24**, with **two false-remove answers**, including a unique private key and required offline model weights. No type veto masks these errors. These small authored examples are not an accuracy benchmark; the results were reviewed and accepted before release. Reproduce with `uv run python scripts/evaluate_model_authority.py --output .private/authority.json`.
+
+Version 0.4.0 evidence (v3 learned adapter): a frozen 38-observation native control went from 34/38 to **38/38** and a 120-case authored regression from 114/120 to **120/120**, both with zero false removals. The six-order final diagnostic answered **718/720 with one false removal**, which stays in the report. These authored controls are not independent human ground truth or a deletion-safety calibration. Methods: [POSTTRAINING-PARITY.md](docs/POSTTRAINING-PARITY.md).
 
 We do not claim superior cleanup accuracy to Mole or that local inference understands every file. The distinction is a visible, mandatory model-driven investigation and a strict human-controlled execution boundary.
 

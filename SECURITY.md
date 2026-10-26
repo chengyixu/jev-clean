@@ -2,7 +2,7 @@
 
 Resource-first contract: [ADR 0006](docs/adr/0006-resource-first-cleanup.md). Performance does not validate model judgments.
 
-**Learned judgments are not a deletion-safety guarantee.** Current local 0.4.0.dev3 uses SHA-pinned encoder/head-adapted Laya and path-free typed observations. No Pictures blacklist or cache-tag authorization gate remains. [Deeper research](docs/DEEPER-LAYA-RESEARCH.md) supersedes ADR 0007 admission. Human confirmation and exact execution/owner-tool checks remain. The executor still
+**Learned judgments are not a deletion-safety guarantee.** Release 0.4.0 uses the revision- and SHA-pinned v3 learned Laya adapter on path-free typed observations; a tampered or unverifiable adapter is refused, never replaced silently or bypassed. No Pictures blacklist or cache-tag authorization gate remains. [Deeper research](docs/DEEPER-LAYA-RESEARCH.md) supersedes ADR 0007 admission. Human confirmation and exact execution/owner-tool checks remain. The executor still
 requires unchanged identity and selected-directory membership, current-user ownership, human selection
 and final confirmation. The bundled Laya model is **not** guaranteed accurate: a
 published 24-scenario diagnostic (ADR 0005) includes two incorrect-remove answers

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0 — Status treemap, actual-path Clean and the learned cleanup adapter
+
+First public release of the 0.4.0 line; the dev entries below record how it was built.
+
+- **Interactive Status treemap.** Apple's storage category labels as nested proportional maps with mouse/keyboard drilldown. Recorded native totals stay separate from estimated path allocations. A selects known approved actual Trash paths; D reviews them with the existing manifests and No-default consent.
+- **Resource-first Clean.** One model judgment per measured resource with native parallel measurement; Clean lists actual file/directory paths only. Owner-tool cache operations are technical advisories and never inflate proposed file bytes.
+- **Learned cleanup adapter v3** (`jev-cleanup-laya-runtime-observations-v3`). Published at [ChengyiX/jev-clean-cleanup-adapter](https://huggingface.co/ChengyiX/jev-clean-cleanup-adapter) and pinned by revision and SHA-256. jev-clean downloads it automatically into a private 0600 file, verifies the checksum, then atomically installs it; a tampered installed adapter is refused, and a failed download stops the operation with no fallback. `install.py --adapter` is removed.
+- **Plan export survives live caches.** A resource that changes after the scan becomes unselectable with a rescan issue instead of discarding the whole report and plan. Selection, confirmation and apply still fail closed.
+- **Model evidence.** Frozen 38-observation native control 34 → 38/38 and authored 120-case regression 114 → 120/120, both with zero false removals; six-order final diagnostic 718/720 with **one false removal**. These are authored controls, not a deletion-safety guarantee — review every proposal.
+- **Upgrading.** `jev-clean update --apply` installs 0.4.0 and provisions the adapter during its model-readiness check. The first install or operation downloads about 1.15 GB (base checkpoint and adapter).
+- Verification is local (`scripts/verify.sh`); the hosted GitHub Actions workflow is removed.
+
 ## 0.4.0.dev5 — Interactive Status treemap (local preview)
 
 ### Post-training update — v3 learned adapter

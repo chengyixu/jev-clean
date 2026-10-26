@@ -60,7 +60,7 @@ Review unfamiliar large directories; do not approve them solely to achieve a GB 
 
 ## Installation and measurement
 
-Automatic pinned-model provisioning/checksum validation/real readiness inference
-remain. A local preview uses `python3 install.py --source . --adapter /verified/model.safetensors` and checksum-verifies the learned weights before runtime readiness; published v0.3.0 retains
-its previous behavior. Demos use synthetic metadata and cannot mutate user data.
+Automatic provisioning, checksum validation and real readiness inference cover both
+the pinned base checkpoint and the learned cleanup adapter (pinned Hugging Face
+revision plus SHA-256). There is no manual model setup and no model-free fallback. Demos use synthetic metadata and cannot mutate user data.
 Resource measurements and test methodology are in ADR 0006 and VERIFICATION.md.

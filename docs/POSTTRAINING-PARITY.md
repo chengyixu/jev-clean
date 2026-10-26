@@ -2,7 +2,7 @@
 
 Authors: Chengyi Xu and Nexora
 
-This work investigates learned cleanup decisions while keeping the application's scanner, observation schema, prompts, selection rules, execution checks, and UI unchanged. It concerns the existing local Laya adaptation, not official TypeSafe Jev. Actual-machine audit records and candidate weights remain private.
+This work investigates learned cleanup decisions while keeping the application's scanner, observation schema, prompts, selection rules, execution checks, and UI unchanged. It concerns the existing local Laya adaptation, not official TypeSafe Jev. Actual-machine audit records and rejected candidate weights remain private; the accepted v3 adapter is published.
 
 ## Why supervised post-training first
 
@@ -47,7 +47,7 @@ The selected checkpoint was update 300, chosen on the 102-case development set t
 
 Individual option orders remain imperfect: the selected model's 720-layout final diagnostic scored 718/720 with one false removal and one missed removal. The application continues to average all six existing probability permutations; it does not choose a favorable order. These are authored synthetic observations, not independently reviewed real-file safety measurements. The 120-case set is a regression set after prior experiments; the extra 38 observations were frozen before their first candidate evaluation. Neither result establishes universal cleanup accuracy.
 
-The accepted artifact identity is `jev-cleanup-laya-runtime-observations-v3`, SHA256 `5b65d16deeb20ac8c9e6ab43cb3c9fe4478896df8e2326e5744559797546bd33`. It retains the existing pinned base checkpoint and tensor layout. Only the application's and installer's artifact-provenance literals change; the production observation/prompt/scanning/execution implementations remain byte-identical. The private adapter is required to install this local preview; this document is not a public model download or release announcement.
+The accepted artifact identity is `jev-cleanup-laya-runtime-observations-v3`, SHA256 `5b65d16deeb20ac8c9e6ab43cb3c9fe4478896df8e2326e5744559797546bd33`. It retains the existing pinned base checkpoint and tensor layout. Only the application's and installer's artifact-provenance literals change; the production observation/prompt/scanning/execution implementations remain byte-identical. Release 0.4.0 publishes this adapter at Hugging Face `ChengyiX/jev-clean-cleanup-adapter`, revision `4000ecc1423ba5b17694b14a631abe424a64b002`; the application downloads it and verifies the SHA256 before loading.
 
 ## Acceptance and limits
 

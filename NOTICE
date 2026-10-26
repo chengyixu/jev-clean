@@ -8,5 +8,9 @@ Mandatory local inference uses laya-mlx (Apache-2.0), an independent MLX port by
 and aac6fef/laya-mlx model weights derived from Convai Innovations Laya (Apache-2.0).
 Weights are not distributed in this repository. See model setup and docs/RESEARCH.md for pinned provenance.
 
+The learned cleanup adapter (https://huggingface.co/ChengyiX/jev-clean-cleanup-adapter, Apache-2.0)
+is a Nexora modification of those Laya weights: encoder layers 24-27, the final norm, type embedding,
+decision head and scorer were fine-tuned on synthetic observations. It is downloaded separately.
+
 Mole's documented interface was researched as a comparison; no Mole source code or assets were copied.
 Other dependencies retain their respective licenses.

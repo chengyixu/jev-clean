@@ -87,3 +87,9 @@ regressions:
   - id: CATEGORY-MIXING
     symptom: An exact System Data breakdown is invented by combining unrelated timestamps or paths.
     observable_signal: tests/test_contracts.py
+  - id: PLAN-EXPORT-LIVE-CACHE-RACE
+    symptom: clean --output exits with "Target identity changed since review" and no report or plan because one approved cache changed during the scan.
+    observable_signal: tests/test_resource_safety.py::test_plan_export_survives_a_resource_changing_after_the_scan
+  - id: ADAPTER-PROVISIONING-INTEGRITY
+    symptom: The learned adapter is missing on a fresh install, or unverified, tampered or symlinked bytes reach the model path.
+    observable_signal: tests/test_adapter_provisioning.py and tests/test_learned_adapter_integrity.py

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Turnkey installer. App + pinned model + real inference, or installation fails.
+"""Turnkey installer. App + pinned model and learned adapter + real inference, or installation fails.
 
 Run without sudo. Uses Python's stdlib and installs uv into a private venv if needed.
 No pip post-install hook, curl-to-shell, password capture or model-free success path.
@@ -8,19 +8,15 @@ No pip post-install hook, curl-to-shell, password capture or model-free success 
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import platform
 import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
-VERSION = "0.4.0.dev5"
-ADAPTER_ID = "jev-cleanup-laya-runtime-observations-v3"
-ADAPTER_SHA256 = "5b65d16deeb20ac8c9e6ab43cb3c9fe4478896df8e2326e5744559797546bd33"
+VERSION = "0.4.0"
 REPO = "https://github.com/chengyixu/jev-clean"
 
 
@@ -34,7 +30,7 @@ def install(uv: str, *, runner=subprocess.run, source: str | None = None) -> dic
     tool_dir = runner([uv, "tool", "dir"], check=True, text=True, capture_output=True).stdout.strip()
     executable = Path(tool_dir) / "jev-clean/bin/jev-clean"
     print(
-        "2/3 Provisioning and checksum-verifying the pinned local model (~0.85 GB on first install)…",
+        "2/3 Provisioning and checksum-verifying the pinned local model and learned adapter (~1.15 GB on first install)…",
         flush=True,
     )
     print("3/3 Running real inference before declaring the installation ready…", flush=True)
@@ -74,41 +70,12 @@ def ensure_uv() -> str:
     return str(bootstrap / "bin/uv")
 
 
-def provision_adapter(source: Path | None) -> Path:
-    target = Path.home() / ".local/share/jev-clean/models" / ADAPTER_ID / "model.safetensors"
-    if any(p.is_symlink() for p in (target, *target.parents)):
-        raise ValueError("Refusing symlink model installation path")
-    if source is None:
-        if not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest() != ADAPTER_SHA256:
-            raise ValueError("This local preview requires --adapter with the verified learned Laya weights")
-        return target
-    data = source.read_bytes()
-    if hashlib.sha256(data).hexdigest() != ADAPTER_SHA256:
-        raise ValueError("Learned adapter checksum mismatch; installation stopped")
-    target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    fd, name = tempfile.mkstemp(prefix=".learned-", dir=target.parent)
-    temporary = Path(name)
-    try:
-        with os.fdopen(fd, "wb") as output:
-            output.write(data)
-            output.flush()
-            os.fsync(output.fileno())
-        temporary.chmod(0o600)
-        os.replace(temporary, target)
-    finally:
-        temporary.unlink(missing_ok=True)
-    return target
-
-
 def main() -> int:
     p = argparse.ArgumentParser(description="Install jev-clean with a ready-to-use local model")
     p.add_argument(
         "--source",
         type=Path,
         help="Developer verification only: install this local checkout instead of the pinned release",
-    )
-    p.add_argument(
-        "--adapter", type=Path, help="Local verified learned Laya adapter for this preview; SHA256 is pinned"
     )
     args = p.parse_args()
     if os.geteuid() == 0:
@@ -121,7 +88,6 @@ def main() -> int:
         if not (Path(source) / "pyproject.toml").is_file():
             p.error("--source must be a local jev-clean checkout")
     try:
-        provision_adapter(args.adapter)
         result = install(ensure_uv(), source=source)
     except (Exception, KeyboardInterrupt) as error:
         print(
