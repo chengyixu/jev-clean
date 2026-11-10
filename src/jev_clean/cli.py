@@ -7,6 +7,7 @@ import json
 import os
 import platform
 import shutil
+import signal
 import subprocess
 import sys
 from contextlib import nullcontext
@@ -207,7 +208,13 @@ def dispatch(args: argparse.Namespace, home: Path) -> int:
     return 0
 
 
+def terminate_on_sigterm() -> None:
+    """SIGTERM unwinds like Ctrl-C: scans stop their native readers and the run lock is released."""
+    signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
+
+
 def main(argv: list[str] | None = None) -> int:
+    terminate_on_sigterm()
     args = parser().parse_args(argv)
     home = Path.home()
     try:
