@@ -32,6 +32,14 @@ def isolate_host_application_manifests(monkeypatch):
     monkeypatch.setattr(Path, "glob", fixture_glob)
 
 
+@pytest.fixture(autouse=True)
+def isolate_host_memory_pressure(monkeypatch):
+    """Hermetic scans see normal kernel pressure; pacing tests substitute their own readings."""
+    from jev_clean.infrastructure import native
+
+    monkeypatch.setattr(native, "memory_pressure", lambda: 1)
+
+
 def prediction(choice="remove"):
     return Decision(
         choice,

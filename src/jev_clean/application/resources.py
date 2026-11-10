@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import threading
 import time
+from collections import deque
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import replace
 from pathlib import Path
@@ -18,12 +19,14 @@ from jev_clean.domain.models import (
     ordered_candidates,
 )
 from jev_clean.domain.policy import apply_policy
-from jev_clean.infrastructure import owner_tools
+from jev_clean.infrastructure import native, owner_tools
 from jev_clean.infrastructure.decision_cache import DecisionCache
 from jev_clean.infrastructure.evidence import EvidenceCollector
 from jev_clean.infrastructure.model import state_for
 from jev_clean.infrastructure.resources import discover_resources, measure_resource
 from jev_clean.infrastructure.volumes import DiskScope, startup_scope
+
+PRESSURE_STOP = "Stopped: system memory pressure critical"
 
 
 def investigate_resources(
@@ -70,9 +73,27 @@ def investigate_resources(
     }
     state_dir = state_dir or home / ".local/state/jev-clean/resource-scan"
     stop = threading.Event()
+    paced = {"critical": False, "paused": False}
 
     def stopped():
         return stop.is_set() or cancelled()
+
+    def memory_allows_work() -> bool:
+        """Kernel pressure paces new work: warn pauses it, critical stops the scan like a cancel."""
+        level = native.memory_pressure()
+        if level >= 4 and not paced["critical"]:
+            paced["critical"] = True
+            stop.set()
+            result.warnings.append(PRESSURE_STOP)
+        if level >= 2 and not paced["paused"]:
+            progress("Paused · memory pressure")
+        paced["paused"] = level >= 2
+        return level < 2
+
+    def wait_for_memory() -> bool:
+        while not stopped() and not memory_allows_work():
+            time.sleep(0.25)
+        return not stopped()
 
     with DecisionCache(state_dir, advisor, scope.roots, mode) as cache:
         # Owner-native actions are separate model proposals. Their allocated
@@ -81,6 +102,8 @@ def investigate_resources(
         if mode == "clean" and not cancelled():
             owner = owner_tools.owner_observations()
             for observation in owner:
+                if not wait_for_memory():
+                    break
                 p = Path(observation["path"])
                 if roots is not None and not any(p == root or p.is_relative_to(root) for root in scope.roots):
                     continue
@@ -116,7 +139,7 @@ def investigate_resources(
         pending_roots = [DiskNode(str(p), None, True, 0, False) for p in scope.roots]
         # Mandatory model prioritization; every root remains in the declared inventory.
         preferred = []
-        while pending_roots and not stopped():
+        while pending_roots and wait_for_memory():
             options = pending_roots[:6]
             decision = advisor.choose_directory(options, mode)
             index = int(decision.choice.removeprefix("n"))
@@ -133,15 +156,13 @@ def investigate_resources(
                 str(p),
             ),
         )
-        iterator = iter(paths)
+        pending = deque(paths)
         with ThreadPoolExecutor(max_workers=4) as workers:
             active: dict[Future[Candidate], Path] = {}
 
             def fill():
-                while len(active) < 4 and not stopped():
-                    path = next(iterator, None)
-                    if path is None:
-                        break
+                while pending and len(active) < 4 and not stopped() and memory_allows_work():
+                    path = pending.popleft()
                     future = workers.submit(
                         measure_resource,
                         path,
@@ -156,10 +177,14 @@ def investigate_resources(
 
             fill()
             try:
-                while active and not stopped():
-                    done, _ = wait(active, timeout=0.1, return_when=FIRST_COMPLETED)
+                while (active or pending) and not stopped():
+                    if active:
+                        done, _ = wait(active, timeout=0.1, return_when=FIRST_COMPLETED)
+                    else:
+                        done = set()
+                        time.sleep(0.25)  # paused at warn pressure; fill() resumes at normal
                     for future in done:
-                        if stopped():
+                        if not wait_for_memory():
                             break
                         path = active.pop(future)
                         try:
@@ -232,7 +257,8 @@ def investigate_resources(
         stats["approved_candidate_bytes"] = sum(
             c.allocated_bytes for c in result.candidates if c.selectable and c.operation == "trash"
         )
-        stats["walk_finished"] = not cancelled() and stats["resources_measured"] + len(
+        stats["memory_pressure_stop"] = paced["critical"]
+        stats["walk_finished"] = not cancelled() and not paced["critical"] and stats["resources_measured"] + len(
             result.warnings
         ) == len(paths)
         stats["elapsed_seconds"] = round(time.monotonic() - started, 3)
@@ -263,7 +289,7 @@ def investigate_resources(
         cache.save_progress(stats, bool(stats["walk_finished"]))
     if not result.complete:
         result.warnings.append("Resource inventory has explicit gaps/exclusions; no full-access claim.")
-    if cancelled():
+    if cancelled() or paced["critical"]:
         result.candidates = [
             apply_policy(replace(c, scan_complete=False), c.decision) for c in result.candidates
         ]

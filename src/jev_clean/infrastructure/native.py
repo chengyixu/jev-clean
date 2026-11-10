@@ -124,6 +124,20 @@ def run(argv: list[str], timeout: float = 30) -> tuple[int, str, str]:
     return code, text_out, text_err
 
 
+def memory_pressure() -> int:
+    """macOS kernel memory pressure level: 1 normal, 2 warn, 4 critical. One syscall, no process."""
+    import ctypes
+
+    level = ctypes.c_int(0)
+    size = ctypes.c_size_t(ctypes.sizeof(level))
+    libc = ctypes.CDLL(None, use_errno=True)
+    if libc.sysctlbyname(
+        b"kern.memorystatus_vm_pressure_level", ctypes.byref(level), ctypes.byref(size), None, 0
+    ):
+        raise OSError(ctypes.get_errno(), "kern.memorystatus_vm_pressure_level unavailable")
+    return level.value
+
+
 def deep_probe(name: str) -> dict[str, Any]:
     if name not in DEEP_COMMANDS:
         raise ValueError("Unrecognized diagnostic")
