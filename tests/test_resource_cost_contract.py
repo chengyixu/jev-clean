@@ -4,6 +4,7 @@ from test_whole_disk_scope import Model
 
 from jev_clean.application.resources import investigate_resources
 from jev_clean.infrastructure import resources
+from jev_clean.infrastructure.native import THROTTLED_IO
 
 
 def test_directory_scan_does_not_capture_descendant_manifests_until_selection(tmp_path, monkeypatch):
@@ -42,7 +43,7 @@ def test_native_measurement_is_one_literal_resource_command_with_deadline(tmp_pa
     monkeypatch.setattr(resources, "_stream_du", native)
     item = resources.measure_resource(path, tmp_path, EvidenceCollector(tmp_path), set(), deep=True)
     assert item.allocated_bytes == 65536 and item.scan_complete
-    assert calls == [(["/usr/bin/sudo", "-n", "/usr/bin/du", "-x", "-k", "-s", str(path)], 30)]
+    assert calls == [(["/usr/bin/sudo", "-n", *THROTTLED_IO, "/usr/bin/du", "-x", "-k", "-s", str(path)], 30)]
 
 
 def test_failed_native_resource_keeps_coverage_gap_and_model_judgment(tmp_path, monkeypatch):

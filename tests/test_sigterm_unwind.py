@@ -18,8 +18,10 @@ SCAN = textwrap.dedent(
     from jev_clean import cli
     from jev_clean.application.resources import investigate_resources
     from jev_clean.domain.models import Decision
-    from jev_clean.infrastructure import resources
+    from jev_clean.infrastructure import native, resources
 
+    # Hermetic like conftest: host memory pressure must not pause this scan.
+    native.memory_pressure = lambda: 1
     root, pids = Path(sys.argv[1]), sys.argv[2]
     # A du stand-in that records its pid and keeps walking for a long time.
     resources.du_command = lambda argv, sudo=False: ["/bin/sh", "-c", f"echo $$ >> {pids}; exec sleep 60"]
