@@ -13,8 +13,8 @@ from textual.binding import Binding
 from textual.widgets import DataTable, Input, OptionList, RichLog, Static
 
 from jev_clean.application.service import audit, execute_selection, merge_status, prepare_selection, save_plan
-from jev_clean.domain.models import AuditReport, Candidate, human_bytes, ordered_candidates
-from jev_clean.domain.storage_map import recommended_ids, storage_map, toggle_selection
+from jev_clean.domain.models import AuditReport, Cancelled, Candidate, human_bytes, ordered_candidates
+from jev_clean.domain.storage_map import MapEntry, recommended_ids, storage_map, toggle_selection
 from jev_clean.infrastructure import native
 from jev_clean.infrastructure.trash import TrashStore
 from jev_clean.infrastructure.update import check_update
@@ -87,6 +87,7 @@ class JevCleanApp(App):
         self.mode = "welcome"
         self.stage = "menu"
         self.report: AuditReport | None = None
+        self.map_root: MapEntry | None = None  # built once per report; filters and selection only redraw
         self.selected: set[str] = set()
         self.candidate_by_id: dict[str, Candidate] = {}
         self.expanding: str | None = None
@@ -124,7 +125,7 @@ class JevCleanApp(App):
         hints = {
             "menu": "↑↓ Enter · q quit",
             "running": "Esc cancel",
-            "preparing": "Checking selected resource contents…",
+            "preparing": "Checking selected resource contents… · Esc cancel",
             "deleting": "Finishing…",
             "review": "Space select · a all · Enter delete · Esc back",
             "status": "Click/Enter open · Space select · a recommended · d review · Esc back",
@@ -207,7 +208,18 @@ class JevCleanApp(App):
     def trace(self, line: str) -> None:
         self.query_one("#trace", RichLog).write(Text(line))
 
+    def drill_in_stopped(self, message: str) -> None:
+        """A drill-in adds detail to the map; when it stops, the map the person had stays."""
+        self.busy = False
+        self.expanding = None
+        self.scope = None
+        self.show_stage("status")
+        self.query_one("#summary", Static).update(message)
+
     def scan_failed(self, message: str) -> None:
+        if self.expanding and self.report:
+            self.drill_in_stopped("Drill-in failed: " + message)
+            return
         self.busy = False
         self.report = None
         self.selected.clear()
@@ -217,6 +229,9 @@ class JevCleanApp(App):
         self.show_stage("error")
 
     def accept_report(self, report: AuditReport) -> None:
+        if self.cancel_event.is_set() and self.expanding and self.report:
+            self.drill_in_stopped("Drill-in cancelled")
+            return
         self.busy = False
         if self.cancel_event.is_set():
             self.report = None
@@ -231,6 +246,7 @@ class JevCleanApp(App):
             self.query_one(StorageMap).stack = []
             self.query_one(StorageMap).current = self.query_one(StorageMap).root
         self.report = report
+        self.map_root = storage_map(report) if report.mode == "status" else None
         self.candidate_by_id = {c.id: c for c in report.scan.candidates}
         self.selected.intersection_update(
             c.id for c in report.scan.candidates if c.selectable and c.operation == "trash"
@@ -280,7 +296,11 @@ class JevCleanApp(App):
 
         else:
             view = self.query_one(StorageMap)
-            view.set_root(storage_map(report), self.selected, query)
+            if self.map_root is not None and view.root is not self.map_root:
+                view.set_root(self.map_root, self.selected, query)
+            else:
+                view.selected, view.query_text = set(self.selected), query
+                view.refresh_view()
             summary = self.status_summary()
         self.query_one("#summary", Static).update(summary)
 
@@ -328,7 +348,8 @@ class JevCleanApp(App):
             self.push_screen(InfoScreen(text))
 
     def on_resize(self) -> None:
-        if self.report and self.stage in ("review", "status"):
+        # The treemap re-lays itself out on resize; only the Clean table sizes its column.
+        if self.report and self.stage == "review":
             self.render_report()
 
     @on(DataTable.RowSelected, "#results")
@@ -385,9 +406,7 @@ class JevCleanApp(App):
         if self.stage == "review" and self.selected:
             items = [self.candidate_by_id[i] for i in self.selected]
             if not self.demo and any(i.unit == "directory" for i in items):
-                self.busy = True
-                self.show_stage("preparing")
-                self.prepare_worker(items)
+                self.start_preparing(items)
             else:
                 self.present_confirmation(items)
         elif self.stage == "status" and self.report:
@@ -400,25 +419,40 @@ class JevCleanApp(App):
             return
         items = [self.candidate_by_id[i] for i in self.selected]
         if not self.demo and any(i.unit == "directory" for i in items):
-            self.busy = True
-            self.show_stage("preparing")
-            self.prepare_worker(items)
+            self.start_preparing(items)
         else:
             self.present_confirmation(items)
+
+    def begin_preparing(self) -> None:
+        self.busy = True
+        self.cancel_event = threading.Event()
+        self.query_one("#trace", RichLog).clear()
+        self.show_stage("preparing")
+
+    def preparation_stopped(self, message: str) -> None:
+        """Preparing or exporting reads the selection again; stopping it keeps the report and selection."""
+        self.busy = False
+        self.show_stage("review" if self.mode == "clean" else "status")
+        self.query_one("#summary", Static).update(message)
+
+    def start_preparing(self, items: list[Candidate]) -> None:
+        self.begin_preparing()
+        self.prepare_worker(items)
 
     @work(thread=True)
     def prepare_worker(self, items: list[Candidate]) -> None:
         try:
-            sealed = prepare_selection(items, home=self.home)
+            sealed = prepare_selection(items, home=self.home, cancelled=self.cancel_event.is_set)
             self.call_from_thread(self.present_confirmation, sealed)
+        except Cancelled:
+            self.call_from_thread(self.preparation_stopped, "Preparation cancelled")
         except Exception as error:
-            self.call_from_thread(self.scan_failed, str(error))
+            self.call_from_thread(self.preparation_stopped, f"Could not prepare the selection: {error}")
 
     def present_confirmation(self, items: list[Candidate]) -> None:
         self.busy = False
         if self.cancel_event.is_set():
-            self.selected.clear()
-            self.show_stage("menu")
+            self.preparation_stopped("Preparation cancelled")
             return
         for item in items:
             self.candidate_by_id[item.id] = item
@@ -554,13 +588,20 @@ class JevCleanApp(App):
         self.exit()
 
     def action_export(self) -> None:
-        if self.report and not self.busy:
-            try:
-                path = self.home / ".local/state/jev-clean/latest-plan.json"
-                save_plan(path, self.report)
-                self.notify(f"Saved {path}")
-            except Exception as error:
-                self.notify(str(error), severity="error")
+        if self.report and not self.busy and self.stage in ("review", "status"):
+            self.begin_preparing()
+            self.export_worker(self.report)
+
+    @work(thread=True)
+    def export_worker(self, report: AuditReport) -> None:
+        path = self.home / ".local/state/jev-clean/latest-plan.json"
+        try:
+            save_plan(path, report, cancelled=self.cancel_event.is_set)
+            self.call_from_thread(self.preparation_stopped, f"Saved {path}")
+        except Cancelled:
+            self.call_from_thread(self.preparation_stopped, "Export cancelled")
+        except Exception as error:
+            self.call_from_thread(self.preparation_stopped, f"Export failed: {error}")
 
     def action_history(self) -> None:
         try:
