@@ -5,7 +5,7 @@ description: Use jev-clean's mandatory local model to investigate macOS System D
 
 # jev-clean · Nexora
 
-Release 0.4.0. Use the installed CLI; it is the same engine as the TUI. Check `jev-clean --version` first.
+Release 0.4.1. Use the installed CLI; it is the same engine as the TUI. Check `jev-clean --version` first.
 
 - **Resources, not files.** Native concurrent measurement, one model judgment per resource. `model_assessed_resources` does not count descendant files. A directory proposal includes the ENTIRE subtree; its exact metadata manifest is sealed before human confirmation or plan export and verified again at apply. Native timeouts are coverage gaps. Proposed allocated bytes are not safe or exclusive reclaim. See ADR 0006.
 - **Learned Laya v3 adapter.** Path-free typed observations and a reordered probability ensemble; no filename blacklist or tag-required admission. Tags are input facts only; unknown uniqueness and dependencies stay unknown. The adapter is downloaded from its pinned Hugging Face revision and checksum-verified automatically. Review [POSTTRAINING-PARITY.md](../../docs/POSTTRAINING-PARITY.md) and [DEEPER-LAYA-RESEARCH.md](../../docs/DEEPER-LAYA-RESEARCH.md) for raw failures; do not promise deletion safety.

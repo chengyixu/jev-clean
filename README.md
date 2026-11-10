@@ -2,7 +2,7 @@
 
 # jev-clean · Nexora
 
-**Release 0.4.0 — interactive Status treemap, actual-path Clean and a learned cleanup adapter.** Command actions are not file rows and command-store allocation is excluded from proposed file totals. Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md).
+**Release 0.4.1 — fixes runaway model memory that could exhaust the Mac's RAM.** Built on 0.4.0: interactive Status treemap, actual-path Clean and a learned cleanup adapter. Command actions are not file rows and command-store allocation is excluded from proposed file totals. Native parallel measurements replace millions of per-file model calls. See [ADR 0006](docs/adr/0006-resource-first-cleanup.md).
 
 **Learned adapter:** cleanup judgments use the v3 learned Laya adapter, published at [ChengyiX/jev-clean-cleanup-adapter](https://huggingface.co/ChengyiX/jev-clean-cleanup-adapter) and pinned by revision and SHA-256. jev-clean downloads and verifies it automatically; there is no manual model setup and no model-free fallback. Authored native controls and remaining single-order errors are recorded in [Post-training research](docs/POSTTRAINING-PARITY.md). Custom roots and Status drill-down remain the way to expose a smaller resource inside a mixed parent.
 
@@ -70,7 +70,7 @@ It keeps that accounting separate from filesystem allocation. Nested directories
 Requires **Apple Silicon macOS** and `python3` to run the installer. It provisions uv if needed, an isolated Python 3.12 app environment, and the required model automatically. The underlying MLX runtime declares macOS 14+ support; live inference is tested here on macOS 27.0. Intel Macs and Linux cannot run the application model.
 
 ```bash
-d="$(mktemp -d)" && curl -fL https://github.com/chengyixu/jev-clean/releases/download/v0.4.0/install.py -o "$d/install.py" && python3 "$d/install.py"
+d="$(mktemp -d)" && curl -fL https://github.com/chengyixu/jev-clean/releases/download/v0.4.1/install.py -o "$d/install.py" && python3 "$d/install.py"
 jev-clean
 ```
 

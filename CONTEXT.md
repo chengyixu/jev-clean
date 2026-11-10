@@ -1,6 +1,6 @@
 # Project context
 
-Current release: **0.4.0** (2026-10-26): interactive Status treemap, actual-path Clean, resource-first engine and the v3 learned Laya cleanup adapter. Release history is in CHANGELOG.md and docs/VERIFICATION.md. Check the installed CLI (`jev-clean --version`) and the GitHub release rather than inferring installed or published state from this file.
+Current release: **0.4.1** (2026-11-10): the model runs with no MLX buffer cache, so scan memory stays flat (about 1.2–2.3 GB). Built on 0.4.0 (2026-10-26): interactive Status treemap, actual-path Clean, resource-first engine and the v3 learned Laya cleanup adapter. Release history is in CHANGELOG.md and docs/VERIFICATION.md. Check the installed CLI (`jev-clean --version`) and the GitHub release rather than inferring installed or published state from this file.
 
 jev-clean is a standalone Nexora-family macOS tool. Python 3.12+, Textual 1.x; mandatory Laya-MLX 0.2.0 on Apple Silicon macOS 14+. Only Clean and Status are main workflows, both model-driven. Pure/adapter-boundary tests run cross-platform; the application and real-inference demo require Apple Silicon macOS. No backend service, account, or API key is required. Network is used only for model/adapter provisioning, installation and release checks.
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1 — Model memory stays flat
+
+- **Fixed runaway memory during scans.** MLX keeps freed GPU buffers in a cache whose default limit is about the size of RAM (65.3 GB on a 64 GB Mac). Real resources give the model inputs of many different lengths, so cached buffers were rarely reused and the cache grew by about 1.3 GB per model judgment. A scan of `~/Library/Caches` alone passed 6 GB within seconds; a whole-disk scan could fill RAM and swap until macOS jetsam killed system processes. jev-clean now loads the model with no buffer cache.
+- Measured after the fix: `~/Library` (2,235 resources, 404 fresh judgments) peaked at 2.28 GB for the whole process tree with no swap growth; `~/Library/Caches` (114 fresh judgments) took 14.7 s against 14.1–21.2 s with a 1 GB cache, so inference is not measurably slower.
+
 ## 0.4.0 — Status treemap, actual-path Clean and the learned cleanup adapter
 
 First public release of the 0.4.0 line; the dev entries below record how it was built.

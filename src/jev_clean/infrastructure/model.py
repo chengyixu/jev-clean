@@ -310,8 +310,13 @@ class LayaAdvisor:
             if type(self)._shared is None:
                 try:
                     import laya_mlx
+                    import mlx.core as mx
                 except ImportError as error:
                     raise RuntimeError("Mandatory laya-mlx runtime missing; reinstall jev-clean") from error
+                # Real resources give inputs of many lengths, so freed buffers rarely match again and
+                # MLX's RAM-sized default cache grew +1.3 GB per judgment into a machine-wide OOM.
+                # Without the cache, memory stays flat and inference is not measurably slower.
+                mx.set_cache_limit(0)
                 backend = laya_mlx.load(str(prepare_checkpoint()))
                 load_cleanup_adapter(backend)
                 type(self)._shared = backend
