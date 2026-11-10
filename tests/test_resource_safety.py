@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import pytest
 from test_resource_staging import proposal
 
 from jev_clean.application import service
@@ -94,8 +93,9 @@ def test_plan_export_seals_resource_before_later_cli_confirmation(tmp_path, monk
     assert loaded[0].manifest_digest and loaded[0].member_count == 3
     assert not report.scan.candidates[0].manifest_digest
     (tmp_path / "cache/nested/blob").write_bytes(b"changed")
-    with pytest.raises(ValueError, match="changed"):
-        service.reassess_selection(loaded, home=tmp_path)
+    result = service.execute_selection(loaded, home=tmp_path)
+    assert result.moved == 0 and "changed" in str(result.failed)
+    assert (tmp_path / "cache/nested/blob").read_bytes() == b"changed"
 
 
 def test_plan_export_survives_a_resource_changing_after_the_scan(tmp_path, monkeypatch, neural_boundary):

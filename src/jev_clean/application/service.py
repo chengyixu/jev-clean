@@ -13,6 +13,7 @@ from typing import Callable
 from jev_clean.application.resources import investigate_resources
 from jev_clean.domain.models import (
     AuditReport,
+    Cancelled,
     Candidate,
     CategoryReport,
     CleanupResult,
@@ -275,23 +276,35 @@ def audit(
     return report
 
 
-def prepare_selection(items: list[Candidate], *, home: Path | None = None) -> list[Candidate]:
+def prepare_selection(
+    items: list[Candidate], *, home: Path | None = None, cancelled: Callable[[], bool] = lambda: False
+) -> list[Candidate]:
     """Seal selected resource membership BEFORE the human sees final confirmation."""
-    return _refresh_selection(items, home=home, require_manifest=False)
+    return _refresh_selection(items, home=home, require_manifest=False, cancelled=cancelled)
 
 
 def reassess_selection(items: list[Candidate], *, home: Path | None = None) -> list[Candidate]:
     return _refresh_selection(items, home=home, require_manifest=True)
 
 
+def check_disjoint(paths: list[Path]) -> None:
+    """Sorted by components, any ancestor sits directly before one of its descendants."""
+    ordered = sorted(paths, key=lambda p: p.parts)
+    for before, after in zip(ordered, ordered[1:], strict=False):
+        if after.is_relative_to(before):
+            raise ValueError("Duplicate or overlapping selection; review disjoint resources")
+
+
 def _refresh_selection(
-    items: list[Candidate], *, home: Path | None, require_manifest: bool, tolerate_changes: bool = False
+    items: list[Candidate],
+    *,
+    home: Path | None,
+    require_manifest: bool,
+    tolerate_changes: bool = False,
+    cancelled: Callable[[], bool] = lambda: False,
 ) -> list[Candidate]:
     """Revalidate every item; with tolerate_changes, a changed item becomes unselectable instead of failing all."""
-    paths = [Path(i.path) for i in items]
-    for index, path in enumerate(paths):
-        if any(path.is_relative_to(other) or other.is_relative_to(path) for other in paths[:index]):
-            raise ValueError("Duplicate or overlapping selection; review disjoint resources")
+    check_disjoint([Path(i.path) for i in items])
     advisor = LayaAdvisor()
     advisor.load()
     home = home or Path.home()
@@ -329,11 +342,16 @@ def _refresh_selection(
         elif item.operation != "trash":
             raise ValueError("Unknown cleanup operation")
         elif item.unit == "directory":
-            if require_manifest and not item.manifest_digest:
-                raise ValueError("Directory needs a pre-confirmation manifest; review/export it first")
-            digest, size, count = tree_manifest(path)
-            if item.manifest_digest and digest != item.manifest_digest:
-                raise ValueError("Resource contents changed since review")
+            if require_manifest:
+                if not item.manifest_digest:
+                    raise ValueError("Directory needs a pre-confirmation manifest; review/export it first")
+                # Staging re-walks the tree immediately before each move and refuses any change;
+                # a second walk here would add time, not safety.
+                digest, size, count = item.manifest_digest, item.allocated_bytes, item.member_count
+            else:
+                digest, size, count = tree_manifest(path, cancelled=cancelled)
+                if item.manifest_digest and digest != item.manifest_digest:
+                    raise ValueError("Resource contents changed since review")
             facts = evidence.collect(path / "[resource]")
             facts["disposal_basis"] = fresh.evidence["disposal_basis"]
             from jev_clean.infrastructure.evidence import observe_children
@@ -357,6 +375,8 @@ def _refresh_selection(
 
     assessed = []
     for item in items:
+        if cancelled():
+            raise Cancelled("Selection preparation cancelled")
         try:
             fresh = refresh(item)
         except (ValueError, OSError) as error:
@@ -406,14 +426,18 @@ def execute_selection(items: list[Candidate], *, home: Path | None = None) -> Cl
     return result
 
 
-def save_plan(path: Path, report: AuditReport) -> None:
+def save_plan(path: Path, report: AuditReport, *, cancelled: Callable[[], bool] = lambda: False) -> None:
     # An exported actionable directory plan must bind exact membership before
     # a later CLI --confirm TRASH; never silently seal after that confirmation.
     resources = [c for c in report.scan.candidates if c.unit == "directory" and c.selectable]
     if resources and not report.demo:
         # Live caches keep changing during a scan; one changed resource must not discard the report.
         refreshed = _refresh_selection(
-            resources, home=Path(report.home), require_manifest=False, tolerate_changes=True
+            resources,
+            home=Path(report.home),
+            require_manifest=False,
+            tolerate_changes=True,
+            cancelled=cancelled,
         )
         sealed = {c.id: c for c in refreshed}
         report = replace(

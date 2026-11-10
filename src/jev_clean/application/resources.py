@@ -258,9 +258,11 @@ def investigate_resources(
             c.allocated_bytes for c in result.candidates if c.selectable and c.operation == "trash"
         )
         stats["memory_pressure_stop"] = paced["critical"]
-        stats["walk_finished"] = not cancelled() and not paced["critical"] and stats["resources_measured"] + len(
-            result.warnings
-        ) == len(paths)
+        stats["walk_finished"] = (
+            not cancelled()
+            and not paced["critical"]
+            and stats["resources_measured"] + len(result.warnings) == len(paths)
+        )
         stats["elapsed_seconds"] = round(time.monotonic() - started, 3)
         stats["model_assessed"] = stats["model_assessed_resources"]
         result.complete = bool(

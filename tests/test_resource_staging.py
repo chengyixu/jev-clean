@@ -54,8 +54,8 @@ def test_deep_change_after_review_is_refused_even_when_root_did_not_change(
     assert callable(getattr(service, "prepare_selection", None))
     sealed = service.prepare_selection([item], home=tmp_path)
     (tmp_path / "cache/nested/blob").write_bytes(b"new valuable work")
-    with pytest.raises(ValueError, match="changed"):
-        service.reassess_selection(sealed, home=tmp_path)
+    result = service.execute_selection(sealed, home=tmp_path)
+    assert result.moved == 0 and "changed" in str(result.failed)
     r = TrashStore(tmp_path).move(sealed, open_paths=set())
     assert r.moved == 0 and (tmp_path / "cache/nested/blob").exists()
 

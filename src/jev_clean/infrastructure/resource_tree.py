@@ -7,13 +7,26 @@ import hashlib
 import os
 import platform
 import stat
+from collections.abc import Callable
 from pathlib import Path
 
+from jev_clean.domain.models import Cancelled
 from jev_clean.infrastructure.paths import directory_fd as directory_fd
 from jev_clean.infrastructure.scanner import fingerprint
 
 
-def tree_manifest(path: Path) -> tuple[str, int, int]:
+def _allocated(st: os.stat_result, seen: set[tuple[int, int]]) -> int:
+    """Allocated bytes counted once per inode, as du does. Only multi-link files are remembered,
+    so memory grows with hard links, not with the size of the tree."""
+    if stat.S_ISDIR(st.st_mode) or st.st_nlink == 1:
+        return st.st_blocks * 512
+    if (st.st_dev, st.st_ino) in seen:
+        return 0
+    seen.add((st.st_dev, st.st_ino))
+    return st.st_blocks * 512
+
+
+def tree_manifest(path: Path, *, cancelled: Callable[[], bool] = lambda: False) -> tuple[str, int, int]:
     """Metadata digest, allocated bytes, descendants; no file contents/symlink targets.
 
     Run only for selected review and execution. Snapshot ownership and filesystem
@@ -21,7 +34,7 @@ def tree_manifest(path: Path) -> tuple[str, int, int]:
     """
     digest = hashlib.sha256()
     count = 0
-    seen = set()
+    seen: set[tuple[int, int]] = set()
     with directory_fd(path) as root:
         before = os.fstat(root)
         if before.st_uid != os.getuid():
@@ -32,6 +45,8 @@ def tree_manifest(path: Path) -> tuple[str, int, int]:
             raise error
 
         for current, dirs, files, fd in os.fwalk(".", dir_fd=root, follow_symlinks=False, onerror=fail):
+            if cancelled():
+                raise Cancelled("Manifest capture cancelled")
             dirs.sort()
             for name in sorted([*dirs, *files]):
                 st = os.stat(name, dir_fd=fd, follow_symlinks=False)
@@ -42,9 +57,7 @@ def tree_manifest(path: Path) -> tuple[str, int, int]:
                 relative = os.path.join(current, name)
                 digest.update(os.fsencode(relative) + b"\0")
                 digest.update(str((fingerprint(st), st.st_mode, st.st_blocks)).encode() + b"\0")
-                if (st.st_dev, st.st_ino) not in seen:
-                    size += st.st_blocks * 512
-                    seen.add((st.st_dev, st.st_ino))
+                size += _allocated(st, seen)
                 count += 1
         if fingerprint(before) != fingerprint(os.fstat(root)):
             raise ValueError("Resource changed during manifest capture")

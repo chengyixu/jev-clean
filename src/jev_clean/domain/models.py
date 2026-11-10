@@ -7,6 +7,10 @@ from pathlib import PurePath
 from typing import Any
 
 
+class Cancelled(Exception):
+    """The person stopped a long operation; partial work is discarded, never treated as complete."""
+
+
 @dataclass(frozen=True)
 class Fingerprint:
     device: int

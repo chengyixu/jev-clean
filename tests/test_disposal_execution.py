@@ -76,6 +76,6 @@ def test_changed_marker_within_reviewed_tree_is_a_manifest_change(tmp_path, monk
     sealed = service.prepare_selection([item], home=tmp_path)
     marker = tmp_path / "cache/CACHEDIR.TAG"
     marker.write_bytes(marker.read_bytes() + b"#changed\n")
-    with pytest.raises(ValueError, match="changed"):
-        service.reassess_selection(sealed, home=tmp_path)
+    result = service.execute_selection(sealed, home=tmp_path)
+    assert result.moved == 0 and "changed" in str(result.failed)
     assert (tmp_path / "cache/nested/blob").exists()

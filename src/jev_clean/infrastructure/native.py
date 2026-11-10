@@ -60,7 +60,9 @@ def _stop(process, selector, buffers: dict[str, bytearray], bound: int, *, drain
         pass  # uninterruptible kernel I/O; the scan keeps its partial data instead of blocking
 
 
-def _collect(command: list[str], timeout: float, cancelled, on_line, bound: int) -> tuple[int, bytes, bytes, int]:
+def _collect(
+    command: list[str], timeout: float, cancelled, on_line, bound: int
+) -> tuple[int, bytes, bytes, int]:
     """Bounded native reader. Returns (returncode, stdout, stderr, stopped) where stopped is 0/124/130."""
     try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

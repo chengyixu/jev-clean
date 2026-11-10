@@ -125,9 +125,7 @@ def dispatch(args: argparse.Namespace, home: Path) -> int:
             raise ValueError("Unknown or empty selected IDs")
         selected = [i for i in items if i.id in ids]
         if not all(i.selectable for i in selected):
-            raise ValueError(
-                "Selection lacks model-remove judgment or execution readiness; rescan/review"
-            )
+            raise ValueError("Selection lacks model-remove judgment or execution readiness; rescan/review")
         print(
             f"Apply {len(selected)} selected cleanup operations. Owner-native pruning is not reversible; Trash staging does not free space.",
             file=sys.stderr,
