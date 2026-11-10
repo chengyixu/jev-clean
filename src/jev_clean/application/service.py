@@ -29,6 +29,7 @@ from jev_clean.infrastructure.evidence import EvidenceCollector
 from jev_clean.infrastructure.model import LayaAdvisor, mlx_peak_memory
 from jev_clean.infrastructure.owner_execution import prune_selected
 from jev_clean.infrastructure.resource_tree import tree_manifest
+from jev_clean.infrastructure.resources import directory_evidence
 from jev_clean.infrastructure.scanner import candidate_from_stat, no_symlink_ancestors
 from jev_clean.infrastructure.trash import read_private, save_private
 
@@ -358,12 +359,10 @@ def _refresh_selection(
                 digest, size, count = tree_manifest(path, cancelled=cancelled)
                 if item.manifest_digest and digest != item.manifest_digest:
                     raise ValueError("Resource contents changed since review")
-            facts = evidence.collect(path / "[resource]")
-            facts["disposal_basis"] = fresh.evidence["disposal_basis"]
-            from jev_clean.infrastructure.evidence import observe_children
-
-            facts.update(observe_children(path))
-            facts["membership"] = f"exact metadata manifest of {count} descendants; contents not read"
+            facts = {
+                **directory_evidence(path, fresh.evidence, evidence),
+                "membership": f"exact metadata manifest of {count} descendants; contents not read",
+            }
             fresh = replace(
                 fresh,
                 id=item.id,

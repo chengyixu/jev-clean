@@ -17,6 +17,81 @@ from jev_clean.infrastructure.paths import directory_fd
 CACHE_NAMESPACE_CONTRACT = "Apple documents the macOS Library/Caches namespace for app-specific support data that the app can re-create easily. Apps can misuse a namespace; this does not prove the contents are unwanted or contain no unique data."
 LOG_NAMESPACE_CONTRACT = "The macOS Library/Logs namespace stores application diagnostic logs. A current writer, support-case need and retention obligation require observation; log placement alone does not prove disposal."
 
+# The single home of every verified storage role: (namespace label, documented purpose).
+# A purpose describes what the owner keeps there, never a permission to remove it.
+STORAGE_ROLES: dict[str, tuple[str, str]] = {
+    "macos-cache": ("macOS Library/Caches", CACHE_NAMESPACE_CONTRACT),
+    "macos-diagnostic-log": ("macOS Library/Logs", LOG_NAMESPACE_CONTRACT),
+    "xcode-derived-data": (
+        "Xcode DerivedData",
+        "Xcode keeps per-project build products, indexes and build logs here and re-creates them when the project is built again. An open project or a running build can be using them.",
+    ),
+    "xcode-device-support": (
+        "Xcode DeviceSupport",
+        "Xcode copies debug symbols for a connected device's OS version here and copies them again the next time a device with that OS version is used for debugging.",
+    ),
+    "xcode-archives": (
+        "Xcode Archives",
+        "Xcode keeps app archives here, including the debug symbols needed to read crash reports from distributed builds. Building again cannot re-create a past archive.",
+    ),
+    "simulator-devices": (
+        "Xcode Simulator devices",
+        "Simulator devices with their installed apps and app data. The owner tool, xcrun simctl, manages devices; app data inside a device can be unique.",
+    ),
+    "ios-device-backup": (
+        "Finder iPhone and iPad backups",
+        "Finder keeps local iPhone and iPad backups here. A backup can hold the only copy of device data such as messages and photos; whether another copy exists is not observed.",
+    ),
+    "user-downloads": (
+        "user Downloads folder",
+        "The user's Downloads folder holds files the user downloaded or saved. Whether a file is still needed or exists elsewhere is not observed.",
+    ),
+    "mail-store": (
+        "Apple Mail data",
+        "Apple Mail keeps local mailboxes, messages and attachments here. Messages of accounts without a server copy exist only here.",
+    ),
+    "messages-store": (
+        "Apple Messages data",
+        "Apple Messages keeps the local conversation history and attachments here. Without Messages in iCloud this can be the only copy.",
+    ),
+    "icloud-drive": (
+        "iCloud Drive",
+        "iCloud Drive and app documents synced with iCloud. Removing a synced file removes it from iCloud and from every device that syncs it.",
+    ),
+    "credential-store": (
+        "SSH or GnuPG key store",
+        "Secure shell and GnuPG keys and configuration. A private key here can be the only copy and can grant access to other systems.",
+    ),
+}
+UNVERIFIED_CONTRACT = "No source establishes this resource's storage purpose."
+
+# Exact roots below HOME, most specific first. No substring or leaf-label guessing.
+_HOME_ROOTS: tuple[tuple[str, str], ...] = (
+    ("Library/Caches", "macos-cache"),
+    ("Library/Logs", "macos-diagnostic-log"),
+    ("Library/Developer/Xcode/DerivedData", "xcode-derived-data"),
+    *(
+        (f"Library/Developer/Xcode/{system} DeviceSupport", "xcode-device-support")
+        for system in ("iOS", "iPadOS", "watchOS", "tvOS", "visionOS", "macOS")
+    ),
+    ("Library/Developer/Xcode/Archives", "xcode-archives"),
+    ("Library/Developer/CoreSimulator/Devices", "simulator-devices"),
+    ("Library/Application Support/MobileSync/Backup", "ios-device-backup"),
+    ("Downloads", "user-downloads"),
+    ("Library/Mail", "mail-store"),
+    ("Library/Messages", "messages-store"),
+    ("Library/Mobile Documents", "icloud-drive"),
+    (".ssh", "credential-store"),
+    (".gnupg", "credential-store"),
+)
+
+
+def name_token(name: str) -> str:
+    """Lower-case suffix token; a leading-dot name without another dot (.git, .ssh) is its own token."""
+    lower = name.lower()
+    suffix = Path(lower).suffix or (lower if lower.startswith(".") and len(lower) > 1 else "")
+    return suffix[:24] or "[none]"
+
 
 def observe_storage_role(path: Path, home: Path) -> dict[str, str]:
     """Exact verified OS storage namespace; never a model choice or permission.
@@ -24,10 +99,10 @@ def observe_storage_role(path: Path, home: Path) -> dict[str, str]:
     Canonical roots only, no substring/leaf-label guessing. The contract describes
     what the namespace is for, not a guarantee that every file obeys that purpose.
     """
-    role, contract = "unverified", "No source establishes this resource's storage purpose."
     if any(p.is_symlink() for p in (path, *path.parents)):
-        return {"storage_namespace": role, "namespace_contract": contract}
-    cache_roots = [home / "Library/Caches", Path("/Library/Caches")]
+        return {"storage_namespace": "unverified", "namespace_contract": UNVERIFIED_CONTRACT}
+    roots = [(Path("/Library/Caches"), "macos-cache"), (Path("/Library/Logs"), "macos-diagnostic-log")]
+    roots += [(home / relative, role) for relative, role in _HOME_ROOTS]
     try:
         parts = path.relative_to(home).parts
     except ValueError:
@@ -37,23 +112,23 @@ def observe_storage_role(path: Path, home: Path) -> dict[str, str]:
         and parts[:2] == ("Library", "Containers")
         and parts[3:6] == ("Data", "Library", "Caches")
     ):
-        cache_roots.append(home.joinpath(*parts[:6]))
+        roots.append((home.joinpath(*parts[:6]), "macos-cache"))
     if (
         len(parts) >= 5
         and parts[:2] == ("Library", "Group Containers")
         and parts[3:5] == ("Library", "Caches")
     ):
-        cache_roots.append(home.joinpath(*parts[:5]))
-    for root in cache_roots:
-        if path == root or path.is_relative_to(root):
-            role, contract = "macos-cache", CACHE_NAMESPACE_CONTRACT
-            break
-    if role == "unverified":
-        for root in (home / "Library/Logs", Path("/Library/Logs")):
-            if path == root or path.is_relative_to(root):
-                role, contract = "macos-diagnostic-log", LOG_NAMESPACE_CONTRACT
-                break
-    return {"storage_namespace": role, "namespace_contract": contract}
+        roots.append((home.joinpath(*parts[:5]), "macos-cache"))
+    for root, role in roots:
+        if path.is_relative_to(root):
+            return {"storage_namespace": role, "namespace_contract": STORAGE_ROLES[role][1]}
+    return {"storage_namespace": "unverified", "namespace_contract": UNVERIFIED_CONTRACT}
+
+
+def _most_common(counts: Counter[str], limit: int = 8) -> str:
+    """Highest counts first, equal counts by name: the input never depends on directory order."""
+    ranked = sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))[:limit]
+    return ", ".join(f"{k}:{v}" for k, v in ranked)
 
 
 def observe_children(path: Path, *, limit: int = 64) -> dict[str, str]:
@@ -75,7 +150,7 @@ def observe_children(path: Path, *, limit: int = 64) -> dict[str, str]:
                     complete = False
                     break
                 info = entry.stat(follow_symlinks=False)
-                suffix = Path(entry.name).suffix.lower()[:24] or "[none]"
+                suffix = name_token(entry.name)
                 if stat.S_ISREG(info.st_mode):
                     files[suffix] += 1
                     types["regular"] += 1
@@ -90,8 +165,8 @@ def observe_children(path: Path, *, limit: int = 64) -> dict[str, str]:
     return {
         "sampled_entries": str(count),
         "entry_types": ", ".join(f"{k}:{v}" for k, v in sorted(types.items())),
-        "file_extensions": ", ".join(f"{k}:{v}" for k, v in files.most_common(8)),
-        "directory_extensions": ", ".join(f"{k}:{v}" for k, v in directories.most_common(8)),
+        "file_extensions": _most_common(files),
+        "directory_extensions": _most_common(directories),
         "observation_scope": "all immediate entries; descendants uninspected"
         if complete
         else "partial immediate-entry sample; no subtree purity claim",
@@ -150,7 +225,7 @@ class EvidenceCollector:
         facts = {
             **observe_storage_role(path, self.home),
             "location": "/".join(p[:40] for p in shown) or "[home]",
-            "extension": path.suffix[:20] or "[none]",
+            "extension": name_token(path.name),
             "application": "unknown",
             "application_version": "unknown",
             "application_match": "unknown",

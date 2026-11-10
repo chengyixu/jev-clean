@@ -183,6 +183,17 @@ def discover_resources(home: Path, scope: DiskScope, cancelled=lambda: False) ->
     return result
 
 
+def directory_evidence(path: Path, facts: dict[str, str], evidence: EvidenceCollector) -> dict[str, str]:
+    """Directory facts shared by the scan and the selection refresh, so both ask the model the same question."""
+    return {
+        **facts,
+        "location": evidence.collect(path / "[resource]")["location"],
+        "measurement": "native allocated subtree total; descendants not individually model-assessed",
+        "membership": "exact descendant manifest captured only for selected review",
+        **observe_children(path),
+    }
+
+
 def measure_resource(
     path: Path,
     home: Path,
@@ -211,11 +222,7 @@ def measure_resource(
     after = path.lstat()
     unchanged = fingerprint(before) == fingerprint(after)
     complete = code == 0 and not err.strip() and valid and unchanged and not cancelled()
-    facts = dict(item.evidence)
-    facts["location"] = evidence.collect(path / "[resource]")["location"]
-    facts["measurement"] = "native allocated subtree total; descendants not individually model-assessed"
-    facts["membership"] = "exact descendant manifest captured only for selected review"
-    facts.update(observe_children(path))
+    facts = directory_evidence(path, item.evidence, evidence)
     active = None if opened is None else any(p == str(path) or p.startswith(str(path) + "/") for p in opened)
     return replace(
         item,

@@ -40,56 +40,70 @@ def _extension_counts(value):
     return ", ".join(result) or "unknown"
 
 
+# The single home of recognized format groups. A group is an observation, never a disposal rule.
+FORMAT_GROUPS: tuple[tuple[frozenset[str], str], ...] = (
+    (
+        frozenset(
+            ".jpg .jpeg .heic .png .gif .tif .tiff .webp .psd .dng .nef .cr2 .cr3 .arw .raf .orf .rw2 "
+            ".mp4 .mov .m4v .avi .mkv .webm .wav .mp3 .m4a .aac .flac .aif .aiff .ogg .opus "
+            ".photoslibrary .imovielibrary .fcpbundle .logicx .band".split()
+        ),
+        "media or photo-library formats; original-versus-preview status unknown",
+    ),
+    (
+        frozenset(
+            ".key .pem .p12 .p8 .pfx .kdbx .wallet .credentials .gpg .pgp .asc .keychain .keychain-db "
+            ".jks .keystore .ppk .ovpn .ssh .gnupg".split()
+        ),
+        "credential or recovery-related formats; real-versus-dummy status unknown",
+    ),
+    (
+        frozenset(
+            ".py .swift .ts .tsx .js .jsx .rs .go .c .cpp .h .hpp .m .mm .cs .java .kt .kts .scala .dart "
+            ".rb .php .lua .vue .sh .zsh .ipynb .git .hg .svn .xcodeproj .xcworkspace .xcarchive .dsym".split()
+        ),
+        "source or repository formats; original-versus-generated status unknown",
+    ),
+    (
+        frozenset(
+            ".pdf .doc .docx .pages .numbers .xls .xlsx .ppt .pptx .odt .ods .odp .rtf .txt .md .tex "
+            ".epub .csv".split()
+        ),
+        "document formats; original-versus-copy status unknown",
+    ),
+    (
+        frozenset(".zip .tar .tgz .7z .rar .xip".split()),
+        "archive formats; contents and other copies unknown",
+    ),
+    (
+        frozenset(".emlx .eml .mbox".split()),
+        "mail or message formats; server or other copies unknown",
+    ),
+    (
+        frozenset(".db .sqlite .sqlite3 .wal".split()),
+        "database formats; persistent-versus-generated cache role unknown",
+    ),
+    (
+        frozenset(
+            ".safetensors .gguf .raw .qcow2 .dmg .iso .img .vmdk .vdi .vhd .vhdx .sparseimage "
+            ".sparsebundle .utm .vmwarevm .pvm .ipsw".split()
+        ),
+        "model or disk-image formats; dependencies and replacement availability unknown",
+    ),
+)
+
+
 def structural_formats(evidence):
-    """Human-readable format observations; not uniqueness or disposal conclusions."""
+    """Human-readable format observations; not uniqueness or disposal conclusions.
+
+    The resource's own suffix (a .photoslibrary bundle) counts as a format, but never
+    enters the input as a raw token: bundle-ID names would only add noise.
+    """
     files = _extension_counts(evidence.get("file_extensions", evidence.get("extension", "") + ":1"))
     directories = _extension_counts(evidence.get("directory_extensions", ""))
     suffixes = {s.strip().split(":", 1)[0] for s in (files + "," + directories).split(",")}
-    formats = []
-    if suffixes & {
-        ".jpg",
-        ".jpeg",
-        ".heic",
-        ".png",
-        ".nef",
-        ".cr3",
-        ".mp4",
-        ".mov",
-        ".wav",
-        ".mp3",
-        ".photoslibrary",
-    }:
-        formats.append("media or photo-library formats; original-versus-preview status unknown")
-    if suffixes & {".key", ".pem", ".p12", ".pfx", ".kdbx", ".wallet", ".credentials"}:
-        formats.append("credential or recovery-related formats; real-versus-dummy status unknown")
-    if suffixes & {
-        ".py",
-        ".swift",
-        ".ts",
-        ".tsx",
-        ".js",
-        ".jsx",
-        ".rs",
-        ".go",
-        ".c",
-        ".cpp",
-        ".h",
-        ".hpp",
-        ".java",
-        ".kt",
-        ".kts",
-        ".rb",
-        ".php",
-        ".lua",
-        ".vue",
-        ".git",
-        ".ipynb",
-    }:
-        formats.append("source or repository formats; original-versus-generated status unknown")
-    if suffixes & {".db", ".sqlite", ".sqlite3", ".wal"}:
-        formats.append("database formats; persistent-versus-generated cache role unknown")
-    if suffixes & {".safetensors", ".gguf", ".raw", ".qcow2", ".dmg"}:
-        formats.append("model or disk-image formats; dependencies and replacement availability unknown")
+    suffixes.add(str(evidence.get("extension", "")).lower())
+    formats = [phrase for group, phrase in FORMAT_GROUPS if suffixes & group]
     return (
         "; ".join(formats)
         if formats
@@ -108,17 +122,14 @@ def observed_state(item):
         "all immediate entries; descendants uninspected",
         "partial immediate-entry sample; no subtree purity claim",
     }
-    namespace = evidence.get("storage_namespace")
-    if namespace == "macos-cache":
-        from jev_clean.infrastructure.evidence import CACHE_NAMESPACE_CONTRACT
+    from jev_clean.infrastructure.evidence import STORAGE_ROLES
 
-        purpose = f"Actual filesystem namespace: macOS Library/Caches. {CACHE_NAMESPACE_CONTRACT} "
-    elif namespace == "macos-diagnostic-log":
-        from jev_clean.infrastructure.evidence import LOG_NAMESPACE_CONTRACT
-
-        purpose = f"Actual filesystem namespace: macOS Library/Logs. {LOG_NAMESPACE_CONTRACT} "
-    else:
-        purpose = "Filesystem storage purpose is unverified. "
+    role = STORAGE_ROLES.get(str(evidence.get("storage_namespace")))
+    purpose = (
+        f"Actual filesystem namespace: {role[0]}. {role[1]} "
+        if role
+        else "Filesystem storage purpose is unverified. "
+    )
     declaration = (
         "A valid cache declaration from the owner indicates rebuildability; active references and current necessity remain unknown."
         if item.disposal is not None

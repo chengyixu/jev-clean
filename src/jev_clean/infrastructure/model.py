@@ -15,7 +15,7 @@ from typing import Any, BinaryIO
 from jev_clean.domain.models import Candidate, Decision, DiskNode
 from jev_clean.infrastructure.learned_cleanup import observed_state, predict_cleanup
 
-INPUT_CONTRACT = "learned-file-purpose-structural-observations-v8"
+INPUT_CONTRACT = "learned-file-purpose-structural-observations-v9"
 CLEANUP_ADAPTER_ID = "jev-cleanup-laya-runtime-observations-v3"
 CLEANUP_ADAPTER_SHA256 = "5b65d16deeb20ac8c9e6ab43cb3c9fe4478896df8e2326e5744559797546bd33"
 CLEANUP_ADAPTER_REPO = "ChengyiX/jev-clean-cleanup-adapter"
