@@ -9,8 +9,9 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from jev_clean.domain.models import Candidate
+from jev_clean.infrastructure.disposal import observe_disposal
 from jev_clean.infrastructure.evidence import EvidenceCollector, observe_children
-from jev_clean.infrastructure.native import _stream_du, du_command
+from jev_clean.infrastructure.native import THROTTLED_IO, _collect, _stream_du, du_command
 from jev_clean.infrastructure.paths import aliases_covered_elsewhere, firmlinks, logical_path
 from jev_clean.infrastructure.resource_tree import directory_fd
 from jev_clean.infrastructure.scanner import candidate_from_stat, fingerprint, no_symlink_ancestors
@@ -108,11 +109,15 @@ def sandbox_container(path: Path, home: Path) -> bool:
     return False
 
 
-def discover_resources(home: Path, scope: DiskScope, cancelled=lambda: False) -> Frontier:
+def discover_resources(
+    home: Path, scope: DiskScope, cancelled=lambda: False, *, opened: frozenset[Path] = frozenset()
+) -> Frontier:
+    """Disjoint resources below the roots. `opened` adds directories to open, such as the
+    ancestors of a nested declared cache; it changes granularity, never scope or disposition."""
     result = Frontier()
     roots = normalize_roots(scope.roots)
     mappings = firmlinks()
-    split = split_locations(home)
+    split = split_locations(home) | opened
     seen: set[tuple[int, int]] = set()
     own_state = home / ".local/state/jev-clean"
 
@@ -243,3 +248,36 @@ def measure_resource(
         ),
         age_seconds=max(0, time.time() - before.st_mtime),
     )
+
+
+def nested_declarations(
+    path: Path, home: Path, *, timeout: float, cancelled=lambda: False
+) -> tuple[list[Path], bool]:
+    """Outermost validated cache declarations strictly inside `path`, and whether the search finished.
+
+    One throttled native find right after du, while the metadata is still cached. A marker
+    only makes the scan open its ancestors; the declared directory still gets a model judgment.
+    """
+    command = [*THROTTLED_IO, "/usr/bin/find", "-x", str(path), "-mindepth", "2"]
+    command += ["-name", "CACHEDIR.TAG", "-type", "f", "-print0"]
+    code, out, _err, stopped = _collect(command, timeout, cancelled, None, 4 * 1024 * 1024)
+    found = []
+    for raw in out.split(b"\0"):
+        if raw.endswith(b"/CACHEDIR.TAG"):
+            directory = Path(os.fsdecode(raw)).parent
+            declared = observe_disposal(directory, home, directory=True)
+            if declared is not None and declared.scope == str(directory):
+                found.append(directory)
+    outermost: list[Path] = []
+    for directory in sorted(found, key=lambda d: len(d.parts)):
+        if not any(directory.is_relative_to(o) for o in outermost):
+            outermost.append(directory)
+    return outermost, code == 0 and not stopped
+
+
+def declared_frontier(path: Path, home: Path, markers: list[Path], cancelled=lambda: False) -> Frontier:
+    """Re-split one measured resource so each outermost declared cache is its own resource."""
+    opened = {path}
+    for marker in markers:
+        opened.update(a for a in marker.parents if a.is_relative_to(path))
+    return discover_resources(home, DiskScope([path], kind="custom"), cancelled, opened=frozenset(opened))

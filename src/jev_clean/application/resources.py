@@ -20,6 +20,7 @@ from jev_clean.domain.models import (
 )
 from jev_clean.domain.policy import apply_policy
 from jev_clean.infrastructure import native, owner_tools
+from jev_clean.infrastructure import resources as native_resources
 from jev_clean.infrastructure.decision_cache import DecisionCache
 from jev_clean.infrastructure.evidence import EvidenceCollector
 from jev_clean.infrastructure.model import state_for
@@ -70,6 +71,8 @@ def investigate_resources(
         "measurement_gaps": 0,
         "walk_finished": False,
         "granularity": "resource",
+        "declared_cache_splits": 0,
+        "declaration_search_gaps": 0,
     }
     state_dir = state_dir or home / ".local/state/jev-clean/resource-scan"
     stop = threading.Event()
@@ -150,23 +153,28 @@ def investigate_resources(
             ),
         )
         pending = deque(paths)
+        # Directories whose complete declaration search found markers: their children need no second search.
+        searched: set[Path] = set()
+
+        def measure(path: Path, search: bool) -> tuple[Candidate, list[Path], bool]:
+            item = measure_resource(
+                path, home, evidence, open_paths, deep=deep, cancelled=stopped, timeout=measurement_timeout
+            )
+            if not search or item.unit != "directory" or item.disposal is not None:
+                return item, [], True
+            markers, complete = native_resources.nested_declarations(
+                path, home, timeout=measurement_timeout, cancelled=stopped
+            )
+            return item, markers, complete
+
         with ThreadPoolExecutor(max_workers=4) as workers:
-            active: dict[Future[Candidate], Path] = {}
+            active: dict[Future[tuple[Candidate, list[Path], bool]], Path] = {}
 
             def fill():
                 while pending and len(active) < 4 and not stopped() and memory_allows_work():
                     path = pending.popleft()
-                    future = workers.submit(
-                        measure_resource,
-                        path,
-                        home,
-                        evidence,
-                        open_paths,
-                        deep=deep,
-                        cancelled=stopped,
-                        timeout=measurement_timeout,
-                    )
-                    active[future] = path
+                    search = path.is_relative_to(home) and not any(a in searched for a in path.parents)
+                    active[workers.submit(measure, path, search)] = path
 
             fill()
             try:
@@ -181,10 +189,21 @@ def investigate_resources(
                             break
                         path = active.pop(future)
                         try:
-                            item = future.result()
+                            item, markers, searched_all = future.result()
                         except (OSError, ValueError) as error:
                             stats["measurement_gaps"] += 1
                             result.warnings.append(f"Measurement unavailable: {path}: {error}")
+                            continue
+                        stats["declaration_search_gaps"] += int(not searched_all)
+                        if markers:
+                            # Open the ancestors of each declared cache; the parent itself is not a resource.
+                            split = native_resources.declared_frontier(path, home, markers, stopped)
+                            frontier.issues.extend(split.issues)
+                            if searched_all:
+                                searched.add(path)
+                            pending.extendleft(reversed(split.paths))
+                            stats["resources_discovered"] += len(split.paths) - 1
+                            stats["declared_cache_splits"] += 1
                             continue
                         stats["resources_measured"] += 1
                         stats["measurement_gaps"] += int(not item.scan_complete)
@@ -247,7 +266,7 @@ def investigate_resources(
         stats["walk_finished"] = (
             not cancelled()
             and not paced["critical"]
-            and stats["resources_measured"] + len(result.warnings) == len(paths)
+            and stats["resources_measured"] + len(result.warnings) == stats["resources_discovered"]
         )
         stats["elapsed_seconds"] = round(time.monotonic() - started, 3)
         stats["model_assessed"] = stats["model_assessed_resources"]
@@ -263,7 +282,9 @@ def investigate_resources(
             "requested_roots": list(map(str, scope.roots)),
             "complete": result.complete,
             "scope_finished": stats["walk_finished"],
-            "resources_discovered": len(paths),
+            "resources_discovered": stats["resources_discovered"],
+            "declared_cache_splits": stats["declared_cache_splits"],
+            "declaration_search_gaps": stats["declaration_search_gaps"],
             "resources_measured": stats["resources_measured"],
             "symlinks_observed": frontier.symlinks,
             "aliases_deduplicated": frontier.aliases,
