@@ -9,12 +9,14 @@ import platform
 import shutil
 import subprocess
 import sys
+from contextlib import nullcontext
 from dataclasses import asdict
 from pathlib import Path
 
 from jev_clean.application.service import audit, execute_selection, load_plan, save_plan
 from jev_clean.infrastructure import native
 from jev_clean.infrastructure.model import verify_model_ready
+from jev_clean.infrastructure.run_lock import single_run
 from jev_clean.infrastructure.trash import TrashStore
 from jev_clean.infrastructure.update import check_update, installed_version
 
@@ -82,6 +84,131 @@ def emit(value) -> None:
     print(json.dumps(value, indent=2, ensure_ascii=False))
 
 
+def dispatch(args: argparse.Namespace, home: Path) -> int:
+    if args.command in (None, "tui", "clean", "status"):
+        demo = getattr(args, "demo", False)
+        json_mode = getattr(args, "json", False) or not sys.stdout.isatty()
+        mode = args.command if args.command not in (None, "tui") else "status"
+        if platform.system() != "Darwin" and not demo:
+            raise ValueError("macOS required for real scans. Use --demo for a portable preview.")
+        if json_mode:
+            if getattr(args, "deep", False):
+                code, _, _ = native.run(["/usr/bin/sudo", "-n", "-v"], 3)
+                if code:
+                    raise ValueError(
+                        "Deep JSON needs prior terminal authentication: sudo -v. Passwords are never accepted here."
+                    )
+            report = audit(
+                home,
+                mode,
+                demo=demo,
+                roots=getattr(args, "root", None),
+                deep=getattr(args, "deep", False),
+                progress=lambda text: print(text, file=sys.stderr),
+            )
+            if getattr(args, "output", None):
+                save_plan(args.output.absolute(), report)
+            emit(report.to_dict())
+        else:
+            from jev_clean.ui.app import JevCleanApp
+
+            JevCleanApp(
+                home=home,
+                demo=demo,
+                initial=None if args.command in (None, "tui") else mode,
+            ).run()
+    elif args.command == "apply":
+        items = load_plan(args.plan.absolute(), home)
+        ids = set(args.ids.split(","))
+        known = {i.id for i in items}
+        if not ids or not ids <= known:
+            raise ValueError("Unknown or empty selected IDs")
+        selected = [i for i in items if i.id in ids]
+        if not all(i.selectable for i in selected):
+            raise ValueError(
+                "Selection lacks model-remove judgment or execution readiness; rescan/review"
+            )
+        print(
+            f"Apply {len(selected)} selected cleanup operations. Owner-native pruning is not reversible; Trash staging does not free space.",
+            file=sys.stderr,
+        )
+        for item in selected:
+            print(item.path, file=sys.stderr)
+        confirm("CLEAN" if any(i.operation == "owner_prune" for i in selected) else "TRASH", args.confirm)
+        result = execute_selection(selected, home=home)
+        emit(asdict(result))
+        return 1 if result.failed else 0
+    elif args.command == "history":
+        emit(TrashStore(home).history())
+    elif args.command == "restore":
+        confirm("RESTORE", args.confirm)
+        restored = TrashStore(home).restore(args.batch)
+        emit(asdict(restored))
+        return 1 if restored.failed else 0
+    elif args.command == "doctor":
+        model_proof = (
+            verify_model_ready()
+            if args.verify_model
+            else {
+                "ready": None,
+                "note": "Model is verified during installation and automatically prepared on first operation.",
+            }
+        )
+        emit(
+            {
+                "version": installed_version(),
+                "model": model_proof,
+                "platform": platform.system(),
+                "arch": platform.machine(),
+                "root": False,
+                "sudo_cached": native.run(["/usr/bin/sudo", "-n", "-v"], 3)[0] == 0,
+                "lsof_available": native.open_files() is not None,
+                "note": "sudo does not bypass Full Disk Access/TCC. No user cleanup performed; model verification may populate its local cache.",
+            }
+        )
+    elif args.command == "update":
+        info = check_update()
+        emit(info)
+        if args.apply:
+            if not sys.stdin.isatty():
+                raise ValueError("Update installation requires interactive terminal confirmation")
+            print(
+                f"Install reviewed public release from {info['url']} using uv tool install. The mandatory model runtime is included on arm64."
+            )
+            confirm("UPDATE", None)
+            uv = shutil.which("uv")
+            bootstrap_uv = home / ".local/share/jev-clean/installer/bin/uv"
+            if not uv and bootstrap_uv.is_file() and os.access(bootstrap_uv, os.X_OK):
+                uv = str(bootstrap_uv)
+            if not uv:
+                raise ValueError("Installer runtime missing; rerun the official jev-clean installer")
+            spec = info["install_spec"]
+            subprocess.run([uv, "tool", "install", "--force", spec], check=True)
+            tool_dir = subprocess.run(
+                [uv, "tool", "dir"], check=True, capture_output=True, text=True
+            ).stdout.strip()
+            verified = subprocess.run(
+                [str(Path(tool_dir) / "jev-clean/bin/jev-clean"), "doctor", "--verify-model"],
+                check=True,
+                stdout=subprocess.PIPE,
+                text=True,
+            )
+            proof = json.loads(verified.stdout)
+            if proof.get("version") != info["latest"] or proof.get("model", {}).get("ready") is not True:
+                raise RuntimeError("Update installed but model verification failed; not ready")
+            emit({"updated": True, "ready": True, "version": info["latest"]})
+            return 0
+    elif args.command == "completion":
+        words = "clean status tui apply restore history update doctor completion"
+        if args.shell == "bash":
+            print(f"complete -W '{words}' jev-clean")
+        elif args.shell == "zsh":
+            print(f"#compdef jev-clean\n_arguments '1:command:({words})'")
+        else:
+            print(f"complete -c jev-clean -f -a '{words}'")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     home = Path.home()
@@ -90,128 +217,11 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError(
                 "Run jev-clean as your normal user. It requests sudo only for read-only diagnostics."
             )
-        if args.command in (None, "tui", "clean", "status"):
-            demo = getattr(args, "demo", False)
-            json_mode = getattr(args, "json", False) or not sys.stdout.isatty()
-            mode = args.command if args.command not in (None, "tui") else "status"
-            if platform.system() != "Darwin" and not demo:
-                raise ValueError("macOS required for real scans. Use --demo for a portable preview.")
-            if json_mode:
-                if getattr(args, "deep", False):
-                    code, _, _ = native.run(["/usr/bin/sudo", "-n", "-v"], 3)
-                    if code:
-                        raise ValueError(
-                            "Deep JSON needs prior terminal authentication: sudo -v. Passwords are never accepted here."
-                        )
-                report = audit(
-                    home,
-                    mode,
-                    demo=demo,
-                    roots=getattr(args, "root", None),
-                    deep=getattr(args, "deep", False),
-                    progress=lambda text: print(text, file=sys.stderr),
-                )
-                if getattr(args, "output", None):
-                    save_plan(args.output.absolute(), report)
-                emit(report.to_dict())
-            else:
-                from jev_clean.ui.app import JevCleanApp
-
-                JevCleanApp(
-                    home=home,
-                    demo=demo,
-                    initial=None if args.command in (None, "tui") else mode,
-                ).run()
-        elif args.command == "apply":
-            items = load_plan(args.plan.absolute(), home)
-            ids = set(args.ids.split(","))
-            known = {i.id for i in items}
-            if not ids or not ids <= known:
-                raise ValueError("Unknown or empty selected IDs")
-            selected = [i for i in items if i.id in ids]
-            if not all(i.selectable for i in selected):
-                raise ValueError(
-                    "Selection lacks model-remove judgment or execution readiness; rescan/review"
-                )
-            print(
-                f"Apply {len(selected)} selected cleanup operations. Owner-native pruning is not reversible; Trash staging does not free space.",
-                file=sys.stderr,
-            )
-            for item in selected:
-                print(item.path, file=sys.stderr)
-            confirm("CLEAN" if any(i.operation == "owner_prune" for i in selected) else "TRASH", args.confirm)
-            result = execute_selection(selected, home=home)
-            emit(asdict(result))
-            return 1 if result.failed else 0
-        elif args.command == "history":
-            emit(TrashStore(home).history())
-        elif args.command == "restore":
-            confirm("RESTORE", args.confirm)
-            restored = TrashStore(home).restore(args.batch)
-            emit(asdict(restored))
-            return 1 if restored.failed else 0
-        elif args.command == "doctor":
-            model_proof = (
-                verify_model_ready()
-                if args.verify_model
-                else {
-                    "ready": None,
-                    "note": "Model is verified during installation and automatically prepared on first operation.",
-                }
-            )
-            emit(
-                {
-                    "version": installed_version(),
-                    "model": model_proof,
-                    "platform": platform.system(),
-                    "arch": platform.machine(),
-                    "root": False,
-                    "sudo_cached": native.run(["/usr/bin/sudo", "-n", "-v"], 3)[0] == 0,
-                    "lsof_available": native.open_files() is not None,
-                    "note": "sudo does not bypass Full Disk Access/TCC. No user cleanup performed; model verification may populate its local cache.",
-                }
-            )
-        elif args.command == "update":
-            info = check_update()
-            emit(info)
-            if args.apply:
-                if not sys.stdin.isatty():
-                    raise ValueError("Update installation requires interactive terminal confirmation")
-                print(
-                    f"Install reviewed public release from {info['url']} using uv tool install. The mandatory model runtime is included on arm64."
-                )
-                confirm("UPDATE", None)
-                uv = shutil.which("uv")
-                bootstrap_uv = home / ".local/share/jev-clean/installer/bin/uv"
-                if not uv and bootstrap_uv.is_file() and os.access(bootstrap_uv, os.X_OK):
-                    uv = str(bootstrap_uv)
-                if not uv:
-                    raise ValueError("Installer runtime missing; rerun the official jev-clean installer")
-                spec = info["install_spec"]
-                subprocess.run([uv, "tool", "install", "--force", spec], check=True)
-                tool_dir = subprocess.run(
-                    [uv, "tool", "dir"], check=True, capture_output=True, text=True
-                ).stdout.strip()
-                verified = subprocess.run(
-                    [str(Path(tool_dir) / "jev-clean/bin/jev-clean"), "doctor", "--verify-model"],
-                    check=True,
-                    stdout=subprocess.PIPE,
-                    text=True,
-                )
-                proof = json.loads(verified.stdout)
-                if proof.get("version") != info["latest"] or proof.get("model", {}).get("ready") is not True:
-                    raise RuntimeError("Update installed but model verification failed; not ready")
-                emit({"updated": True, "ready": True, "version": info["latest"]})
-                return 0
-        elif args.command == "completion":
-            words = "clean status tui apply restore history update doctor completion"
-            if args.shell == "bash":
-                print(f"complete -W '{words}' jev-clean")
-            elif args.shell == "zsh":
-                print(f"#compdef jev-clean\n_arguments '1:command:({words})'")
-            else:
-                print(f"complete -c jev-clean -f -a '{words}'")
-        return 0
+        locked = args.command in (None, "tui", "clean", "status", "apply") or (
+            args.command == "doctor" and args.verify_model
+        )
+        with single_run(home) if locked else nullcontext():
+            return dispatch(args, home)
     except KeyboardInterrupt:
         print("Cancelled.", file=sys.stderr)
         return 130

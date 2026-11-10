@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -38,7 +37,6 @@ class DecisionCache(AbstractContextManager):
             self.path,
             Path(str(self.path) + "-wal"),
             Path(str(self.path) + "-shm"),
-            directory / "scan.lock",
         ):
             if not no_symlink_ancestors(path):
                 raise ValueError("Symlink decision cache refused")
@@ -51,18 +49,12 @@ class DecisionCache(AbstractContextManager):
                     or info.st_mode & 0o022
                 ):
                     raise ValueError("Unsafe decision cache file ownership/type/links")
-        self.fd = os.open(directory / "scan.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
-        try:
-            fcntl.flock(self.fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError:
-            os.close(self.fd)
-            raise RuntimeError("Another disk scan owns this checkpoint; finish or stop it first") from None
+        # The per-user run lock (run_lock.single_run) is taken before the model loads.
         try:
             self._initialize(advisor, roots, mode)
         except BaseException:
             if hasattr(self, "db"):
                 self.db.close()
-            os.close(self.fd)
             raise
 
     def _initialize(self, advisor, roots, mode):
@@ -149,6 +141,5 @@ class DecisionCache(AbstractContextManager):
     def __exit__(self, *args):
         try:
             self.db.commit()
-            self.db.close()
         finally:
-            os.close(self.fd)
+            self.db.close()
