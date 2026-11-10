@@ -12,7 +12,14 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import DataTable, Input, OptionList, RichLog, Static
 
-from jev_clean.application.service import audit, execute_selection, merge_status, prepare_selection, save_plan
+from jev_clean.application.service import (
+    audit,
+    execute_selection,
+    memory_record,
+    merge_status,
+    prepare_selection,
+    save_plan,
+)
 from jev_clean.domain.models import AuditReport, Cancelled, Candidate, human_bytes, ordered_candidates
 from jev_clean.domain.storage_map import MapEntry, recommended_ids, storage_map, toggle_selection
 from jev_clean.infrastructure import native
@@ -456,6 +463,8 @@ class JevCleanApp(App):
             return
         for item in items:
             self.candidate_by_id[item.id] = item
+        if self.report and not self.demo:
+            self.report.diagnostics.setdefault("memory", {})["after_prepare"] = memory_record()
         self.show_stage("review" if self.mode == "clean" else "status")
         self.push_screen(ConfirmScreen(items), lambda yes: self.move_selected(items) if yes else None)
 

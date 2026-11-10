@@ -151,6 +151,48 @@ def memory_pressure() -> int:
     return level.value
 
 
+def process_footprint(pid: int | None = None) -> int:
+    """phys_footprint from proc_pid_rusage(RUSAGE_INFO_V2): the number Activity Monitor and jetsam use.
+
+    It includes GPU (Metal) memory that RSS and USS do not show.
+    """
+    import ctypes
+
+    class RUsageInfoV2(ctypes.Structure):
+        _fields_ = [
+            ("uuid", ctypes.c_uint8 * 16),
+            *(
+                (name, ctypes.c_uint64)
+                for name in (
+                    "user_time",
+                    "system_time",
+                    "pkg_idle_wkups",
+                    "interrupt_wkups",
+                    "pageins",
+                    "wired_size",
+                    "resident_size",
+                    "phys_footprint",
+                    "proc_start_abstime",
+                    "proc_exit_abstime",
+                    "child_user_time",
+                    "child_system_time",
+                    "child_pkg_idle_wkups",
+                    "child_interrupt_wkups",
+                    "child_pageins",
+                    "child_elapsed_abstime",
+                    "diskio_bytesread",
+                    "diskio_byteswritten",
+                )
+            ),
+        ]
+
+    info = RUsageInfoV2()
+    libc = ctypes.CDLL(None, use_errno=True)
+    if libc.proc_pid_rusage(os.getpid() if pid is None else pid, 2, ctypes.byref(info)):
+        raise OSError(ctypes.get_errno(), "proc_pid_rusage unavailable")
+    return int(info.phys_footprint)
+
+
 def deep_probe(name: str) -> dict[str, Any]:
     if name not in DEEP_COMMANDS:
         raise ValueError("Unrecognized diagnostic")

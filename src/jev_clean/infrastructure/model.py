@@ -273,6 +273,13 @@ def prepare_checkpoint() -> Path:
     return path
 
 
+def mlx_peak_memory() -> int:
+    """Peak bytes MLX has allocated in this process since start."""
+    import mlx.core as mx
+
+    return int(mx.get_peak_memory())
+
+
 def verify_model_ready() -> dict[str, Any]:
     advisor = LayaAdvisor()
     advisor.load()

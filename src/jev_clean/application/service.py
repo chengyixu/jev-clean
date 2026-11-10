@@ -26,7 +26,7 @@ from jev_clean.domain.models import (
 from jev_clean.domain.policy import apply_policy
 from jev_clean.infrastructure import native, owner_tools
 from jev_clean.infrastructure.evidence import EvidenceCollector
-from jev_clean.infrastructure.model import LayaAdvisor
+from jev_clean.infrastructure.model import LayaAdvisor, mlx_peak_memory
 from jev_clean.infrastructure.owner_execution import prune_selected
 from jev_clean.infrastructure.resource_tree import tree_manifest
 from jev_clean.infrastructure.scanner import candidate_from_stat, no_symlink_ancestors
@@ -185,6 +185,11 @@ def merge_status(previous: AuditReport, expansion: AuditReport, parent: str) -> 
     )
 
 
+def memory_record() -> dict[str, int]:
+    """Observation only: written into reports for diagnosis, never a reason to stop or kill."""
+    return {"footprint_bytes": native.process_footprint(), "mlx_peak_bytes": mlx_peak_memory()}
+
+
 def audit(
     home: Path,
     mode: str,
@@ -201,6 +206,7 @@ def audit(
     progress("Inspecting System Data…" if mode == "clean" else "Reading disk usage…")
     advisor = LayaAdvisor()
     advisor.load()  # Must succeed before native scans or synthetic demonstration.
+    memory = {"after_load": memory_record()}
     if demo:
         return demo_report(home, mode, advisor, progress)
     report = AuditReport(1, datetime.now(timezone.utc).isoformat(), str(home), mode, ScanReport())
@@ -210,6 +216,7 @@ def audit(
             raise ValueError("Explicit read scope must be an absolute filesystem path")
     handles = native.open_files(deep=True) if deep else native.open_files()
     report.diagnostics = native.status_snapshot(home)
+    report.diagnostics["memory"] = memory
     report.diagnostics["coverage"] = (
         "deep native diagnostics requested" if deep else "unprivileged; permission gaps reported"
     )
@@ -242,6 +249,7 @@ def audit(
     report.created_at = datetime.now(
         timezone.utc
     ).isoformat()  # review expiry starts after a potentially long scan
+    memory["after_scan"] = memory_record()
     report.coverage = result.stats.get("coverage", {})
     report.exploration = {
         "nodes": [asdict(n) for n in result.nodes],
@@ -444,6 +452,8 @@ def save_plan(path: Path, report: AuditReport, *, cancelled: Callable[[], bool] 
             report,
             scan=replace(report.scan, candidates=[sealed.get(c.id, c) for c in report.scan.candidates]),
         )
+    memory = {**report.diagnostics.get("memory", {}), "after_export": memory_record()}
+    report = replace(report, diagnostics={**report.diagnostics, "memory": memory})
     save_private(path, report.to_dict())
 
 
