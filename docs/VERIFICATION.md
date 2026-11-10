@@ -1,5 +1,14 @@
 # Verification record
 
+## 0.4.1 release (2026-11-11)
+
+- Root cause of the repeated out-of-memory events: MLX keeps freed GPU buffers in a cache whose default limit is about the size of RAM (65.3 GB on this 64 GB Mac). Variable-length resource inputs rarely reuse a cached buffer, so the cache grew by about 1.3 GB per judgment; `~/Library/Caches` alone passed 6 GB within seconds. The model and the trainer now set the cache limit to 0. After the fix, `~/Library` (2,235 resources, 404 fresh judgments) peaked at 2.28 GB for the whole process tree with no swap growth; `~/Library/Caches` (114 fresh judgments) took 14.7 s against 14.1–21.2 s with a 1 GB cache.
+- A process-killing memory guard was drafted and dropped: with the cause removed, the scan paces itself on macOS memory pressure instead (pause at warn, stop like a cancel at critical) and runs `du` with throttled disk I/O.
+- RED-first tests cover pressure pacing, native-reader stop without raising or SIGKILL to `sudo`, SIGTERM unwinding, the per-user run lock, Esc during export and preparation, one cancellable manifest walk, owner-store blocking, order agreement, nested `CACHEDIR.TAG` discovery (outermost only, invalid markers ignored, each tree searched once), v9 observations and canonical extension order. The recommended-selection test with 20,000 proposals ran for over 300 s before the fix and under 1 s after it.
+- Fresh worktree at the release commit: `uv sync --frozen --extra dev` and `scripts/verify.sh` — **402 tests, 84.62% coverage**, Ruff lint/format, mypy (34 source files) and architecture guards pass; exit status checked directly.
+- Model input v9 with the unchanged v3 adapter. A v9 retraining from v3 (600 updates, peak 6.26 GiB) was rejected: every trained checkpoint made 2–7 false removals on the 192-case development set, so native selection kept the start. v3 under v9, native six-order ensemble: 38 frozen v8 controls (byte-identical under v9) 38/38, 89 role controls frozen before training 69/89, 210-case final set 190/210 — **zero false removals in every set**; all errors answer review instead of keep or remove. Peak 2.52 GiB. Authored controls, not a deletion-safety guarantee.
+- No real cleanup ran during development; no file was moved, pruned or Trash-emptied. No remote CI.
+
 ## 0.4.0 release (2026-10-26)
 
 - `scripts/verify.sh`: **321 tests, 82.59% coverage**, Ruff lint/format, mypy (33 source files) and architecture guards pass; exit status checked directly. The guards rejected a first adapter-provisioning draft that cleaned its staging directory with `shutil.rmtree`; provisioning now streams into one `mkstemp` file and only ever unlinks that file.

@@ -20,7 +20,14 @@ into a minutes-scale review. See USEFULNESS-INVESTIGATION.md for the baseline.
    containers, aliases and scanner-state ancestors. Every accessible sibling is
    represented; location rules set **granularity, not disposability**. Symlinks,
    unmounted volumes, inaccessible frontiers and filesystem boundaries are explicit.
-2. Four native read-only `du -x -k -s` workers measure directory resources. Direct
+   Since 0.4.1, after measuring a home directory resource, one throttled native
+   `find` lists validated `CACHEDIR.TAG` declarations inside it. If any exist, the
+   scan opens only their ancestors with the same discovery walker, so each outermost
+   declared cache becomes its own resource and every resulting resource is judged.
+   The parent is not judged as well. A declaration changes granularity only; it is
+   never approval. Search deadlines are reported as declaration search gaps.
+2. Four native read-only `du -x -k -s` workers measure directory resources, with
+   throttled disk I/O (`taskpolicy -d throttle`, which execs `du` in place). Direct
    files use stat. Each native job has a 30-second deadline and cancellation. A
    deadline is recorded as an incomplete measurement, never zero/full coverage.
    There is no total-resource sample cap. Resource boundary enumeration and native
@@ -70,6 +77,16 @@ fixture target, not the default production path and not a silent fallback.
   retain backups and do not select unfamiliar resources just because they are large.
 - Scope-finished and complete access differ. Frontier enumeration itself is
   unprivileged; sudo permits native measurements, not root inference or deletion.
+- Memory (0.4.1): the model runs with no MLX buffer cache; the default cache grows
+  toward RAM size with variable-length inputs. New measurements pause at kernel
+  "warn" memory pressure and the scan stops like a cancel at "critical", keeping
+  measured results and marking the inventory incomplete. There is no external
+  memory guard process; reports record process memory per stage.
+- One run per user (0.4.1): an advisory `flock` on `~/.local/state/jev-clean/run.lock`
+  refuses a second TUI, scan, apply or model check. SIGTERM unwinds like Ctrl-C, so
+  native readers stop and none outlives the process.
+- Owner-managed stores (0.4.1): a Trash target equal to, inside or containing a store
+  that an owner tool manages is unselectable; only the owner-native operation applies.
 - Changed input contracts use a separate namespace/cache from v0.3.0 decisions.
   No warm-start speed claim is labeled cold inference.
 

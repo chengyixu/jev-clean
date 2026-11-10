@@ -39,6 +39,14 @@ measured allocation/activity and installed-app manifest facts, not user file con
 arbitrary file basenames. The exact 43-byte cache declaration header is read for evidence. Directory names are not instructions or proof of garbage.
 Unknown dependencies/regenerability remain unknown. Locally trained Laya encoder/head weights use factual observation questions and batched option permutations. Canonical OS cache/log namespace purpose and descriptive structural formats are input evidence, never runtime remove permission; active and mixed controls still defer/keep. Arbitrary leaf labels remain excluded. Arbitrary path labels are excluded from classifier input; tags are observations only, not admission gates. Model decisions remain keep/review/remove, with technical execution checks and final human consent. See [DEEPER-LAYA-RESEARCH.md](DEEPER-LAYA-RESEARCH.md) for held-out errors/limits. No folder-name blacklist or confidence threshold.
 
+Input contract v9 (0.4.1) adds verified storage roles at exact canonical roots (Xcode
+DerivedData, DeviceSupport and Archives, Simulator devices, Finder device backups,
+Downloads, Mail, Messages, iCloud Drive, SSH/GnuPG keys), dotfile tokens such as `.git`,
+a canonical extension order and wider format groups (documents, archives, mail).
+Each role states what its owner keeps there, never a removal permission. Look-alike names
+outside the exact roots stay unverified. Clean shows how many of the six option orders
+agree with each choice; agreement is a consistency observation, not a safety probability.
+
 Exact serialized resource input + questions + label mapping + input contract +
 model/runtime key the private cache. Fresh and reused counts are separate. Counters
 say resources, not individual files. Proposed bytes are not selected/freed bytes,

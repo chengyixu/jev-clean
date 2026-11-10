@@ -49,6 +49,12 @@ Individual option orders remain imperfect: the selected model's 720-layout final
 
 The accepted artifact identity is `jev-cleanup-laya-runtime-observations-v3`, SHA256 `5b65d16deeb20ac8c9e6ab43cb3c9fe4478896df8e2326e5744559797546bd33`. It retains the existing pinned base checkpoint and tensor layout. Only the application's and installer's artifact-provenance literals change; the production observation/prompt/scanning/execution implementations remain byte-identical. Release 0.4.0 publishes this adapter at Hugging Face `ChengyiX/jev-clean-cleanup-adapter`, revision `4000ecc1423ba5b17694b14a631abe424a64b002`; the application downloads it and verifies the SHA256 before loading.
 
+## Input contract v9 (0.4.1)
+
+Release 0.4.1 deliberately changes the observation interface: verified storage roles at exact canonical roots, dotfile tokens, a canonical extension order and wider format groups. The corpus adds matched idle/active/unknown cases for each role and personal formats inside rebuildable roles, all rendered by the production formatter. The 38 frozen v8 controls render byte-identically under v9 and remain valid. 89 new role controls were frozen before any candidate was trained.
+
+A retraining from v3 with the same recipe (600 updates, microbatch 4, learning rate 0.000003, false-removal cost 4, MLX cache limit 0, peak 6.26 GiB) was rejected: every trained checkpoint made 2–7 false removals on the 192-case v9 development set, so native selection kept the starting adapter. v3 under v9 scored 38/38 controls, 69/89 role controls and 190/210 final cases, all with zero false removals; its 20 errors on each role set are keep or remove answered as review. The role facts therefore make proposals no less conservative today; a future adapter must improve them without any false removal before its pins change.
+
 ## Acceptance and limits
 
 Evaluate starting and candidate adapters through the unchanged native six-option ensemble. Report complete confusion matrices, false removals, useful-removal recall, option-order behavior, and readiness-control output. Evaluate held-out controls and repeat live read-only comparisons before changing artifact pins. Preserve failed-candidate reports and raw errors.
