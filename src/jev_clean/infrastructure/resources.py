@@ -10,7 +10,7 @@ from pathlib import Path
 
 from jev_clean.domain.models import Candidate
 from jev_clean.infrastructure.evidence import EvidenceCollector, observe_children
-from jev_clean.infrastructure.native import _stream_du
+from jev_clean.infrastructure.native import _stream_du, du_command
 from jev_clean.infrastructure.paths import aliases_covered_elsewhere, firmlinks, logical_path
 from jev_clean.infrastructure.resource_tree import directory_fd
 from jev_clean.infrastructure.scanner import candidate_from_stat, fingerprint, no_symlink_ancestors
@@ -203,9 +203,7 @@ def measure_resource(
         raise ValueError("Unsupported resource type")
     # du reads descendants natively without returning millions of Python objects.
     # A timeout is an explicit measurement gap, not zero or a completed subtree.
-    command = ["/usr/bin/du", "-x", "-k", "-s", str(path)]
-    if deep:
-        command = ["/usr/bin/sudo", "-n", *command]
+    command = du_command(["/usr/bin/du", "-x", "-k", "-s", str(path)], sudo=deep)
     code, out, err = _stream_du(command, timeout, cancelled, lambda _: None)
     amount, sep, label = out.partition("\t")
     valid = bool(sep and amount.strip().isdigit() and label == str(path) + "\n")

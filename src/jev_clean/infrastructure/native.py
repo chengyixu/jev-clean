@@ -36,6 +36,17 @@ DEEP_COMMANDS = {
 }
 
 
+THROTTLED_IO = ["/usr/sbin/taskpolicy", "-d", "throttle"]
+
+
+def du_command(argv: list[str], *, sudo: bool = False) -> list[str]:
+    """du with throttled I/O so a scan yields the disk to paging and foreground apps.
+
+    taskpolicy execs du in place, so signals reach du; sudo stays first so it relays them.
+    """
+    return [*(["/usr/bin/sudo", "-n"] if sudo else []), *THROTTLED_IO, *argv]
+
+
 def _drain(selector, buffers: dict[str, bytearray], bound: int, until: float) -> None:
     while selector is not None and selector.get_map() and time.monotonic() < until:
         for key, _ in selector.select(min(0.1, max(0.0, until - time.monotonic()))):
@@ -192,7 +203,7 @@ def parse_categories(text: str) -> CategoryReport | None:
 
 
 def measure(path: Path, *, timeout: float = 20) -> Measurement:
-    code, out, err = run(["/usr/bin/du", "-x", "-k", "-s", str(path)], timeout)
+    code, out, err = run(du_command(["/usr/bin/du", "-x", "-k", "-s", str(path)]), timeout)
     value: int | None = None
     for line in out.splitlines():
         size, _, _path = line.partition("\t")
@@ -284,12 +295,12 @@ def measure_tree(
         "/opt/homebrew/var": "homebrew-data",
     }
     if deep and str(path) in names:
-        code, out, err = run(["/usr/bin/sudo", "-n", *DEEP_COMMANDS[names[str(path)]]], timeout)
+        code, out, err = run(du_command(DEEP_COMMANDS[names[str(path)]], sudo=True), timeout)
         for line in out.splitlines():
             observed(line)
     else:
         code, out, err = _stream_du(
-            ["/usr/bin/du", "-x", "-k", "-d", "1", str(path)], timeout, cancelled, observed
+            du_command(["/usr/bin/du", "-x", "-k", "-d", "1", str(path)]), timeout, cancelled, observed
         )
     return parse_du_tree(str(path), code, out, err)
 

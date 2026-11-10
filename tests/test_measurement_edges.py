@@ -41,7 +41,7 @@ def test_deep_measurement_consumes_elevated_native_output(monkeypatch):
 
     monkeypatch.setattr(native, "run", run)
     rows = native.measure_tree(Path("/Library"), deep=True)
-    assert calls[0][:3] == ["/usr/bin/sudo", "-n", "/usr/bin/du"]
+    assert calls[0][:2] == ["/usr/bin/sudo", "-n"] and calls[0][5] == "/usr/bin/du"
     assert next(r for r in rows if r.path == "/Library").allocated_bytes == 8192
 
 
