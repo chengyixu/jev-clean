@@ -73,6 +73,10 @@ class ConfirmScreen(QuestionScreen):
                 detail += "\nOther selected items move to Trash; recoverable."
         if directories:
             detail += f"\n{directories} directory resources, including ALL descendants."
+        judged = [i.decision for i in items if i.decision and i.decision.orders_total]
+        if judged:
+            least = min(judged, key=lambda d: d.orders_agreeing / d.orders_total)
+            detail += f"\nLeast model agreement: {least.agreement} answer orders chose {least.choice}."
         super().__init__(
             "Delete selected items?",
             detail,

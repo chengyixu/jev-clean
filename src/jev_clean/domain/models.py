@@ -29,6 +29,13 @@ class Decision:
     backend: str
     elapsed_ms: float
     reused: bool = False
+    # How many of the answer-order runs chose `choice`. Shown to the person; never a gate.
+    orders_agreeing: int = 0
+    orders_total: int = 0
+
+    @property
+    def agreement(self) -> str:
+        return f"{self.orders_agreeing}/{self.orders_total}" if self.orders_total else ""
 
 
 @dataclass(frozen=True)

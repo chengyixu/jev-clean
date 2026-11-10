@@ -10,7 +10,7 @@ import stat
 import time
 from collections import OrderedDict
 from contextlib import AbstractContextManager
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
@@ -114,6 +114,7 @@ class DecisionCache(AbstractContextManager):
             0.0,
             raw["backend"],
         )
+        decision = replace(decision, orders_agreeing=raw["orders_agreeing"], orders_total=raw["orders_total"])
         self._remember(key, decision)
         return decision
 

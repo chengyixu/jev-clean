@@ -273,7 +273,8 @@ class JevCleanApp(App):
         query = self.query_one("#search", Input).value.casefold()
         if self.mode == "clean":
             table.add_column("Pick", width=3)
-            table.add_column("Files", width=max(15, self.size.width - 25))
+            table.add_column("Files", width=max(15, self.size.width - 31))
+            table.add_column("Agree", width=5)
             table.add_column("Size", width=10)
             approved = [
                 c
@@ -286,6 +287,7 @@ class JevCleanApp(App):
                 table.add_row(
                     Text("[x]" if c.id in self.selected else "[ ]"),
                     Text(c.path.replace(str(self.home), "~", 1)),
+                    c.decision.agreement if c.decision else "",
                     human_bytes(c.allocated_bytes),
                     key=c.id,
                 )

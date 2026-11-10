@@ -202,9 +202,12 @@ def predict_cleanup(backend, item):
     from jev_clean.domain.models import Decision
 
     result = ensemble_predict(backend, observed_state(item))
+    orders = result["order_choices"]
     return Decision(
         result["choice"],
         result["probabilities"],
         "local Laya cleanup encoder adaptation",
         result["elapsed_ms"],
+        orders_agreeing=orders.count(result["choice"]),
+        orders_total=len(orders),
     )

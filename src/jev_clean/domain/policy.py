@@ -41,6 +41,8 @@ def apply_policy(
         and decision.probabilities.get("remove", 0) >= max(decision.probabilities.values(), default=1)
     )
     reason = f"Model chose {decision.choice}" if decision else "Awaiting mandatory model judgment"
+    if decision and decision.agreement:
+        reason += f" ({decision.agreement} answer orders agree)"
     if execution_issue:
         reason += "; " + execution_issue
     return replace(
