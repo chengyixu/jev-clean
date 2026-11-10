@@ -7,7 +7,7 @@ import subprocess
 import time
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Callable
 
 from jev_clean.application.resources import investigate_resources
@@ -318,6 +318,8 @@ def _refresh_selection(
     home = home or Path.home()
     evidence = EvidenceCollector(home)
     handles = native.open_files()
+    owners = owner_tools.owner_observations()
+    owner_stores = [PurePath(r["path"]) for r in owners]
 
     def refresh(item: Candidate) -> Candidate:
         path = Path(item.path)
@@ -328,11 +330,7 @@ def _refresh_selection(
             raise ValueError("Target identity changed since review")
         if item.operation == "owner_prune":
             observation = next(
-                (
-                    r
-                    for r in owner_tools.owner_observations()
-                    if r["owner"] == item.owner_tool and r["path"] == item.path
-                ),
+                (r for r in owners if r["owner"] == item.owner_tool and r["path"] == item.path),
                 None,
             )
             if observation is None:
@@ -394,7 +392,7 @@ def _refresh_selection(
             assessed.append(apply_policy(replace(item, execution_issue=issue), item.decision))
             continue
         # Model output is never tolerated: invalid or missing judgments stop the operation.
-        assessed.append(apply_policy(fresh, advisor.predict(fresh)))
+        assessed.append(apply_policy(fresh, advisor.predict(fresh), owner_stores))
     if not tolerate_changes and not all(c.selectable for c in assessed):
         raise ValueError("Model no longer recommends removal or target cannot be staged; rescan and review")
     return assessed

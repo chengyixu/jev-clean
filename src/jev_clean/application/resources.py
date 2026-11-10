@@ -7,7 +7,7 @@ import time
 from collections import deque
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import replace
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any
 
 from jev_clean.domain.models import (
@@ -99,8 +99,9 @@ def investigate_resources(
         # Owner-native actions are separate model proposals. Their allocated
         # stores remain Status rows; don't double-count their nested resource bytes.
         stats["owner_actions_assessed"] = 0
-        if mode == "clean" and not cancelled():
-            owner = owner_tools.owner_observations()
+        owner = [] if cancelled() else owner_tools.owner_observations()
+        owner_stores = [PurePath(o["path"]) for o in owner]
+        if mode == "clean":
             for observation in owner:
                 if not wait_for_memory():
                     break
@@ -128,14 +129,6 @@ def investigate_resources(
                 if reviewed.selectable:
                     stats["approved"] += 1
                     stats["approved_candidate_bytes"] += item.allocated_bytes
-                # Never show an overlapping entire store/child Trash operation
-                # alongside a native prune whose target scope is the same tree.
-                result.candidates = [
-                    c
-                    for c in result.candidates
-                    if c.operation != "trash"
-                    or not (Path(c.path).is_relative_to(p) or p.is_relative_to(Path(c.path)))
-                ]
         pending_roots = [DiskNode(str(p), None, True, 0, False) for p in scope.roots]
         # Mandatory model prioritization; every root remains in the declared inventory.
         preferred = []
@@ -206,7 +199,7 @@ def investigate_resources(
                             stats["reused_model_decisions"] += 1
                         stats["model_assessed_resources"] += 1
                         stats["model_" + ("kept" if decision.choice == "keep" else decision.choice)] += 1
-                        reviewed = apply_policy(item, decision)
+                        reviewed = apply_policy(item, decision, owner_stores)
                         stats["execution_unavailable"] += int(not reviewed.eligible)
                         if decision.choice in ("remove", "review"):
                             result.candidates.append(reviewed)
@@ -236,13 +229,6 @@ def investigate_resources(
                 stop.set()
                 for future in active:
                     future.cancel()
-        owner_paths = [Path(c.path) for c in result.candidates if c.operation == "owner_prune"]
-        result.candidates = [
-            c
-            for c in result.candidates
-            if c.operation != "trash"
-            or not any(Path(c.path).is_relative_to(p) or p.is_relative_to(Path(c.path)) for p in owner_paths)
-        ]
         stats["approved"] = sum(c.selectable and c.operation == "trash" for c in result.candidates)
         stats["owner_advisories"] = [
             {
