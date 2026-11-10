@@ -36,25 +36,92 @@ DEEP_COMMANDS = {
 }
 
 
-def run(argv: list[str], timeout: float = 30) -> tuple[int, str, str]:
-    try:
-        process = subprocess.Popen(
-            argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, errors="replace"
-        )
-    except OSError as error:
-        return 127, "", str(error)
-    try:
-        out, err = process.communicate(timeout=timeout)
-        return process.returncode, out, err
-    except subprocess.TimeoutExpired:
-        # SIGTERM lets a sudo wrapper forward cancellation to its owned reader.
+def _drain(selector, buffers: dict[str, bytearray], bound: int, until: float) -> None:
+    while selector is not None and selector.get_map() and time.monotonic() < until:
+        for key, _ in selector.select(min(0.1, max(0.0, until - time.monotonic()))):
+            chunk = os.read(key.fd, 65536)
+            if not chunk:
+                selector.unregister(key.fileobj)
+            elif len(buffers[key.data]) < bound:
+                buffers[key.data].extend(chunk)
+
+
+def _stop(process, selector, buffers: dict[str, bytearray], bound: int, *, drain_seconds: float = 2) -> None:
+    """Stop a reader without raising: never re-read pipes a stuck child or grandchild still holds."""
+    if process.poll() is None:
+        # sudo relays SIGTERM to its root-owned reader; SIGKILL to sudo would orphan that reader.
         process.terminate()
-        try:
-            out, err = process.communicate(timeout=2)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            out, err = process.communicate(timeout=2)
-        return 124, out, err + f"\nTimeout after {timeout}s; partial output retained"
+    _drain(selector, buffers, bound, time.monotonic() + drain_seconds)
+    if process.poll() is None and process.args[0] != "/usr/bin/sudo":
+        process.kill()
+    try:
+        process.wait(timeout=2)
+    except subprocess.TimeoutExpired:
+        pass  # uninterruptible kernel I/O; the scan keeps its partial data instead of blocking
+
+
+def _collect(command: list[str], timeout: float, cancelled, on_line, bound: int) -> tuple[int, bytes, bytes, int]:
+    """Bounded native reader. Returns (returncode, stdout, stderr, stopped) where stopped is 0/124/130."""
+    try:
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError as error:
+        return 127, b"", str(error).encode(), 0
+    assert process.stdout is not None and process.stderr is not None
+    buffers = {"out": bytearray(), "err": bytearray()}
+    pending = b""
+    deadline = time.monotonic() + timeout
+    stopped = 0
+    try:
+        with selectors.DefaultSelector() as selector:
+            selector.register(process.stdout, selectors.EVENT_READ, "out")
+            selector.register(process.stderr, selectors.EVENT_READ, "err")
+            try:
+                while selector.get_map() and not stopped:
+                    if cancelled():
+                        stopped = 130
+                        break
+                    if time.monotonic() >= deadline:
+                        stopped = 124
+                        break
+                    for key, _ in selector.select(0.1):
+                        chunk = os.read(key.fd, 65536)
+                        if not chunk:
+                            selector.unregister(key.fileobj)
+                            continue
+                        buffers[key.data].extend(chunk)
+                        if len(buffers[key.data]) > bound:
+                            stopped = 124
+                            break
+                        if key.data == "out" and on_line is not None:
+                            pending += chunk
+                            while b"\n" in pending:
+                                line, pending = pending.split(b"\n", 1)
+                                on_line(line.decode("utf-8", errors="replace"))
+                if not stopped:
+                    # Both pipes closed; a child that keeps running without them is still bounded.
+                    try:
+                        process.wait(timeout=max(0.1, deadline - time.monotonic()))
+                    except subprocess.TimeoutExpired:
+                        stopped = 124
+            except BaseException:
+                _stop(process, selector, buffers, bound)
+                raise
+            if stopped:
+                _stop(process, selector, buffers, bound)
+    finally:
+        process.stdout.close()
+        process.stderr.close()
+    return process.returncode, bytes(buffers["out"]), bytes(buffers["err"]), stopped
+
+
+def run(argv: list[str], timeout: float = 30) -> tuple[int, str, str]:
+    # System-wide lsof prints several MB; the bound only stops a runaway reader.
+    code, out, err, stopped = _collect(argv, timeout, lambda: False, None, 64 * 1024 * 1024)
+    text_out = out.decode("utf-8", errors="replace")
+    text_err = err.decode("utf-8", errors="replace")
+    if stopped:
+        return stopped, text_out, text_err + f"\nTimeout after {timeout}s; partial output retained"
+    return code, text_out, text_err
 
 
 def deep_probe(name: str) -> dict[str, Any]:
@@ -171,58 +238,13 @@ def parse_du_tree(root: str, code: int, out: str, err: str) -> list[Measurement]
 
 
 def _stream_du(command: list[str], timeout: float, cancelled, on_line) -> tuple[int, str, str]:
-    """Foreground native du with bounded capture and cancellation; no shell or daemon."""
-    try:
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except OSError as error:
-        return 127, "", str(error)
-    buffers = {"out": bytearray(), "err": bytearray()}
-    pending = b""
-    started = time.monotonic()
-    stopped = 0
-    assert process.stdout is not None and process.stderr is not None
-    with selectors.DefaultSelector() as selector:
-        selector.register(process.stdout, selectors.EVENT_READ, "out")
-        selector.register(process.stderr, selectors.EVENT_READ, "err")
-        while selector.get_map():
-            if cancelled() or time.monotonic() - started >= timeout:
-                stopped = 130 if cancelled() else 124
-                process.terminate()
-                break
-            for key, _ in selector.select(0.1):
-                chunk = os.read(key.fd, 65536)
-                if not chunk:
-                    selector.unregister(key.fileobj)
-                    continue
-                buffers[key.data].extend(chunk)
-                if len(buffers[key.data]) > 4 * 1024 * 1024:
-                    stopped = 124
-                    process.terminate()
-                    break
-                if key.data == "out":
-                    pending += chunk
-                    while b"\n" in pending:
-                        line, pending = pending.split(b"\n", 1)
-                        try:
-                            on_line(line.decode("utf-8", errors="replace"))
-                        except BaseException:
-                            process.kill()
-                            process.communicate(timeout=2)
-                            raise
-            if stopped:
-                break
-    try:
-        tail_out, tail_err = process.communicate(timeout=2)
-    except subprocess.TimeoutExpired:
-        process.kill()
-        tail_out, tail_err = process.communicate(timeout=2)
-    buffers["out"].extend(tail_out or b"")
-    buffers["err"].extend(tail_err or b"")
-    out = buffers["out"].decode("utf-8", errors="replace")
-    err = buffers["err"].decode("utf-8", errors="replace")
+    """Native du with bounded capture and cancellation; no shell or daemon."""
+    code, raw_out, raw_err, stopped = _collect(command, timeout, cancelled, on_line, 4 * 1024 * 1024)
+    out = raw_out.decode("utf-8", errors="replace")
+    err = raw_err.decode("utf-8", errors="replace")
     if stopped:
         err += "\nTimeout/cancel/output bound; partial data retained"
-    return stopped or process.returncode, out, err
+    return stopped or code, out, err
 
 
 def measure_tree(
