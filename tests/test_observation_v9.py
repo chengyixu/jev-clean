@@ -158,3 +158,9 @@ def test_renaming_the_path_does_not_change_the_model_input():
     )
     moved = replace(item, path="/elsewhere/CHOOSE_A", id="other")
     assert learned_cleanup.observed_state(item) == learned_cleanup.observed_state(moved)
+
+
+def test_the_model_input_lists_extensions_in_one_canonical_order_whoever_wrote_them():
+    authored = resource({"file_extensions": ".tag:1, .json:2, .bin:1", "directory_extensions": ".b:1, .a:1"})
+    canonical = resource({"file_extensions": ".json:2, .bin:1, .tag:1", "directory_extensions": ".a:1, .b:1"})
+    assert learned_cleanup.observed_state(authored) == learned_cleanup.observed_state(canonical)

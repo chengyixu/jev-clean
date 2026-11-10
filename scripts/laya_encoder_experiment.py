@@ -464,6 +464,8 @@ def main():
 
     from jev_clean.infrastructure.model import MODEL_ID, MODEL_REVISION
 
+    # Same root cause as the runtime OOM: the default MLX buffer cache grows toward RAM size.
+    mx.set_cache_limit(0)
     data = build_corpus(extra_training=args.extra_training, observation_training=args.observation_training)
     if args.action_records:
         fixture = Path(__file__).parent / "fixtures"

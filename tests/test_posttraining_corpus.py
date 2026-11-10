@@ -1,4 +1,4 @@
-"""Post-training data uses the unchanged production input, without path policies."""
+"""Post-training data is rendered by the production observation API, without path policies."""
 
 import importlib.util
 from pathlib import Path
@@ -74,3 +74,26 @@ def test_external_training_corpus_refuses_contradictory_observations(tmp_path, m
     path.write_text(json.dumps(rows))
     with pytest.raises(ValueError, match="contradictory"):
         module.load_external_corpus(path)
+
+
+def test_every_verified_role_has_matched_activity_and_personal_format_counterfactuals(monkeypatch):
+    experiment(monkeypatch)
+    from runtime_resource_corpus import ROLE_IDLE_LABEL, build_runtime_corpus
+
+    from jev_clean.infrastructure.evidence import STORAGE_ROLES
+
+    assert set(ROLE_IDLE_LABEL) == set(STORAGE_ROLES) - {"macos-cache", "macos-diagnostic-log"}
+    for split, rows in build_runtime_corpus().items():
+        for role, (label, contract) in STORAGE_ROLES.items():
+            if role not in ROLE_IDLE_LABEL:
+                continue
+            mine = [r for r in rows if f"Actual filesystem namespace: {label}. {contract}" in r["state"]]
+            by = {r["scenario"]: r["label"] for r in mine}
+            assert by["role-active"] == 2, (split, role)
+            assert by["role-idle"] == ROLE_IDLE_LABEL[role], (split, role)
+            assert by["role-unknown-activity"] != 0, (split, role)
+            if ROLE_IDLE_LABEL[role] == 0:
+                personal = [r for r in mine if r["scenario"].startswith("role-personal-")]
+                assert len(personal) >= 5 and all(r["label"] == 1 for r in personal)
+        repository = [r for r in rows if r["scenario"] == "cache-personal-repository"]
+        assert repository and "source or repository formats" in repository[0]["state"]

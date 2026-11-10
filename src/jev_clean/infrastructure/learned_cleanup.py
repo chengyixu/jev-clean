@@ -25,7 +25,7 @@ def _numeric_count(value, limit=256):
 
 def _extension_counts(value):
     """Only count + literal suffix tokens, never arbitrary basename sentences."""
-    result = []
+    result: list[tuple[str, int]] = []
     for component in str(value).split(",")[:8]:
         suffix, sep, count = component.strip().rpartition(":")
         n = _numeric_count(count)
@@ -36,8 +36,10 @@ def _extension_counts(value):
             or suffix.startswith(".")
             and all(c.isascii() and (c.isalnum() or c in "._-") for c in suffix)
         ):
-            result.append(f"{suffix}:{n}")
-    return ", ".join(result) or "unknown"
+            result.append((suffix, n))
+    # Highest counts first, equal counts by name: one canonical text for scans and authored cases.
+    result.sort(key=lambda pair: (-pair[1], pair[0]))
+    return ", ".join(f"{suffix}:{n}" for suffix, n in result) or "unknown"
 
 
 # The single home of recognized format groups. A group is an observation, never a disposal rule.
