@@ -172,3 +172,14 @@ def test_gap_has_no_fabricated_area_but_remains_in_hierarchy():
     assert not system.complete
     assert any(not n.complete for n in system.children)
     assert not mod.layout_tiles([mod.MapEntry("unknown", "unknown", None)], 80, 20)
+
+
+def test_recommended_selection_scales_linearly_with_many_disjoint_proposals():
+    import time
+
+    mod = contract()
+    items = [item(f"/r/p{i}") for i in range(20000)] + [item("/r/p7/inside")]
+    started = time.monotonic()
+    chosen = mod.recommended_ids(items)
+    assert time.monotonic() - started < 1.0
+    assert len(chosen) == 20000 and "/r/p7/inside" not in chosen

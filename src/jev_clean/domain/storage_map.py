@@ -196,15 +196,20 @@ def storage_map(report: AuditReport) -> MapEntry:
 
 
 def recommended_ids(items: list[Candidate]) -> set[str]:
-    chosen: list[Candidate] = []
+    """Outermost selectable trash paths. Ancestors are looked up by their parts, so the cost
+    is items × path depth, not items × chosen items."""
+    chosen: set[tuple[str, ...]] = set()
+    ids: set[str] = set()
     for c in sorted(items, key=lambda c: (len(PurePath(c.path).parts), c.path)):
+        parts = PurePath(c.path).parts
         if (
             c.selectable
             and c.operation == "trash"
-            and not any(PurePath(c.path).is_relative_to(x.path) for x in chosen)
+            and not any(parts[:depth] in chosen for depth in range(1, len(parts) + 1))
         ):
-            chosen.append(c)
-    return {c.id for c in chosen}
+            chosen.add(parts)
+            ids.add(c.id)
+    return ids
 
 
 def toggle_selection(selected: set[str], item: Candidate, items: list[Candidate]) -> set[str]:
