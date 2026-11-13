@@ -11,6 +11,7 @@ from pathlib import PurePath
 from jev_clean.domain.models import Candidate, Decision
 
 OWNER_STORE_ISSUE = "owner-managed store: only the owner-native operation is supported"
+ALREADY_GONE = "Already gone: deleted or moved since the scan"
 
 
 def apply_policy(

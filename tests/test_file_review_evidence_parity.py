@@ -33,8 +33,6 @@ def test_resource_review_and_discovery_use_identical_semantic_evidence(
 def test_forged_cache_namespace_is_discarded_on_selected_review(tmp_path, monkeypatch, neural_boundary):
     from dataclasses import replace
 
-    import pytest
-
     path = tmp_path / "Pictures"
     path.mkdir()
     (path / "image.jpg").write_bytes(b"personal fixture")
@@ -43,7 +41,6 @@ def test_forged_cache_namespace_is_discarded_on_selected_review(tmp_path, monkey
     monkeypatch.setattr(service.native, "open_files", lambda: set())
     seen = []
     monkeypatch.setattr(LayaAdvisor, "predict", lambda self, fresh: seen.append(fresh) or answer("review"))
-    with pytest.raises(ValueError, match="Model"):
-        service.prepare_selection([item], home=tmp_path)
+    assert not service.prepare_selection([item], home=tmp_path)[0].selectable  # only this item is held back
     assert seen[0].evidence["storage_namespace"] == "unverified"
     assert (path / "image.jpg").exists()

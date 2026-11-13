@@ -13,7 +13,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from jev_clean.domain.models import Candidate, Fingerprint, MoveResult
-from jev_clean.domain.policy import apply_policy
+from jev_clean.domain.policy import ALREADY_GONE, apply_policy
 from jev_clean.infrastructure.resource_tree import directory_fd, rename_exclusive, tree_manifest
 from jev_clean.infrastructure.scanner import fingerprint, no_symlink_ancestors
 
@@ -46,12 +46,16 @@ def save_private(path: Path, data: dict) -> None:
                 pass
 
 
+# A whole-disk plan is over 20 MB; the limit only refuses an absurd file.
+PRIVATE_FILE_LIMIT = 256 * 1024 * 1024
+
+
 def read_private(path: Path) -> dict:
     with directory_fd(path.parent) as parent:
         fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=parent)
         with os.fdopen(fd) as source:
             st = os.fstat(source.fileno())
-            if not stat.S_ISREG(st.st_mode) or st.st_uid != os.getuid() or st.st_size > 16 * 1024 * 1024:
+            if not stat.S_ISREG(st.st_mode) or st.st_uid != os.getuid() or st.st_size > PRIVATE_FILE_LIMIT:
                 raise ValueError("Invalid report/journal file")
             return json.load(source)
 
@@ -149,7 +153,8 @@ class TrashStore:
                             result.moved += 1
                             result.staged_bytes += item.allocated_bytes
                     except (OSError, ValueError) as error:
-                        result.failed.append(f"{item.path}: {error}")
+                        reason = error if os.path.lexists(item.path) else ALREADY_GONE
+                        result.failed.append(f"{item.path}: {reason}")
             return result
 
     def validate_source(self, source: Path) -> None:

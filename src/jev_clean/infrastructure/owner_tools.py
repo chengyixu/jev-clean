@@ -9,7 +9,7 @@ import os
 import re
 import shutil
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any
 
 # Typed owner interfaces, not folder classification/approval rules. Detection,
@@ -20,6 +20,8 @@ OWNER_INTERFACES: dict[str, dict[str, Any]] = {
         "path": ["cache", "dir"],
         "help": ["cache", "prune", "--help"],
         "phrase": "Prune all unreachable objects from the cache",
+        # Installed tools and managed Pythons live in uv's own stores too.
+        "managed": [["tool", "dir"], ["python", "dir"]],
         "action": ["cache", "prune"],
         "source": "https://docs.astral.sh/uv/concepts/cache/",
         "effect": "removes only unused generated objects with owner-managed cache locking; required projects are not the target",
@@ -103,29 +105,56 @@ def active_owner(name):
     return process_conflict(name, result[1], current_pid=os.getpid())
 
 
-def owner_observations(executables=None, *, run=readonly_run, active=active_owner):
+def installed_owners(executables=None):
     executables = (
         {name: shutil.which(spec["binary"]) for name, spec in OWNER_INTERFACES.items()}
         if executables is None
         else executables
     )
-    out = []
-    for name, executable in executables.items():
-        if not executable or name not in OWNER_INTERFACES:
-            continue
+    return {name: exe for name, exe in executables.items() if exe and name in OWNER_INTERFACES}
+
+
+def store_path(run, argv):
+    """The owner's own answer to "where is your store?", or None when it gives no usable answer."""
+    code, text, error = run(argv)
+    path = Path(text.strip())
+    if (
+        code
+        or error.strip()
+        or not path.is_absolute()
+        or ".." in path.parts
+        or not path.is_dir()
+        or path.is_symlink()
+    ):
+        return None
+    return path
+
+
+def managed_stores(executables=None, *, run=readonly_run):
+    """Every store an installed owner reports. Protection never depends on its help wording."""
+    found = []
+    for name, executable in installed_owners(executables).items():
         interface = OWNER_INTERFACES[name]
-        path_cmd = [executable, *interface["path"]]
+        for query in (interface["path"], *interface.get("managed", [])):
+            path = store_path(run, [executable, *query])
+            if path is not None:
+                found.append(path)
+    return found
+
+
+def protected_stores(observations):
+    """Stores no Trash move may enter, contain or sit inside."""
+    return sorted({PurePath(o["path"]) for o in observations} | {PurePath(p) for p in managed_stores()})
+
+
+def owner_observations(executables=None, *, run=readonly_run, active=active_owner):
+    """Owner-native operations offered to the model; the help phrase gates only this offer."""
+    out = []
+    for name, executable in installed_owners(executables).items():
+        interface = OWNER_INTERFACES[name]
         help_cmd = [executable, *interface["help"]]
-        code, text, error = run(path_cmd)
-        path = Path(text.strip())
-        if (
-            code
-            or error.strip()
-            or not path.is_absolute()
-            or ".." in path.parts
-            or not path.is_dir()
-            or path.is_symlink()
-        ):
+        path = store_path(run, [executable, *interface["path"]])
+        if path is None:
             continue
         code, helptext, _ = run(help_cmd)
         phrase = interface["phrase"]

@@ -7,7 +7,7 @@ import subprocess
 import time
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
-from pathlib import Path, PurePath
+from pathlib import Path
 from typing import Callable
 
 from jev_clean.application.resources import investigate_resources
@@ -23,7 +23,7 @@ from jev_clean.domain.models import (
     Measurement,
     ScanReport,
 )
-from jev_clean.domain.policy import apply_policy
+from jev_clean.domain.policy import ALREADY_GONE, apply_policy
 from jev_clean.infrastructure import native, owner_tools
 from jev_clean.infrastructure.evidence import EvidenceCollector
 from jev_clean.infrastructure.model import LayaAdvisor, mlx_peak_memory
@@ -309,10 +309,9 @@ def _refresh_selection(
     *,
     home: Path | None,
     require_manifest: bool,
-    tolerate_changes: bool = False,
     cancelled: Callable[[], bool] = lambda: False,
 ) -> list[Candidate]:
-    """Revalidate every item; with tolerate_changes, a changed item becomes unselectable instead of failing all."""
+    """Revalidate every item on its own: a vanished or changed item becomes unselectable, never fatal to the rest."""
     check_disjoint([Path(i.path) for i in items])
     advisor = LayaAdvisor()
     advisor.load()
@@ -320,7 +319,7 @@ def _refresh_selection(
     evidence = EvidenceCollector(home)
     handles = native.open_files()
     owners = owner_tools.owner_observations()
-    owner_stores = [PurePath(r["path"]) for r in owners]
+    owner_stores = owner_tools.protected_stores(owners)
 
     def refresh(item: Candidate) -> Candidate:
         path = Path(item.path)
@@ -385,15 +384,13 @@ def _refresh_selection(
         try:
             fresh = refresh(item)
         except (ValueError, OSError) as error:
-            if not tolerate_changes:
-                raise
-            issue = f"Changed after the scan; rescan before cleanup ({error})"
+            gone = not os.path.lexists(item.path)
+            issue = ALREADY_GONE if gone else f"Changed after the scan; rescan before cleanup ({error})"
             assessed.append(apply_policy(replace(item, execution_issue=issue), item.decision))
             continue
-        # Model output is never tolerated: invalid or missing judgments stop the operation.
+        # Invalid model output is never tolerated: it raises and stops the operation.
+        # A valid new answer other than remove leaves only that item unselectable.
         assessed.append(apply_policy(fresh, advisor.predict(fresh), owner_stores))
-    if not tolerate_changes and not all(c.selectable for c in assessed):
-        raise ValueError("Model no longer recommends removal or target cannot be staged; rescan and review")
     return assessed
 
 
@@ -408,14 +405,16 @@ def execute_selection(items: list[Candidate], *, home: Path | None = None) -> Cl
     except (ValueError, OSError) as error:
         result.failed.append(str(error))
         return result
-    staged = [i for i in assessed if i.operation == "trash"]
+    ready = [i for i in assessed if i.selectable]
+    result.failed.extend(f"{i.path}: {i.execution_issue or i.reason}" for i in assessed if not i.selectable)
+    staged = [i for i in ready if i.operation == "trash"]
     if staged:
         moved = TrashStore(home).move(staged, open_paths=native.open_files())
         result.moved = moved.moved
         result.staged_bytes = moved.staged_bytes
         result.batch_id = moved.batch_id
         result.failed.extend(moved.failed)
-    for item in assessed:
+    for item in ready:
         if item.operation != "owner_prune":
             continue
         try:
@@ -441,7 +440,6 @@ def save_plan(path: Path, report: AuditReport, *, cancelled: Callable[[], bool] 
             resources,
             home=Path(report.home),
             require_manifest=False,
-            tolerate_changes=True,
             cancelled=cancelled,
         )
         sealed = {c.id: c for c in refreshed}

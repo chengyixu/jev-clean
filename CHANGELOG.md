@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.2 — One vanished item never stops a cleanup
+
+- **Fixed: a confirmed cleanup could clean nothing.** On a real run, 154 resources (about 18 GB) were confirmed, one `.ruff_cache` was deleted by its own tool after the scan, and the whole cleanup reported "0 items cleaned. 1 skipped." Every item is now checked on its own just before it moves. An item that was deleted or moved since the scan is skipped as "Already gone", a changed item is skipped with its reason, and a new model answer other than remove skips only that item. All other items still pass every identity, manifest, activity and model check and move to the Trash. Invalid model output still stops the whole operation.
+- **The result screen says what happened to every item:** how many were cleaned, how many bytes moved to the Trash, each skipped path with its reason, and the `jev-clean restore` command. Before, reasons went only to a hidden log.
+- **The confirmation counts only items that are still ready.** Items that changed or vanished while the selection was prepared are left out of the question and named in the log; if none are left, nothing is asked.
+- **Fixed: uv's stores were offered for the Trash.** uv 0.13 reworded its `cache prune` help text, so uv went undetected and `~/.cache/uv` plus uv's installed tools were proposed. Store protection now depends only on the owner tool reporting its store, never on its help wording; the wording only decides whether the owner's own prune command is offered. uv's tool directory (`uv tool dir`) and managed Pythons (`uv python dir`) are protected stores too.
+- **Fixed: `jev-clean apply` refused whole-disk plans** larger than 16 MB as "Invalid report/journal file". The limit is now 256 MB.
+
 ## 0.4.1 — Model memory stays flat
 
 - **Fixed runaway memory during scans.** MLX keeps freed GPU buffers in a cache whose default limit is about the size of RAM (65.3 GB on a 64 GB Mac). Real resources give the model inputs of many different lengths, so cached buffers were rarely reused and the cache grew by about 1.3 GB per model judgment. A scan of `~/Library/Caches` alone passed 6 GB within seconds; a whole-disk scan could fill RAM and swap until macOS jetsam killed system processes. jev-clean now loads the model with no buffer cache.

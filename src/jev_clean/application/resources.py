@@ -7,7 +7,7 @@ import time
 from collections import deque
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import replace
-from pathlib import Path, PurePath
+from pathlib import Path
 from typing import Any
 
 from jev_clean.domain.models import (
@@ -103,7 +103,7 @@ def investigate_resources(
         # stores remain Status rows; don't double-count their nested resource bytes.
         stats["owner_actions_assessed"] = 0
         owner = [] if cancelled() else owner_tools.owner_observations()
-        owner_stores = [PurePath(o["path"]) for o in owner]
+        owner_stores = owner_tools.protected_stores(owner)
         if mode == "clean":
             for observation in owner:
                 if not wait_for_memory():

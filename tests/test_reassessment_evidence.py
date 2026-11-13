@@ -1,6 +1,5 @@
 from dataclasses import replace
 
-import pytest
 from cache_fixtures import declare_cache
 from test_model_owned_judgment import answer
 
@@ -23,8 +22,7 @@ def test_reassessment_uses_fresh_activity_not_saved_metadata(tmp_path, monkeypat
         return answer("keep" if candidate.open_file else "remove")
 
     monkeypatch.setattr(LayaAdvisor, "predict", predict)
-    with pytest.raises(ValueError, match="Model"):
-        service.reassess_selection([item], home=tmp_path)
+    assert not service.reassess_selection([item], home=tmp_path)[0].selectable  # only this item is held back
     assert seen[0].open_file is True
     assert path.exists()
 
@@ -37,8 +35,8 @@ def test_changed_target_is_not_silently_reauthorized(tmp_path, monkeypatch):
     monkeypatch.setattr(service.native, "open_files", lambda: set())
     monkeypatch.setattr(LayaAdvisor, "load", lambda self: None)
     monkeypatch.setattr(LayaAdvisor, "predict", lambda *a: answer("remove"))
-    with pytest.raises(ValueError, match="changed"):
-        service.reassess_selection([item], home=tmp_path)
+    (fresh,) = service.reassess_selection([item], home=tmp_path)
+    assert not fresh.selectable and "changed" in fresh.execution_issue.lower()
     assert path.read_bytes() == b"new owner work"
 
 
