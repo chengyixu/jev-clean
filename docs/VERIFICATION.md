@@ -1,5 +1,14 @@
 # Verification record
 
+## 0.4.2 release (2026-11-14)
+
+- Live failure reproduced: a real whole-disk run confirmed 154 resources (about 18 GB); one `.ruff_cache` vanished after the scan and 0.4.1 reported "0 items cleaned. 1 skipped." A new Textual pilot test selects all, confirms, removes one item and asserts the old code shows that exact screen; with the fix it shows "2 items cleaned", "1 skipped", the path with "Already gone", the restore command, and the other two items in the Trash.
+- RED-first tests: one item gone before apply, changed before apply, a new keep answer, gone during preparation, gone at the Trash boundary, the TUI end-to-end path, left-out confirmation, the result summary, uv help-text drift with cache/tool/python stores protected, failed location queries inventing no store, an installed uv tool never offered for Trash, whole-disk scan store protection, and a plan larger than 16 MB. All 13 new tests failed before the fix and pass after it. Four older tests now assert the per-item hold-back with the file intact instead of a whole-run abort.
+- Store protection no longer depends on the owner tool's help phrase: `owner_tools.managed_stores` asks each installed owner for its store paths, and `protected_stores` combines those with observed owner operations. The help phrase still gates only owner-native prune offers. `uv tool dir` and `uv python dir` are included.
+- `read_private` limit raised from 16 MB to 256 MB after `jev-clean apply` rejected a real 22.6 MB whole-disk plan as "Invalid report/journal file". Ownership, regular-file and no-follow checks are unchanged.
+- Fresh worktree at commit `eefd907`: `uv sync --frozen --extra dev` and `scripts/verify.sh` — **416 tests, 85.17% coverage**, Ruff lint/format, mypy (34 source files) and architecture guards pass; exit status checked directly. The first local run found two failures (a missed version fallback in `update.py` and an owner-store test still expecting an abort); both were fixed before the fresh-worktree run.
+- No user files were moved during development or release verification; tests use temporary home directories. No hosted CI.
+
 ## 0.4.1 release (2026-11-11)
 
 - Root cause of the repeated out-of-memory events: MLX keeps freed GPU buffers in a cache whose default limit is about the size of RAM (65.3 GB on this 64 GB Mac). Variable-length resource inputs rarely reuse a cached buffer, so the cache grew by about 1.3 GB per judgment; `~/Library/Caches` alone passed 6 GB within seconds. The model and the trainer now set the cache limit to 0. After the fix, `~/Library` (2,235 resources, 404 fresh judgments) peaked at 2.28 GB for the whole process tree with no swap growth; `~/Library/Caches` (114 fresh judgments) took 14.7 s against 14.1–21.2 s with a 1 GB cache.

@@ -3,6 +3,7 @@ from test_model_owned_judgment import answer
 from test_whole_disk_scope import Model
 
 from jev_clean.application import resources
+from jev_clean.domain.policy import OWNER_STORE_ISSUE
 from jev_clean.infrastructure import owner_tools
 
 
@@ -118,5 +119,7 @@ def test_preparing_an_owner_store_selection_is_refused(tmp_path, monkeypatch, ne
         "owner_observations",
         lambda: [{"owner": "uv", "path": str(tmp_path / "cache"), "argv": [], "state": "", "active": False}],
     )
-    with pytest.raises(ValueError, match="cannot be staged"):
-        service.prepare_selection([replace(item)], home=tmp_path)
+    (sealed,) = service.prepare_selection([replace(item)], home=tmp_path)
+    assert not sealed.selectable and sealed.execution_issue == OWNER_STORE_ISSUE
+    result = service.execute_selection([sealed], home=tmp_path)
+    assert result.moved == 0 and (tmp_path / "cache/nested/blob").exists()

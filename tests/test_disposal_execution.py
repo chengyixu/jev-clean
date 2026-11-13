@@ -2,7 +2,6 @@
 
 from dataclasses import replace
 
-import pytest
 from cache_fixtures import declare_cache
 from test_model_owned_judgment import answer
 from test_resource_staging import proposal
@@ -31,8 +30,7 @@ def test_forged_saved_cache_claim_is_not_reused_in_fresh_model_input(tmp_path, m
         return answer("review")
 
     monkeypatch.setattr(LayaAdvisor, "predict", predict)
-    with pytest.raises(ValueError, match="Model"):
-        service.prepare_selection([forged], home=tmp_path)
+    assert not service.prepare_selection([forged], home=tmp_path)[0].selectable  # only this item is held back
     assert seen[0].disposal is None
     assert "none observed" in seen[0].evidence["disposal_basis"]
     assert (path / "valuable").read_bytes() == b"unique"
@@ -53,8 +51,7 @@ def test_removed_ancestor_tag_is_observed_as_missing_on_model_recheck(tmp_path, 
     from jev_clean.infrastructure.model import LayaAdvisor
 
     monkeypatch.setattr(LayaAdvisor, "predict", lambda self, fresh: seen.append(fresh) or answer("review"))
-    with pytest.raises(ValueError, match="Model"):
-        service.reassess_selection(sealed, home=tmp_path)
+    assert not service.reassess_selection(sealed, home=tmp_path)[0].selectable  # only this item is held back
     assert seen[0].disposal is None
     assert (path / "blob").exists()
 

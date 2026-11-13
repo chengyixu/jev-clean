@@ -60,7 +60,7 @@ class DepthScreen(QuestionScreen):
 
 
 class ConfirmScreen(QuestionScreen):
-    def __init__(self, items: list[Candidate]):
+    def __init__(self, items: list[Candidate], *, left_out: int = 0):
         count = len(items)
         size = human_bytes(sum(i.allocated_bytes for i in items))
         directories = sum(i.unit == "directory" and i.operation == "trash" for i in items)
@@ -77,6 +77,10 @@ class ConfirmScreen(QuestionScreen):
         if judged:
             least = min(judged, key=lambda d: d.orders_agreeing / d.orders_total)
             detail += f"\nLeast model agreement: {least.agreement} answer orders chose {least.choice}."
+        if left_out:
+            detail += (
+                f"\n{left_out} other selected items changed or vanished since the scan; they stay untouched."
+            )
         super().__init__(
             "Delete selected items?",
             detail,

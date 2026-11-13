@@ -20,7 +20,14 @@ from jev_clean.application.service import (
     prepare_selection,
     save_plan,
 )
-from jev_clean.domain.models import AuditReport, Cancelled, Candidate, human_bytes, ordered_candidates
+from jev_clean.domain.models import (
+    AuditReport,
+    Cancelled,
+    Candidate,
+    CleanupResult,
+    human_bytes,
+    ordered_candidates,
+)
 from jev_clean.domain.storage_map import MapEntry, recommended_ids, storage_map, toggle_selection
 from jev_clean.infrastructure import native
 from jev_clean.infrastructure.trash import TrashStore
@@ -38,6 +45,20 @@ Q quit
 
 Select items with Space, then Enter to confirm moving them to Trash.
 Technical details are available in the JSON export."""
+
+
+def cleanup_summary(result: CleanupResult) -> str:
+    """What happened to every confirmed item: cleaned, skipped with its reason, and how to undo."""
+    lines = [
+        f"{result.completed} {'item' if result.completed == 1 else 'items'} cleaned"
+        f" ({human_bytes(result.staged_bytes)} moved to Trash)."
+    ]
+    if result.failed:
+        lines.append(f"{len(result.failed)} skipped; nothing else was affected:")
+        lines.extend(f"  {reason}" for reason in result.failed)
+    if result.batch_id:
+        lines.append(f"Undo: jev-clean restore {result.batch_id}")
+    return "\n".join(lines)
 
 
 class JevCleanApp(App):
@@ -467,8 +488,20 @@ class JevCleanApp(App):
             self.candidate_by_id[item.id] = item
         if self.report and not self.demo:
             self.report.diagnostics.setdefault("memory", {})["after_prepare"] = memory_record()
+        ready = [i for i in items if i.selectable]
+        left_out = [i for i in items if not i.selectable]
+        for item in left_out:
+            self.trace(f"Left out: {item.path}: {item.execution_issue or item.reason}")
+        if not ready:
+            self.preparation_stopped(
+                f"Nothing left to clean: all {len(left_out)} selected items changed since the scan. Rescan."
+            )
+            return
         self.show_stage("review" if self.mode == "clean" else "status")
-        self.push_screen(ConfirmScreen(items), lambda yes: self.move_selected(items) if yes else None)
+        self.push_screen(
+            ConfirmScreen(ready, left_out=len(left_out)),
+            lambda yes: self.move_selected(ready) if yes else None,
+        )
 
     def move_selected(self, items: list[Candidate]) -> None:
         if self.demo:
@@ -483,13 +516,9 @@ class JevCleanApp(App):
     def move_worker(self, items: list[Candidate]) -> None:
         try:
             result = execute_selection(items, home=self.home)
-            text = f"{result.completed} items cleaned."
-            if result.failed:
-                text += f" {len(result.failed)} skipped."
-            if result.batch_id:
-                self.call_from_thread(self.trace, f"Undo Trash items: jev-clean restore {result.batch_id}")
-            for error in result.failed:
-                self.call_from_thread(self.trace, error)
+            text = cleanup_summary(result)
+            for line in text.splitlines()[1:]:
+                self.call_from_thread(self.trace, line)
             self.call_from_thread(self.finish_move, text)
         except Exception as error:
             self.call_from_thread(self.scan_failed, str(error))
