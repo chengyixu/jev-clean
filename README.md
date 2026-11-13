@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/assets/hero.svg" alt="jev-clean · Nexora — Clean mysterious macOS System Data." width="960"></p>
+<p align="center"><img src="docs/assets/hero.svg" alt="jev-clean · Nexora — see what macOS System Data really is and clear it safely, with undo. 0 wrong removals in 337 frozen tests, 2.3 GB peak memory, every file move can be undone, nothing leaves your Mac." width="960"></p>
 
 # jev-clean · Nexora
 
@@ -13,6 +13,21 @@
 ![Local inference required](https://img.shields.io/badge/inference-required%20%26%20local-6ce5ca)
 
 macOS calls hundreds of gigabytes **System Data**. That label doesn't tell you what the data is, why it exists, or whether you can remove it.
+
+## How jev-clean compares
+
+| | **jev-clean** | macOS Storage settings | [Mole](https://github.com/tw93/Mole) (CLI) | [DaisyDisk](https://daisydiskapp.com/) | [CleanMyMac](https://macpaw.com/cleanmymac) |
+|---|---|---|---|---|---|
+| **Who decides what goes** | ✅ A learned model on your Mac judges every measured item from facts (storage role, activity, formats); file and folder names do not enter the decision. You approve each path. | Fixed Apple recommendations; you delete | Built-in cleanup rules and whitelists | You, from a visual map | MacPaw's Safety Database, a vendor “remove-or-keep reference book” |
+| **Can you undo it?** | ✅ Every file move goes to the Trash with a restore journal; `jev-clean restore` never overwrites | ❌ Delete warns “You can't undo this action” | ⚠️ `clean`, `purge` and `installer` delete permanently; some commands use the Trash | ❌ Deletes permanently, bypassing the Trash by design | Not stated on its product or Safety Database pages |
+| **Checks before anything moves** | ✅ Seals an exact list of every file before you confirm; at apply time rechecks identity, activity and the model's answer | Confirmation dialog | Path validation; `--dry-run` preview | Collector review; 5-second cancel countdown | Safety Database rules; ignore lists |
+| **Explains System Data** | ✅ The macOS record at one timestamp, plus a treemap with Apple's category names; measured and estimated sizes kept apart | One gray total, “a general category” | Disk explorer (`mo analyze`) | Breakdown of “Other” / “System Data” with an admin scan | Cleanup modules and a “Reduce System Data” guide |
+| **Shows its evidence** | ✅ Each choice shows how many of six answer orders agree; every known wrong model answer and every test result is published in this repo | — | Operation log (`mo history`) | — | — |
+| **Price and licence** | ✅ Free, Apache-2.0 | Built into macOS | Free CLI, GPL-3.0 (paid app separate) | $9.99 once, closed source | From $3.33/month, closed source |
+
+**Where others do more.** DaisyDisk frees space at once (because it deletes permanently) and maps external, network and cloud drives. CleanMyMac adds malware scanning and app updates. Mole runs on Intel Macs, Windows and Linux and uninstalls apps. jev-clean needs Apple Silicon, and moving files to the Trash frees nothing until you empty it.
+
+This table compares design facts, not cleanup accuracy: no shared benchmark exists, and jev-clean's test results come from authored controls. Competitor facts were checked on 13 November 2026 against their own documentation: [Apple Support](https://support.apple.com/en-us/102624), the [Mole README](https://github.com/tw93/Mole), DaisyDisk's [deleting guide](https://daisydiskapp.com/guide/4/en/DeletingFiles) and [product page](https://daisydiskapp.com/), and MacPaw's [Safety Database](https://macpaw.com/support/cleanmymac/knowledgebase/safety-database) and [product page](https://macpaw.com/cleanmymac). The macOS warning is the Storage settings Delete dialog.
 
 **Clean is the flagship System Data workflow.** The terminal stays simple:
 
