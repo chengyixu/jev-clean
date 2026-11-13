@@ -20,6 +20,12 @@ def no_learned_adapter_network(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def isolate_host_home(monkeypatch, tmp_path_factory):
+    """Every test, and every CLI subprocess it starts, gets its own HOME: never the account's state or run lock."""
+    monkeypatch.setenv("HOME", str(tmp_path_factory.mktemp("home")))
+
+
+@pytest.fixture(autouse=True)
 def isolate_host_application_manifests(monkeypatch):
     """Synthetic HOME manifests stay real; never enumerate the host's installed apps."""
     glob = Path.glob
